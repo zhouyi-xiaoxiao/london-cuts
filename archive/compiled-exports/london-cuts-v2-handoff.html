@@ -1,0 +1,3637 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>London Cuts — V2 Handoff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Black&family=Instrument+Serif:ital@0;1&family=Bodoni+Moda:ital,wght@0,400;0,500;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@400;700&display=swap" />
+<style data-src="styles/base.css">
+/* London Cuts — base styles, design tokens, mode grammars */
+
+:root {
+  /* Neutrals — warm paper */
+  --paper: oklch(0.985 0.004 60);
+  --paper-2: oklch(0.96 0.005 60);
+  --paper-3: oklch(0.92 0.006 60);
+  --ink: oklch(0.14 0.008 60);
+  --ink-2: oklch(0.32 0.008 60);
+  --ink-3: oklch(0.55 0.008 60);
+  --rule: oklch(0.88 0.006 60);
+
+  /* Accent (mode-agnostic) */
+  --accent: oklch(0.55 0.14 20);
+
+  /* Type scale */
+  --f-display: 'Archivo Black', 'Archivo', system-ui, sans-serif;
+  --f-serif: 'Instrument Serif', 'Times New Roman', serif;
+  --f-fashion: 'Bodoni Moda', 'Didot', 'Bodoni 72', serif;
+  --f-sans: 'Archivo', system-ui, -apple-system, sans-serif;
+  --f-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+  --f-hand: 'Caveat', cursive;
+
+  /* Grid */
+  --gutter: 24px;
+  --edge: 40px;
+
+  /* Mode tokens — overridden per mode */
+  --mode-bg: var(--paper);
+  --mode-ink: var(--ink);
+  --mode-accent: var(--accent);
+  --mode-display-font: var(--f-serif);
+  --mode-body-font: var(--f-sans);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+input, textarea, select { font: inherit; color: inherit; background: none; border: none; outline: none; }
+
+/* ———————————————————————————————————————————
+   MODE GRAMMARS — change typography, rhythm, spacing
+——————————————————————————————————————————— */
+
+/* PUNK — zine, collage, raw, asymmetric, black on white with red */
+[data-mode="punk"] {
+  --mode-bg: oklch(0.97 0 0);
+  --mode-ink: oklch(0.08 0 0);
+  --mode-accent: oklch(0.62 0.24 25);
+  --mode-display-font: var(--f-display);
+  --mode-body-font: var(--f-sans);
+}
+
+/* FASHION — editorial, whitespace, bold crop, elegant serif */
+[data-mode="fashion"] {
+  --mode-bg: oklch(0.98 0.008 75);
+  --mode-ink: oklch(0.16 0.01 40);
+  --mode-accent: oklch(0.45 0.12 25);
+  --mode-display-font: var(--f-fashion);
+  --mode-body-font: var(--f-sans);
+}
+
+/* CINEMA — scene card, subtitle, moody, dark */
+[data-mode="cinema"] {
+  --mode-bg: oklch(0.12 0.015 250);
+  --mode-ink: oklch(0.92 0.01 80);
+  --mode-accent: oklch(0.88 0.14 90);
+  --mode-display-font: var(--f-serif);
+  --mode-body-font: var(--f-mono);
+}
+
+/* ———————————————————————————————————————————
+   PRIMITIVES
+——————————————————————————————————————————— */
+
+.page { min-height: 100vh; background: var(--mode-bg, var(--paper)); color: var(--mode-ink, var(--ink)); transition: background 400ms ease, color 400ms ease; }
+
+.rule { height: 1px; background: currentColor; opacity: 0.15; }
+.rule-heavy { height: 2px; background: currentColor; }
+
+.mono { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.mono-sm { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.eyebrow { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.7; }
+
+/* Image placeholders — striped, with mono caption */
+.img-ph {
+  position: relative;
+  background: repeating-linear-gradient(
+    135deg,
+    oklch(0.88 0.01 60) 0 10px,
+    oklch(0.92 0.008 60) 10px 20px
+  );
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  color: oklch(0.35 0.01 60);
+}
+.img-ph::before {
+  content: attr(data-label);
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 10px 12px;
+  background: oklch(0.98 0.004 60 / 0.9);
+  margin: 10px;
+  border-radius: 2px;
+}
+.img-ph[data-tone="dark"] {
+  background: repeating-linear-gradient(
+    135deg,
+    oklch(0.2 0.01 250) 0 10px,
+    oklch(0.24 0.01 250) 10px 20px
+  );
+  color: oklch(0.7 0.01 60);
+}
+.img-ph[data-tone="dark"]::before {
+  background: oklch(0.15 0.01 250 / 0.9);
+  color: oklch(0.85 0.01 60);
+}
+.img-ph[data-tone="warm"] {
+  background: repeating-linear-gradient(
+    135deg,
+    oklch(0.82 0.04 50) 0 10px,
+    oklch(0.86 0.03 55) 10px 20px
+  );
+}
+.img-ph[data-tone="cool"] {
+  background: repeating-linear-gradient(
+    135deg,
+    oklch(0.78 0.04 240) 0 10px,
+    oklch(0.82 0.03 235) 10px 20px
+  );
+}
+.img-ph[data-tone="punk"] {
+  background: repeating-linear-gradient(
+    45deg,
+    oklch(0.15 0 0) 0 8px,
+    oklch(0.9 0 0) 8px 10px
+  );
+  color: #fff;
+}
+.img-ph[data-tone="punk"]::before {
+  background: oklch(0.62 0.24 25);
+  color: #fff;
+}
+
+/* Underground roundel marker */
+.roundel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid var(--mode-accent);
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+}
+.roundel::after {
+  content: '';
+  position: absolute;
+  left: -5px; right: -5px; top: 50%;
+  height: 3px;
+  background: var(--mode-accent);
+  transform: translateY(-50%);
+}
+.roundel-xl { width: 40px; height: 40px; border-width: 4px; }
+.roundel-xl::after { left: -10px; right: -10px; height: 6px; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  background: transparent;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+.btn:hover { background: currentColor; color: var(--mode-bg, var(--paper)); }
+.btn-solid {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.btn-solid:hover { background: var(--accent); border-color: var(--accent); color: white; }
+.btn-ghost { border-color: transparent; }
+.btn-ghost:hover { background: transparent; color: var(--accent); }
+.btn-sm { padding: 6px 10px; font-size: 10px; }
+
+/* Chip / tag */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 9px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  opacity: 0.8;
+}
+.chip-solid { background: var(--ink); color: var(--paper); border-color: var(--ink); opacity: 1; }
+
+/* Layout helpers */
+.row { display: flex; }
+.col { display: flex; flex-direction: column; }
+.gap-4 { gap: 4px; } .gap-8 { gap: 8px; } .gap-12 { gap: 12px; } .gap-16 { gap: 16px; } .gap-24 { gap: 24px; } .gap-32 { gap: 32px; } .gap-48 { gap: 48px; }
+.between { justify-content: space-between; }
+.center { align-items: center; justify-content: center; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+.flex-1 { flex: 1; }
+.grow { flex-grow: 1; }
+.wrap { flex-wrap: wrap; }
+
+/* Container widths */
+.max-editorial { max-width: 1440px; margin: 0 auto; padding: 0 var(--edge); }
+.max-narrow { max-width: 780px; margin: 0 auto; padding: 0 var(--edge); }
+.max-wide { max-width: 1680px; margin: 0 auto; padding: 0 var(--edge); }
+
+/* Scrollbar thin */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: oklch(0.8 0.008 60); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: oklch(0.6 0.008 60); }
+
+/* =========================================================================
+   Atlas — real MapLibre map + per-mode marker styles
+   ========================================================================= */
+.atlas-map-wrap { position: relative; border: 1px solid var(--rule); overflow: hidden; }
+.atlas-map {
+  width: 100%;
+  aspect-ratio: 16/10;
+  background: oklch(0.92 0.005 60);
+}
+.atlas-map-loading {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: oklch(0.35 0.01 60);
+  background: oklch(0.96 0.005 60 / 0.85);
+  z-index: 5;
+}
+.atlas-map-hover {
+  position: absolute; left: 16px; bottom: 16px; max-width: 280px;
+  background: white;
+  border: 1px solid var(--rule);
+  padding: 12px 14px;
+  pointer-events: none;
+  z-index: 4;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.1);
+}
+.atlas-map-wrap[data-mode="cinema"] .atlas-map-hover {
+  background: oklch(0.12 0.02 240);
+  color: oklch(0.96 0.005 60);
+  border-color: oklch(0.3 0.03 240);
+  box-shadow: 0 4px 22px rgba(0,0,0,0.5);
+}
+.atlas-attribution {
+  position: absolute; right: 8px; top: 8px;
+  font-family: var(--f-mono); font-size: 9px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  background: rgba(255,255,255,0.75);
+  color: oklch(0.35 0.01 60);
+  padding: 2px 6px;
+  z-index: 3;
+  pointer-events: none;
+}
+.atlas-map-wrap[data-mode="cinema"] .atlas-attribution {
+  background: rgba(0,0,0,0.55);
+  color: oklch(0.85 0.14 90);
+}
+.atlas-letterbox {
+  position: absolute; left: 0; right: 0;
+  height: 28px;
+  background: oklch(0.04 0.01 240);
+  z-index: 2; pointer-events: none;
+}
+.atlas-letterbox-top    { top: 0; }
+.atlas-letterbox-bottom { bottom: 0; }
+
+/* MapLibre control tweaks to fit the design system */
+.maplibregl-ctrl-group {
+  border-radius: 0 \!important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15) \!important;
+  border: 1px solid var(--rule) \!important;
+  background: oklch(0.98 0.004 60) \!important;
+}
+.maplibregl-ctrl-group button { border-radius: 0 \!important; }
+.atlas-map-wrap[data-mode="cinema"] .maplibregl-ctrl-group {
+  background: oklch(0.12 0.02 240) \!important;
+  border-color: oklch(0.3 0.03 240) \!important;
+}
+.atlas-map-wrap[data-mode="cinema"] .maplibregl-ctrl-group button span {
+  filter: invert(1);
+}
+
+/* =========================================================================
+   Markers — three mode-specific grammars
+   ========================================================================= */
+.atlas-marker {
+  display: grid; place-items: center;
+  width: 32px; height: 32px;
+  cursor: pointer;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: transform 0.18s ease;
+  will-change: transform;
+}
+.atlas-marker-n { position: relative; z-index: 2; line-height: 1; }
+.atlas-marker:hover { z-index: 10; }
+
+/* Punk — taped ransom label, red-orange, tilted, chunky Archivo Black */
+.atlas-marker[data-mode="punk"] {
+  background: oklch(0.62 0.24 25);
+  color: oklch(0.98 0.004 60);
+  border: 2px solid oklch(0.12 0.008 60);
+  box-shadow: 2px 2px 0 oklch(0.12 0.008 60);
+  transform: rotate(-4deg);
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0;
+  width: 30px; height: 30px;
+}
+.atlas-marker[data-mode="punk"]:hover { transform: rotate(-4deg) scale(1.2); }
+
+/* Fashion — minimal oxblood ring, italic serif numeral */
+.atlas-marker[data-mode="fashion"] {
+  background: oklch(0.98 0.004 60);
+  color: oklch(0.55 0.14 20);
+  border: 1.5px solid oklch(0.55 0.14 20);
+  border-radius: 50%;
+  font-family: 'Bodoni Moda', serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 13px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  width: 30px; height: 30px;
+}
+.atlas-marker[data-mode="fashion"]:hover { transform: scale(1.2); }
+
+/* Cinema — subtitle-yellow dot with glow on dark base */
+.atlas-marker[data-mode="cinema"] {
+  background: oklch(0.12 0.02 240);
+  color: oklch(0.88 0.14 90);
+  border: 1.5px solid oklch(0.85 0.14 90);
+  border-radius: 50%;
+  box-shadow: 0 0 14px oklch(0.85 0.14 90 / 0.45);
+  width: 28px; height: 28px;
+  font-size: 10px;
+}
+.atlas-marker[data-mode="cinema"]:hover {
+  transform: scale(1.22);
+  box-shadow: 0 0 22px oklch(0.85 0.14 90 / 0.7);
+}
+
+</style>
+<style data-src="styles/v2.css">
+/* London Cuts V2 — additions on top of base.css
+   ============================================
+   The V1 token system (colors, fonts, mode grammars) is preserved.
+   This file only adds NEW tokens + components introduced by V2:
+     - workspace spine + canvas + drawers
+     - slide-over panel (publish)
+     - inline editable regions (postcard message, recipient)
+     - content node type affordances (TipTap/Lexical preview)
+     - live progress pips (spine stop rows)
+     - atlas per-mode tile + marker refinements
+*/
+
+:root {
+  /* V2: structural tokens for the workspace shell */
+  --spine-w: 288px;
+  --drawer-w: 340px;
+  --topbar-h: 60px;
+  --pip-size: 8px;
+
+  /* V2: editable-state accent (shared across modes) */
+  --edit-ring: oklch(0.62 0.18 230);     /* dim blue pencil */
+  --edit-ring-punk: oklch(0.62 0.24 25);
+  --edit-ring-fashion: oklch(0.55 0.14 20);
+  --edit-ring-cinema: oklch(0.88 0.14 90);
+
+  /* V2: status dot palette for media tasks */
+  --status-queued: oklch(0.70 0.04 60);
+  --status-running: oklch(0.72 0.17 90);
+  --status-done: oklch(0.62 0.14 150);
+  --status-failed: oklch(0.58 0.22 25);
+}
+
+/* =====================================================================
+   WORKSPACE SHELL
+   ===================================================================== */
+.ws-shell {
+  display: grid;
+  grid-template-columns: var(--spine-w) 1fr auto;
+  min-height: calc(100vh - var(--topbar-h));
+  background: var(--mode-bg);
+  color: var(--mode-ink);
+  transition: background 300ms ease, color 300ms ease;
+}
+
+.ws-topbar {
+  position: sticky; top: 0; z-index: 60;
+  height: var(--topbar-h);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  background: var(--mode-bg);
+  color: var(--mode-ink);
+  border-bottom: 1px solid oklch(from currentColor l c h / 0.15);
+}
+
+/* ---- spine ---- */
+.spine {
+  border-right: 1px solid oklch(from currentColor l c h / 0.12);
+  padding: 14px 0;
+  position: sticky; top: var(--topbar-h);
+  align-self: flex-start;
+  height: calc(100vh - var(--topbar-h));
+  overflow-y: auto;
+  background: oklch(from var(--mode-bg) calc(l - 0.015) c h);
+}
+.spine-hdr {
+  padding: 4px 20px 12px;
+  display: flex; align-items: baseline; justify-content: space-between;
+}
+.spine-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 18px 10px 14px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background 150ms ease, border-color 150ms ease;
+  position: relative;
+}
+.spine-row:hover { background: oklch(from currentColor l c h / 0.05); }
+.spine-row[data-active="true"] {
+  background: oklch(from currentColor l c h / 0.08);
+  border-left-color: var(--mode-accent);
+}
+.spine-n {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  opacity: 0.6;
+  letter-spacing: 0.08em;
+}
+.spine-row[data-active="true"] .spine-n { opacity: 1; }
+.spine-title {
+  font-family: var(--mode-display-font);
+  font-size: 14px;
+  line-height: 1.22;
+  letter-spacing: -0.005em;
+  text-wrap: pretty;
+}
+[data-mode="punk"] .spine-title { text-transform: uppercase; font-size: 12px; letter-spacing: 0.01em; }
+[data-mode="fashion"] .spine-title { font-style: italic; }
+[data-mode="cinema"] .spine-title { font-family: var(--f-serif); font-size: 15px; }
+.spine-meta-row {
+  grid-column: 2 / 4;
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 4px;
+  font-family: var(--f-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  opacity: 0.6;
+  text-transform: uppercase;
+}
+/* progress pips: each circle = one of {upload, hero, body, media} */
+.pip-group { display: inline-flex; gap: 3px; }
+.pip {
+  width: var(--pip-size); height: var(--pip-size);
+  border-radius: 50%;
+  border: 1px solid oklch(from currentColor l c h / 0.5);
+  background: transparent;
+}
+.pip[data-done="true"] { background: currentColor; border-color: currentColor; }
+.pip[data-running="true"] {
+  background: var(--status-running);
+  border-color: var(--status-running);
+  animation: pip-pulse 1.2s ease-in-out infinite;
+}
+@keyframes pip-pulse {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50%     { transform: scale(1.3); opacity: 0.6; }
+}
+.spine-foot {
+  padding: 16px 20px 4px;
+  border-top: 1px dashed oklch(from currentColor l c h / 0.18);
+  margin-top: 10px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  opacity: 0.65;
+}
+
+/* ---- canvas ---- */
+.canvas {
+  padding: 28px 40px 120px;
+  min-width: 0;   /* allow children to shrink */
+  max-width: 1180px;
+}
+[data-mode="fashion"] .canvas { max-width: 880px; margin: 0 auto; padding: 36px 48px 120px; }
+[data-mode="cinema"]  .canvas { padding: 0 0 120px; }
+
+/* Cinema letterbox frame around main */
+[data-mode="cinema"] .canvas-inner {
+  background: oklch(0.08 0.015 250);
+  padding: 48px 56px;
+  border-top: 28px solid oklch(0.02 0.01 240);
+  border-bottom: 28px solid oklch(0.02 0.01 240);
+  margin-top: 20px;
+}
+
+/* Punk asymmetric overlap */
+[data-mode="punk"] .canvas { padding: 20px 28px 120px; }
+[data-mode="punk"] .canvas-inner { position: relative; }
+
+.canvas-hdr {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 24px; gap: 24px;
+}
+.canvas-title {
+  font-family: var(--mode-display-font);
+  font-size: 64px;
+  line-height: 0.96;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+[data-mode="punk"] .canvas-title { text-transform: uppercase; font-size: 72px; line-height: 0.88; }
+[data-mode="fashion"] .canvas-title { font-style: italic; font-size: 72px; }
+[data-mode="cinema"] .canvas-title { font-family: var(--f-serif); color: oklch(0.96 0.02 80); }
+
+.hero-slot {
+  position: relative;
+  aspect-ratio: 16/9;
+  border: 1px solid oklch(from currentColor l c h / 0.2);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+[data-mode="punk"] .hero-slot {
+  transform: rotate(-1.2deg);
+  border: 2px solid currentColor;
+  box-shadow: 6px 6px 0 oklch(from currentColor l c h / 0.6);
+}
+[data-mode="cinema"] .hero-slot { aspect-ratio: 21/9; }
+
+.asset-strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 120px;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 6px 2px 10px;
+}
+.asset-strip .cell {
+  aspect-ratio: 1/1;
+  border: 1px solid oklch(from currentColor l c h / 0.18);
+  cursor: grab;
+  position: relative;
+}
+.asset-strip .cell[data-hero="true"] {
+  outline: 2px solid var(--mode-accent);
+  outline-offset: -2px;
+}
+.asset-strip .cell[data-hero="true"]::after {
+  content: 'HERO';
+  position: absolute; top: 4px; left: 4px;
+  font-family: var(--f-mono); font-size: 8px; letter-spacing: 0.14em;
+  background: var(--mode-accent); color: var(--mode-bg);
+  padding: 2px 4px;
+}
+
+/* ---- drawer ---- */
+.drawers {
+  width: var(--drawer-w);
+  border-left: 1px solid oklch(from currentColor l c h / 0.12);
+  position: sticky; top: var(--topbar-h);
+  align-self: flex-start;
+  height: calc(100vh - var(--topbar-h));
+  display: flex; flex-direction: column;
+  background: oklch(from var(--mode-bg) calc(l - 0.01) c h);
+}
+.drawer-tabs { display: flex; border-bottom: 1px solid oklch(from currentColor l c h / 0.12); }
+.drawer-tab {
+  flex: 1;
+  padding: 14px 12px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: left;
+  opacity: 0.5;
+  cursor: pointer;
+  border-right: 1px solid oklch(from currentColor l c h / 0.08);
+}
+.drawer-tab:last-child { border-right: none; }
+.drawer-tab[data-active="true"] {
+  opacity: 1;
+  background: oklch(from currentColor l c h / 0.06);
+  box-shadow: inset 0 -2px 0 0 var(--mode-accent);
+}
+.drawer-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
+
+/* Assets pool grid */
+.pool-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.pool-cell {
+  position: relative;
+  aspect-ratio: 1/1;
+  cursor: grab;
+}
+.pool-cell[data-assigned="true"]::after {
+  content: ''; position: absolute; inset: 0;
+  background: oklch(0 0 0 / 0.55);
+}
+.pool-cell[data-assigned="true"]::before {
+  content: attr(data-assigned-stop);
+  position: absolute; top: 4px; right: 4px;
+  font-family: var(--f-mono); font-size: 9px;
+  background: var(--mode-accent); color: var(--mode-bg);
+  padding: 1px 4px; z-index: 2;
+  letter-spacing: 0.04em;
+}
+
+/* Task card */
+.task-card {
+  border: 1px solid oklch(from currentColor l c h / 0.15);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.task-card-hdr { display: flex; align-items: center; justify-content: space-between; }
+.task-bar {
+  height: 3px;
+  background: oklch(from currentColor l c h / 0.15);
+  margin-top: 8px; position: relative; overflow: hidden;
+}
+.task-bar-fill {
+  position: absolute; inset: 0 auto 0 0;
+  background: var(--status-running);
+  transition: width 200ms ease;
+}
+.task-card[data-state="done"] .task-bar-fill { background: var(--status-done); width: 100% !important; }
+.task-card[data-state="failed"] .task-bar-fill { background: var(--status-failed); width: 100% !important; }
+.task-dot {
+  width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+  margin-right: 6px;
+}
+.task-dot[data-s="queued"]  { background: var(--status-queued); }
+.task-dot[data-s="running"] { background: var(--status-running); animation: pip-pulse 1.2s ease-in-out infinite; }
+.task-dot[data-s="done"]    { background: var(--status-done); }
+.task-dot[data-s="failed"]  { background: var(--status-failed); }
+
+/* =====================================================================
+   CONTENT NODE TYPES (TipTap/Lexical preview)
+   ===================================================================== */
+.node {
+  position: relative;
+  padding: 4px 0;
+}
+.node[data-selected="true"]::before {
+  content: ''; position: absolute; inset: -6px -10px;
+  border-left: 2px solid var(--mode-accent);
+  background: oklch(from var(--mode-accent) l c h / 0.04);
+  pointer-events: none;
+}
+.node-hint {
+  position: absolute; top: 0; right: -74px;
+  font-family: var(--f-mono); font-size: 9px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  opacity: 0; transition: opacity 120ms;
+  pointer-events: none;
+}
+.node:hover .node-hint, .node[data-selected="true"] .node-hint { opacity: 0.55; }
+
+/* paragraph */
+.n-para { font-size: 17px; line-height: 1.6; margin: 10px 0; max-width: 64ch; text-wrap: pretty; }
+[data-mode="punk"] .n-para { font-family: var(--f-sans); }
+[data-mode="fashion"] .n-para { font-size: 18px; line-height: 1.65; }
+[data-mode="cinema"] .n-para {
+  font-family: var(--f-mono); font-size: 14px; line-height: 1.7;
+  letter-spacing: 0.02em; max-width: 56ch;
+}
+
+/* heroImage */
+.n-hero { margin: 22px 0; }
+.n-hero .frame { aspect-ratio: 16/9; }
+[data-mode="cinema"] .n-hero .frame { aspect-ratio: 21/9; }
+[data-mode="punk"]  .n-hero .frame { transform: rotate(-0.8deg); box-shadow: 4px 4px 0 currentColor; }
+.n-hero-cap {
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  margin-top: 8px; opacity: 0.7;
+}
+
+/* inlineImage */
+.n-inline { display: grid; grid-template-columns: 180px 1fr; gap: 16px; margin: 16px 0; align-items: flex-start; }
+[data-mode="fashion"] .n-inline { grid-template-columns: 240px 1fr; gap: 24px; }
+.n-inline .frame { aspect-ratio: 3/4; }
+.n-inline .cap { font-family: var(--f-mono); font-size: 11px; line-height: 1.4; opacity: 0.75; }
+
+/* pullQuote */
+.n-pull {
+  margin: 28px 0;
+  padding-left: 20px;
+  border-left: 3px solid var(--mode-accent);
+  font-family: var(--mode-display-font);
+  font-size: 28px; line-height: 1.2;
+}
+[data-mode="fashion"] .n-pull {
+  border: none; padding: 0;
+  text-align: center; font-style: italic; font-size: 36px;
+  max-width: 20ch; margin: 40px auto;
+}
+[data-mode="punk"] .n-pull {
+  text-transform: uppercase; font-size: 34px; line-height: 1;
+  transform: rotate(-1deg);
+  background: currentColor; color: var(--mode-bg);
+  padding: 10px 14px;
+  max-width: fit-content;
+  border: none;
+}
+[data-mode="cinema"] .n-pull {
+  font-family: var(--f-mono); font-size: 15px;
+  text-transform: none; border-left: none;
+  padding: 14px 18px;
+  background: oklch(0.02 0.01 240);
+  color: oklch(0.88 0.14 90);
+  max-width: 52ch;
+  letter-spacing: 0.02em;
+}
+
+/* mediaEmbed */
+.n-embed {
+  margin: 20px 0; position: relative;
+  aspect-ratio: 16/9;
+  border: 1px solid oklch(from currentColor l c h / 0.2);
+  overflow: hidden;
+}
+.n-embed .play {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-family: var(--f-mono); font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  background: oklch(0 0 0 / 0.25); color: white;
+}
+.n-embed-tag {
+  position: absolute; top: 10px; left: 10px;
+  font-family: var(--f-mono); font-size: 9px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  background: var(--mode-accent); color: var(--mode-bg);
+  padding: 2px 6px;
+}
+
+/* metaRow */
+.n-meta {
+  display: flex; flex-wrap: wrap; gap: 18px;
+  font-family: var(--f-mono); font-size: 11px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 10px 0;
+  border-top: 1px solid oklch(from currentColor l c h / 0.18);
+  border-bottom: 1px solid oklch(from currentColor l c h / 0.18);
+  margin: 14px 0;
+  opacity: 0.8;
+}
+[data-mode="cinema"] .n-meta {
+  color: oklch(0.88 0.14 90);
+  border-color: oklch(0.88 0.14 90 / 0.3);
+}
+
+/* slash command dropdown */
+.slash {
+  position: absolute; z-index: 30;
+  background: var(--mode-bg);
+  color: var(--mode-ink);
+  border: 1px solid oklch(from currentColor l c h / 0.2);
+  box-shadow: 0 12px 32px oklch(0 0 0 / 0.18);
+  width: 260px;
+  padding: 6px 0;
+}
+.slash-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px;
+  font-family: var(--f-mono); font-size: 11px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.slash-item:hover, .slash-item[data-focus="true"] { background: oklch(from currentColor l c h / 0.08); }
+.slash-kbd {
+  font-family: var(--f-mono); font-size: 9px; opacity: 0.5;
+  border: 1px solid oklch(from currentColor l c h / 0.3);
+  padding: 1px 4px;
+}
+
+/* =====================================================================
+   SLIDE-OVER (Publish)
+   ===================================================================== */
+.slideover-scrim {
+  position: fixed; inset: 0; z-index: 100;
+  background: oklch(0 0 0 / 0.35);
+  backdrop-filter: blur(2px);
+  animation: scrim-in 180ms ease both;
+}
+@keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
+.slideover {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: 60vw; max-width: 980px; min-width: 520px;
+  background: var(--mode-bg); color: var(--mode-ink);
+  z-index: 101;
+  border-left: 1px solid oklch(from currentColor l c h / 0.2);
+  box-shadow: -20px 0 40px oklch(0 0 0 / 0.2);
+  display: flex; flex-direction: column;
+  animation: slide-in 260ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.slideover-hdr {
+  padding: 18px 28px;
+  border-bottom: 1px solid oklch(from currentColor l c h / 0.15);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.slideover-body {
+  flex: 1; overflow-y: auto;
+  display: grid; grid-template-columns: 1fr 1fr;
+}
+.slideover-col { padding: 24px 28px; }
+.slideover-col + .slideover-col { border-left: 1px solid oklch(from currentColor l c h / 0.12); }
+
+.checklist-item {
+  display: grid; grid-template-columns: 20px 1fr auto;
+  gap: 10px; align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px dashed oklch(from currentColor l c h / 0.15);
+  cursor: pointer;
+}
+.checklist-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 1.5px solid currentColor;
+}
+.checklist-item[data-ok="true"] .checklist-dot { background: var(--status-done); border-color: var(--status-done); }
+.checklist-item[data-ok="false"] .checklist-dot { background: var(--status-failed); border-color: var(--status-failed); }
+.checklist-label { font-size: 13px; }
+.checklist-jump { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.12em; opacity: 0.6; }
+
+/* =====================================================================
+   POSTCARD EDITORS
+   ===================================================================== */
+.editable {
+  position: relative;
+  cursor: text;
+}
+.editable[data-editing="true"] {
+  outline: 1.5px dashed var(--mode-accent);
+  outline-offset: 4px;
+  background: oklch(from var(--mode-accent) l c h / 0.04);
+}
+.editable[data-editing="true"]::after {
+  content: attr(data-edit-label);
+  position: absolute; top: -18px; left: 0;
+  font-family: var(--f-mono); font-size: 9px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--mode-accent);
+}
+/* Punk: taped edit label */
+[data-mode="punk"] .editable[data-editing="true"]::after {
+  background: var(--mode-accent); color: white;
+  padding: 2px 6px; top: -14px;
+  transform: rotate(-3deg);
+  box-shadow: 2px 2px 0 oklch(0 0 0 / 0.3);
+}
+/* Cinema: slate frame */
+[data-mode="cinema"] .editable[data-editing="true"] {
+  outline: 1px solid oklch(0.88 0.14 90 / 0.6);
+  background: oklch(0.02 0.01 240 / 0.4);
+}
+
+/* =====================================================================
+   PUBLIC PROJECT (unified scroll)
+   ===================================================================== */
+.pp-hero {
+  min-height: 92vh;
+  display: grid; grid-template-columns: 5fr 7fr;
+  gap: 0;
+  border-bottom: 1px solid oklch(from currentColor l c h / 0.15);
+}
+.pp-hero-txt { padding: 60px 48px; display: flex; flex-direction: column; justify-content: space-between; }
+.pp-hero-img { background: oklch(from currentColor l c h / 0.08); }
+[data-mode="punk"] .pp-hero { grid-template-columns: 1fr; }
+[data-mode="punk"] .pp-hero-img { display: none; }
+.pp-atlas-band {
+  padding: 48px 40px 64px;
+  border-bottom: 1px solid oklch(from currentColor l c h / 0.15);
+}
+.pp-atlas-map {
+  height: 68vh;
+  min-height: 520px;
+  border: 1px solid oklch(from currentColor l c h / 0.2);
+}
+.pp-stop-detail {
+  padding: 72px 40px 120px;
+}
+
+/* =====================================================================
+   MODE PILL (top bar variant, per-mode shape)
+   ===================================================================== */
+.mode-pill {
+  display: inline-flex;
+  border: 1px solid oklch(from currentColor l c h / 0.35);
+}
+.mode-pill button {
+  padding: 6px 14px;
+  font-family: var(--f-mono);
+  font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.mode-pill button[data-active="true"] {
+  background: currentColor;
+  color: var(--mode-bg);
+  opacity: 1;
+}
+
+/* =====================================================================
+   Annotation chips — used throughout the demo to point at design decisions
+   ===================================================================== */
+.annot {
+  position: absolute; z-index: 20;
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: oklch(0.45 0.18 230);
+  background: oklch(0.98 0.004 60);
+  border: 1px dashed oklch(0.55 0.18 230);
+  padding: 4px 8px;
+  max-width: 240px;
+  pointer-events: none;
+  box-shadow: 0 2px 6px oklch(0 0 0 / 0.08);
+}
+.annot::before {
+  content: ''; position: absolute; width: 36px; height: 1px;
+  border-top: 1px dashed oklch(0.55 0.18 230);
+}
+.annot[data-dir="left"]::before { left: -36px; top: 50%; }
+.annot[data-dir="right"]::before { right: -36px; top: 50%; }
+
+/* =====================================================================
+   SECTION SHELL — the HANDOFF-V2 prototype is a long-scroll doc
+   ===================================================================== */
+.doc {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-sans);
+}
+.doc section {
+  padding: 96px 0 64px;
+  border-bottom: 1px solid var(--rule);
+}
+.doc .section-hdr {
+  max-width: 1680px; margin: 0 auto; padding: 0 40px 40px;
+}
+.doc .section-n {
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.24em; text-transform: uppercase; opacity: 0.55;
+}
+.doc .section-h {
+  font-family: var(--f-serif); font-size: 56px; line-height: 0.98;
+  letter-spacing: -0.02em; margin-top: 12px;
+  max-width: 22ch; text-wrap: balance;
+}
+.doc .section-lede {
+  font-size: 18px; line-height: 1.6; max-width: 68ch;
+  margin-top: 24px; color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+.sticky-sidebar {
+  position: sticky; top: 20px;
+  align-self: flex-start;
+}
+
+.frame-wrap {
+  max-width: 1680px; margin: 0 auto; padding: 0 40px;
+}
+.frame {
+  position: relative;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  overflow: hidden;
+}
+.frame-caption {
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  opacity: 0.7; margin-top: 10px;
+}
+
+.tabs {
+  display: inline-flex;
+  border: 1px solid var(--ink);
+  margin-bottom: 16px;
+  background: var(--paper);
+}
+.tabs button {
+  padding: 8px 18px;
+  font-family: var(--f-mono); font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+.tabs button[data-active="true"] { background: var(--ink); color: var(--paper); }
+
+.kit-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+}
+.kit-card {
+  border: 1px solid var(--rule);
+  padding: 24px;
+  background: var(--paper);
+}
+.swatch { height: 48px; border: 1px solid var(--rule); }
+
+.token-table {
+  width: 100%;
+  font-family: var(--f-mono); font-size: 11px;
+  letter-spacing: 0.04em;
+  border-collapse: collapse;
+}
+.token-table th, .token-table td {
+  text-align: left; padding: 8px 10px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+.token-table th {
+  text-transform: uppercase; opacity: 0.55;
+  font-weight: 500; letter-spacing: 0.14em;
+}
+.token-table td code {
+  background: var(--paper-2); padding: 1px 4px;
+}
+
+.ia-diagram {
+  font-family: var(--f-mono); font-size: 12px;
+  white-space: pre;
+  padding: 24px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  overflow-x: auto;
+  line-height: 1.6;
+}
+
+.stopband {
+  display: inline-block;
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 2px 8px;
+  background: currentColor;
+  color: var(--mode-bg);
+}
+
+.overline-divider {
+  display: flex; align-items: center; gap: 14px;
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  opacity: 0.55;
+  margin: 36px 0 18px;
+}
+.overline-divider::before, .overline-divider::after {
+  content: ''; flex: 1; height: 1px; background: currentColor;
+  opacity: 0.4;
+}
+
+</style>
+<style>
+  /* doc chrome specific to the handoff page */
+  .doc-top {
+    position: sticky; top: 0; z-index: 90;
+    background: var(--paper); border-bottom: 1px solid var(--rule);
+  }
+  .doc-top .row { max-width: 1680px; margin: 0 auto; padding: 14px 40px; }
+  .doc-tabs { display: inline-flex; border: 1px solid var(--ink); }
+  .doc-tabs button {
+    padding: 8px 14px; font-family: var(--f-mono); font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase; min-width: 92px;
+  }
+  .doc-tabs button[data-active="true"] { background: var(--ink); color: var(--paper); }
+  .demo-embed {
+    border: 1px solid var(--rule);
+    background: var(--paper-2);
+    overflow: hidden;
+    position: relative;
+  }
+  .demo-embed-chrome {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
+    font-family: var(--f-mono); font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    opacity: 0.75;
+  }
+  .demo-embed-chrome .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--paper-3); }
+  .demo-embed-body { height: 780px; overflow: auto; resize: vertical; }
+  .demo-embed-body.tall { height: 920px; }
+  .demo-embed-body.short { height: 640px; }
+
+  .handoff-hero {
+    padding: 120px 40px 100px;
+    border-bottom: 1px solid var(--rule);
+    background:
+      radial-gradient(circle at 15% 110%, oklch(0.92 0.04 60) 0, transparent 55%),
+      var(--paper);
+  }
+  .handoff-hero h1 {
+    font-family: var(--f-fashion);
+    font-style: italic;
+    font-size: clamp(64px, 9vw, 148px);
+    line-height: 0.88; letter-spacing: -0.025em;
+    max-width: 14ch; text-wrap: balance;
+  }
+  .handoff-hero .kicker {
+    font-family: var(--f-mono); font-size: 11px;
+    letter-spacing: 0.24em; text-transform: uppercase; opacity: 0.6;
+    margin-bottom: 24px;
+  }
+  .handoff-hero .summary {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+    margin-top: 56px;
+  }
+  .summary-card {
+    border-top: 1px solid var(--ink);
+    padding-top: 14px;
+  }
+  .summary-card .n {
+    font-family: var(--f-fashion); font-style: italic;
+    font-size: 46px; line-height: 1;
+  }
+  .summary-card .l {
+    font-family: var(--f-mono); font-size: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    margin-top: 8px; opacity: 0.7;
+  }
+  .toc {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    margin-top: 40px;
+  }
+  .toc a {
+    padding: 10px 14px;
+    border: 1px solid var(--rule);
+    font-family: var(--f-mono); font-size: 11px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .toc a:hover { background: var(--ink); color: var(--paper); }
+  .ia-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+
+  .mode-swatch {
+    display: grid; grid-template-columns: 8fr 14fr; gap: 20px;
+    padding: 24px; border: 1px solid var(--rule); background: var(--paper);
+  }
+  .mode-swatch[data-m="punk"]    { background: #f7f4ec; color: #0a0a0a; }
+  .mode-swatch[data-m="fashion"] { background: #faf5eb; color: #2a1810; }
+  .mode-swatch[data-m="cinema"]  { background: #050a18; color: #e8ddb3; }
+  .mode-swatch .swatch-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .mode-swatch .sq { height: 40px; border: 1px solid currentColor; }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<!-- React 18 + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- V2 modules -->
+<script type="text/babel" data-src="src/data.jsx">
+// data.jsx — V2 mock content. Reuses V1 STOPS + PROJECT; adds V2 extensions:
+//   - real SE1 coordinates per stop (was only in atlas module before)
+//   - per-stop body (content nodes) + postcard message + recipient
+//   - workspace status (upload / hero / body / media) per stop
+//   - assets pool (some assigned, some loose)
+//   - media task seed across the 12 stops
+
+const PROJECT = {
+  title: 'A Year in SE1',
+  author: 'Ana Ishii',
+  subtitle: 'Twelve walks between Bermondsey and Waterloo, 2025–2026',
+  coverLabel: 'SOUTHWARK · GOLDEN HOUR',
+  tags: ['SE1', 'Walking', 'Thames'],
+  published: '14 APR 2026',
+  reads: 2487,
+  saves: 214,
+  duration: '48 min read',
+  slug: 'a-year-in-se1',
+  visibility: 'public',
+};
+
+const STOPS = [
+  { n: '01', code: 'SE1 9DT', title: 'Borough Market at opening',       time: '07:12', mood: 'Amber',    tone: 'warm', lat: 51.5055, lng: -0.0910, label: 'BOROUGH MKT · MORNING',   status: { upload: true, hero: true,  body: true,  media: 'done' } },
+  { n: '02', code: 'SE1 2AA', title: 'The Shard from Crucifix Lane',    time: '08:04', mood: 'Steel',    tone: 'cool', lat: 51.5050, lng: -0.0867, label: 'CRUCIFIX LN · GLASS',     status: { upload: true, hero: true,  body: true,  media: 'done' } },
+  { n: '03', code: 'SE1 9DA', title: 'Tate Modern turbine hall',        time: '10:27', mood: 'Rust',     tone: 'punk', lat: 51.5076, lng: -0.0991, label: 'TATE · TURBINE HALL',     status: { upload: true, hero: true,  body: true,  media: 'running' } },
+  { n: '04', code: 'SE1 8XX', title: 'Thames at low tide',              time: '11:48', mood: 'Mud',      tone: 'warm', lat: 51.5074, lng: -0.1161, label: 'SOUTH BANK · MUDLARK',    status: { upload: true, hero: true,  body: false, media: null } },
+  { n: '05', code: 'SE1 7PB', title: 'Waterloo bridge, facing east',    time: '17:19', mood: 'Gold',     tone: 'warm', lat: 51.5090, lng: -0.1164, label: 'WATERLOO BR · DUSK',      status: { upload: true, hero: true,  body: true,  media: 'done' } },
+  { n: '06', code: 'SE1 8UP', title: 'The National Theatre façade',     time: '19:02', mood: 'Concrete', tone: 'cool', lat: 51.5068, lng: -0.1148, label: 'NATIONAL · BRUTALIST',    status: { upload: true, hero: false, body: true,  media: null } },
+  { n: '07', code: 'SE1 9PX', title: 'A pub off Southwark Street',      time: '20:15', mood: 'Ember',    tone: 'warm', lat: 51.5037, lng: -0.0974, label: 'SOUTHWARK · PINT',        status: { upload: true, hero: true,  body: false, media: null } },
+  { n: '08', code: 'SE1 2SD', title: 'Bermondsey Street by night',      time: '22:40', mood: 'Neon',     tone: 'punk', lat: 51.4992, lng: -0.0812, label: 'BERMONDSEY ST · NEON',    status: { upload: true, hero: true,  body: true,  media: 'running' } },
+  { n: '09', code: 'SE1 3UN', title: 'The walk home',                   time: '23:51', mood: 'Blue',     tone: 'cool', lat: 51.4964, lng: -0.0754, label: 'GRANGE RD · STREETLIGHT', status: { upload: true, hero: false, body: false, media: null } },
+  { n: '10', code: 'SE1 5EN', title: 'Morning after, Tower Bridge',     time: '06:34', mood: 'Silver',   tone: 'cool', lat: 51.5055, lng: -0.0754, label: 'TOWER BR · FIRST LIGHT',  status: { upload: true, hero: true,  body: true,  media: 'done' } },
+  { n: '11', code: 'SE1 6TH', title: 'Guy\u2019s chapel, raining',       time: '14:08', mood: 'Stone',    tone: 'cool', lat: 51.5037, lng: -0.0870, label: 'GUY\u2019S · CHAPEL',      status: { upload: false, hero: false, body: false, media: null } },
+  { n: '12', code: 'SE1 1AA', title: 'Elephant & Castle roundabout',    time: '16:45', mood: 'Brick',    tone: 'warm', lat: 51.4944, lng: -0.1000, label: 'ELEPHANT · ROUNDABOUT',   status: { upload: false, hero: false, body: false, media: null } },
+];
+
+// Content nodes for Stop 05 — demo payload used in the canvas editor.
+const BODY_05 = [
+  { type: 'metaRow',    content: ['17:19', '28 OCT 2025', '8°C · SW', 'WATERLOO BR · DUSK'] },
+  { type: 'heroImage',  assetId: 'a-wb-hero', caption: 'WATERLOO BRIDGE, FACING EAST · 17:19' },
+  { type: 'paragraph',  content: 'The river is the only thing in London that tells the time. Everything else lies — the sky, the lamps on the embankment, the hour on your phone — but the Thames knows exactly where the sun is.' },
+  { type: 'pullQuote',  content: 'Six minutes of gold, then nothing.' },
+  { type: 'paragraph',  content: 'I walked from the South Bank side, from the National, and by the time I was halfway across the bridge the light had already shifted once. It does not wait.' },
+  { type: 'inlineImage',assetId: 'a-wb-02', caption: 'The near railings catch last; the far side is gone first.', align: 'left' },
+  { type: 'paragraph',  content: 'A man was leaning on the rail taking a photo with both hands, like he was trying to hold the bridge still.' },
+  { type: 'mediaEmbed', taskId: 'tk_w05_vid', caption: 'img2vid · 3s pan, camera still' },
+  { type: 'paragraph',  content: 'By the time I got off the bridge the lamps were on and it was just a city again.' },
+];
+
+// Postcard state for Stop 05 — previously hard-coded, now editable.
+const POSTCARD_05 = {
+  message: 'M — walked home across Waterloo last night. The river caught. Thought of you in Lisbon. Six minutes of gold, then nothing.\n— A.',
+  recipient: {
+    name: 'Matteo Ricci',
+    line1: 'Rua das Flores 28',
+    line2: '1200-195 Lisboa',
+    country: 'Portugal',
+  },
+};
+
+// Unassigned pool assets (demo). Stop assignments live on the assignment string.
+const POOL_ASSETS = [
+  { id: 'a-wb-hero', stop: '05', tone: 'warm' },
+  { id: 'a-wb-02',   stop: '05', tone: 'warm' },
+  { id: 'a-wb-03',   stop: '05', tone: 'cool' },
+  { id: 'a-bm-01',   stop: '01', tone: 'warm' },
+  { id: 'a-bm-02',   stop: '01', tone: 'warm' },
+  { id: 'a-sh-01',   stop: '02', tone: 'cool' },
+  { id: 'a-tt-01',   stop: '03', tone: 'punk' },
+  { id: 'a-tt-02',   stop: '03', tone: 'punk' },
+  { id: 'a-nt-01',   stop: '06', tone: 'cool' },
+  { id: 'a-nt-02',   stop: '06', tone: 'cool' },
+  { id: 'a-pb-01',   stop: '07', tone: 'warm' },
+  { id: 'a-bs-01',   stop: '08', tone: 'punk' },
+  { id: 'a-bs-02',   stop: '08', tone: 'punk' },
+  { id: 'a-bs-03',   stop: '08', tone: 'punk' },
+  { id: 'a-tw-01',   stop: '10', tone: 'cool' },
+  { id: 'a-tw-02',   stop: '10', tone: 'cool' },
+  { id: 'a-gr-01',   stop: null, tone: 'warm' },  // loose
+  { id: 'a-x-02',    stop: null, tone: 'cool' },
+  { id: 'a-x-03',    stop: null, tone: 'warm' },
+  { id: 'a-x-04',    stop: null, tone: 'punk' },
+  { id: 'a-x-05',    stop: null, tone: 'cool' },
+  { id: 'a-x-06',    stop: null, tone: 'warm' },
+];
+
+// Seed media tasks for the queue drawer.
+const SEED_TASKS = [
+  { id: 'tk_w05_vid', kind: 'img2vid', stopId: '05', mode: 'fashion', state: 'done',     progress: 1.0,  prompt: 'dolly 3s, golden hour, camera still' },
+  { id: 'tk_w03_img', kind: 'img2img', stopId: '03', mode: 'punk',    state: 'running',  progress: 0.62, prompt: 'ransom, high-contrast newsprint, paper grain' },
+  { id: 'tk_w08_img', kind: 'img2img', stopId: '08', mode: 'cinema',  state: 'running',  progress: 0.34, prompt: 'noir neon, subtitle framing, letterbox' },
+  { id: 'tk_w01_img', kind: 'img2img', stopId: '01', mode: 'fashion', state: 'done',     progress: 1.0,  prompt: 'amber morning, editorial crop, grain preserved' },
+  { id: 'tk_w10_img', kind: 'img2img', stopId: '10', mode: 'cinema',  state: 'done',     progress: 1.0,  prompt: 'first light, still camera, subtitle composition' },
+  { id: 'tk_w07_img', kind: 'img2img', stopId: '07', mode: 'fashion', state: 'queued',   progress: 0.0,  prompt: 'pub interior, warm tungsten, ember glow' },
+  { id: 'tk_w04_img', kind: 'img2img', stopId: '04', mode: 'fashion', state: 'failed',   progress: 1.0,  prompt: 'mud, low tide, editorial — retry w/ strength 0.5' },
+];
+
+const PROJECTS_FEED = [
+  { id: 1, title: 'A Year in SE1',      author: 'Ana Ishii',   stops: 12, mode: 'fashion', label: 'SOUTHWARK · COVER',    reads: '2.4k', updated: '2d' },
+  { id: 2, title: 'Mudlark Diaries',    author: 'Ty Okafor',   stops: 14, mode: 'punk',    label: 'THAMES · FORESHORE',   reads: '891', updated: '5d' },
+  { id: 3, title: '48 Hours in E8',     author: 'Priya Shah',  stops: 8,  mode: 'cinema',  label: 'HACKNEY · NIGHT',      reads: '4.1k', updated: '1w' },
+  { id: 4, title: 'The Jubilee Walk',   author: 'Lena Park',   stops: 12, mode: 'fashion', label: 'WESTMINSTER · DAY',    reads: '1.2k', updated: '2w' },
+  { id: 5, title: 'Last Trains',        author: 'Marco Reed',  stops: 7,  mode: 'cinema',  label: 'UNDERGROUND · 00:47',  reads: '3.6k', updated: '3w' },
+  { id: 6, title: 'Brick Lane after rain', author: 'Yui Tanaka', stops: 9, mode: 'punk',   label: 'E1 · WET ASPHALT',     reads: '624', updated: '1m' },
+];
+
+// Derived project summary — used by the spine + publish slide-over.
+function projectSummary(stops) {
+  const missingHeroes = stops.filter(s => !s.status.hero).length;
+  const missingBodies = stops.filter(s => !s.status.body).length;
+  const missingUploads = stops.filter(s => !s.status.upload).length;
+  const totalComplete = stops.filter(s => s.status.upload && s.status.hero && s.status.body).length;
+  return { missingHeroes, missingBodies, missingUploads, totalComplete, total: stops.length };
+}
+
+Object.assign(window, {
+  PROJECT, STOPS, BODY_05, POSTCARD_05, POOL_ASSETS, SEED_TASKS, PROJECTS_FEED,
+  projectSummary,
+});
+
+</script>
+<script type="text/babel" data-src="src/shared.jsx">
+// shared.jsx — V2 shared UI primitives.
+// Reuses V1 Img + Roundel + ModeSwitcher conventions.
+
+function Img({ label, tone, ratio = '3/2', style = {}, className = '' }) {
+  return (
+    <div
+      className={`img-ph ${className}`}
+      data-label={label}
+      data-tone={tone}
+      style={{ aspectRatio: ratio, width: '100%', ...style }}
+    />
+  );
+}
+
+function Roundel({ label, size = 'md', style = {} }) {
+  const cls = size === 'xl' ? 'roundel roundel-xl' : 'roundel';
+  return <span className={cls} style={style} aria-label={label} />;
+}
+
+// Top-bar mode pill (V2 styling: squared, on the workspace top bar).
+function ModePill({ mode, onMode }) {
+  const modes = [
+    { id: 'punk', label: 'Punk' },
+    { id: 'fashion', label: 'Fashion' },
+    { id: 'cinema', label: 'Cinema' },
+  ];
+  return (
+    <div className="mode-pill">
+      {modes.map(m => (
+        <button
+          key={m.id}
+          onClick={() => onMode(m.id)}
+          data-active={mode === m.id}
+        >{m.label}</button>
+      ))}
+    </div>
+  );
+}
+
+// Progress pips — 4 dots per stop row: upload / hero / body / media.
+// Running media is indicated by animation.
+function Pips({ status }) {
+  return (
+    <span className="pip-group" aria-label="stop progress">
+      <span className="pip" data-done={!!status.upload} title="upload" />
+      <span className="pip" data-done={!!status.hero}   title="hero" />
+      <span className="pip" data-done={!!status.body}   title="body" />
+      <span className="pip"
+            data-done={status.media === 'done'}
+            data-running={status.media === 'running'}
+            title="media" />
+    </span>
+  );
+}
+
+function Annot({ dir = 'left', style = {}, children }) {
+  return (
+    <div className="annot" data-dir={dir} style={style}>{children}</div>
+  );
+}
+
+// A fake cursor caret for "editable" demos (static)
+function Caret() {
+  return (
+    <span style={{
+      display: 'inline-block', width: 1.5, height: '1em',
+      background: 'var(--mode-accent)', verticalAlign: 'text-top',
+      marginLeft: 1,
+      animation: 'lc-caret 1s step-end infinite',
+    }} />
+  );
+}
+
+// Document frame caption — "FIG 3a — Fashion workspace, stop selected"
+function FigCap({ n, text }) {
+  return (
+    <div className="frame-caption">
+      <span style={{ opacity: 0.55 }}>FIG {n} — </span>{text}
+    </div>
+  );
+}
+
+// A small icon primitive for drawer tabs (2-char monogram). No svg icons.
+function TabGlyph({ char }) {
+  return (
+    <span style={{
+      display: 'inline-block',
+      width: 16, height: 16,
+      border: '1px solid currentColor',
+      marginRight: 8,
+      fontFamily: 'var(--f-mono)', fontSize: 9,
+      textAlign: 'center', lineHeight: '14px',
+    }}>{char}</span>
+  );
+}
+
+Object.assign(window, { Img, Roundel, ModePill, Pips, Annot, Caret, FigCap, TabGlyph });
+
+// Inject caret keyframe once.
+(function injectCaret() {
+  if (document.getElementById('lc-caret-kf')) return;
+  const s = document.createElement('style');
+  s.id = 'lc-caret-kf';
+  s.textContent = '@keyframes lc-caret { 0%,49% { opacity: 1 } 50%,100% { opacity: 0 } }';
+  document.head.appendChild(s);
+})();
+
+</script>
+<script type="text/babel" data-src="src/workspace.jsx">
+// workspace.jsx — the V2 project workspace.
+// One screen that replaces V1's Upload + Organize + Editor + Media + Publish.
+// Spine (left) · Canvas (middle) · Drawers A/B (right, tabbed).
+//
+// The workspace re-renders the SAME content in the three modes, with
+// meaningfully different layout grammar per mode (brief §What changes → 1).
+
+function Workspace({ mode, onMode, onOpenPublish, onExitToProjects }) {
+  const [selected, setSelected] = React.useState('05');
+  const [drawerTab, setDrawerTab] = React.useState('assets');  // assets | queue
+  const [drawerOpen, setDrawerOpen] = React.useState(true);
+  const stop = STOPS.find(s => s.n === selected);
+  const summary = projectSummary(STOPS);
+
+  return (
+    <div className="page" data-mode={mode}>
+      {/* top bar */}
+      <div className="ws-topbar">
+        <div className="row items-center gap-16">
+          <button className="mono-sm" onClick={onExitToProjects} style={{ opacity: 0.6 }}>← Projects</button>
+          <Roundel />
+          <div style={{ fontFamily: 'var(--mode-display-font)', fontSize: 15, lineHeight: 1 }}>
+            {PROJECT.title}
+          </div>
+          <span className="mono-sm" style={{ opacity: 0.45 }}>DRAFT · ED.01 · {summary.totalComplete}/{summary.total} STOPS READY</span>
+        </div>
+        <div className="row items-center gap-16">
+          <ModePill mode={mode} onMode={onMode} />
+          <button className="btn" onClick={() => setDrawerOpen(o => !o)}>{drawerOpen ? 'Hide panels →' : '← Show panels'}</button>
+          <button className="btn btn-solid" onClick={onOpenPublish}>Publish →</button>
+        </div>
+      </div>
+
+      <div className="ws-shell" style={{ gridTemplateColumns: drawerOpen ? `var(--spine-w) 1fr var(--drawer-w)` : `var(--spine-w) 1fr` }}>
+        <Spine selected={selected} onSelect={setSelected} />
+        <WSCanvas mode={mode} stop={stop} key={selected /* reset per stop */} />
+        {drawerOpen && (
+          <WSDrawers tab={drawerTab} onTab={setDrawerTab} selectedStop={selected} mode={mode} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---- Spine ----------------------------------------------------------------
+function Spine({ selected, onSelect }) {
+  const summary = projectSummary(STOPS);
+  return (
+    <aside className="spine">
+      <div className="spine-hdr">
+        <div className="eyebrow">12 stops</div>
+        <div className="eyebrow" style={{ opacity: 0.6 }}>{summary.totalComplete}/{summary.total}</div>
+      </div>
+      {STOPS.map(s => (
+        <div
+          key={s.n}
+          className="spine-row"
+          data-active={selected === s.n}
+          onClick={() => onSelect(s.n)}
+        >
+          <span className="spine-n">{s.n}</span>
+          <span className="spine-title">{s.title}</span>
+          <Pips status={s.status} />
+          <div className="spine-meta-row">
+            <span>{s.code}</span>
+            <span style={{ opacity: 0.6 }}>·</span>
+            <span>{s.time}</span>
+          </div>
+        </div>
+      ))}
+      <div className="spine-foot">
+        <div>{summary.missingHeroes} stops without hero · {summary.missingBodies} without body</div>
+        <div style={{ marginTop: 6 }}>{summary.missingUploads ? `${summary.missingUploads} stops need uploads` : 'All stops have uploads'}</div>
+      </div>
+    </aside>
+  );
+}
+
+// ---- Canvas (per-stop workspace body) -------------------------------------
+function WSCanvas({ mode, stop }) {
+  // Only Stop 05 carries the demo body / postcard state for the prototype.
+  const isDemo = stop.n === '05';
+  return (
+    <main className="canvas">
+      <div className="canvas-inner">
+        <CanvasHeader stop={stop} mode={mode} />
+        <div className="overline-divider">Hero &amp; assets for stop {stop.n}</div>
+        <HeroSlot stop={stop} mode={mode} />
+        <AssetStrip stop={stop} />
+        <div className="overline-divider">Body</div>
+        {isDemo
+          ? <StoryEditorDemo mode={mode} />
+          : <EmptyBodyHint stop={stop} mode={mode} />}
+        <div className="overline-divider">Postcard preview</div>
+        <PostcardTile stop={stop} mode={mode} />
+      </div>
+    </main>
+  );
+}
+
+function CanvasHeader({ stop, mode }) {
+  return (
+    <div className="canvas-hdr">
+      <div>
+        <div className="eyebrow" style={{ opacity: 0.75 }}>
+          Stop {stop.n} · {stop.code} · {stop.time} · {stop.mood}
+        </div>
+        <h1 className="canvas-title" style={{ marginTop: 10 }}>{stop.title}</h1>
+      </div>
+      <div className="col items-end gap-8" style={{ flexShrink: 0 }}>
+        <span className="mono-sm" style={{ opacity: 0.65 }}>
+          {stop.status.body ? 'Body: 3 paragraphs · 1 quote' : 'Body: empty'}
+        </span>
+        <span className="mono-sm" style={{ opacity: 0.65 }}>
+          Media task: {stop.status.media ?? '—'}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function HeroSlot({ stop, mode }) {
+  if (!stop.status.hero) {
+    return (
+      <div className="hero-slot" style={{
+        display: 'grid', placeItems: 'center',
+        borderStyle: 'dashed',
+        minHeight: 280,
+      }}>
+        <div className="col items-center gap-8">
+          <div className="mono-sm" style={{ opacity: 0.65 }}>Pick a hero from the asset strip</div>
+          <button className="btn btn-sm">Drop image here</button>
+        </div>
+      </div>
+    );
+  }
+  return <Img label={stop.label + ' · HERO'} tone={stop.tone} ratio="16/9" style={{ aspectRatio: 'auto', height: mode === 'cinema' ? 360 : 440 }} />;
+}
+
+function AssetStrip({ stop }) {
+  const assigned = POOL_ASSETS.filter(a => a.stop === stop.n);
+  const hero = assigned[0];
+  if (assigned.length === 0) {
+    return (
+      <div className="mono-sm" style={{ opacity: 0.55, padding: '8px 2px' }}>
+        No assets assigned yet. Drag from the Assets pool →
+      </div>
+    );
+  }
+  return (
+    <div className="asset-strip">
+      {assigned.map(a => (
+        <div key={a.id} className="cell" data-hero={a.id === hero.id}>
+          <Img label={a.id.toUpperCase()} tone={a.tone} ratio="1/1" style={{ aspectRatio: 'auto', height: '100%' }} />
+        </div>
+      ))}
+      <div className="cell" style={{ borderStyle: 'dashed', display: 'grid', placeItems: 'center' }}>
+        <span className="mono-sm" style={{ opacity: 0.55 }}>+ drop</span>
+      </div>
+    </div>
+  );
+}
+
+function EmptyBodyHint({ stop, mode }) {
+  return (
+    <div style={{ padding: '28px 0' }}>
+      <p className="n-para" style={{ opacity: 0.6, fontStyle: 'italic' }}>
+        Nothing written for Stop {stop.n} yet. Press <kbd style={{
+          fontFamily: 'var(--f-mono)', fontSize: 10,
+          border: '1px solid currentColor', padding: '1px 5px', margin: '0 2px', opacity: 0.8,
+        }}>/</kbd> to insert a block, or just start typing{stop.status.hero ? '.' : ' — a hero image would help.'}
+      </p>
+    </div>
+  );
+}
+
+// ---- Story Editor demo (Stop 05) ------------------------------------------
+function StoryEditorDemo({ mode }) {
+  const [selected, setSelected] = React.useState(3);       // the pullQuote
+  const [slashOpen, setSlashOpen] = React.useState(false);
+  return (
+    <div style={{ position: 'relative' }}>
+      {BODY_05.map((node, i) => (
+        <ContentNode
+          key={i}
+          node={node}
+          selected={selected === i}
+          onSelect={() => setSelected(i)}
+          mode={mode}
+        />
+      ))}
+
+      {/* trailing "/" affordance */}
+      <div style={{ position: 'relative', padding: '12px 0 4px' }}>
+        <div className="mono-sm" style={{ opacity: 0.55, cursor: 'pointer' }}
+             onClick={() => setSlashOpen(o => !o)}>
+          + add block  <span style={{ marginLeft: 6, opacity: 0.8 }}>/</span>
+        </div>
+        {slashOpen && (
+          <div className="slash" style={{ top: 34, left: 0 }}>
+            {[
+              ['Paragraph',  'Enter'],
+              ['Hero image', '/hero'],
+              ['Inline image','/img'],
+              ['Pull quote', '/quote'],
+              ['Media embed','/embed'],
+              ['Meta row',   '/meta'],
+            ].map(([label, kbd], i) => (
+              <div key={label} className="slash-item" data-focus={i === 0} onClick={() => setSlashOpen(false)}>
+                <span>{label}</span>
+                <span className="slash-kbd">{kbd}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---- Content node renderer ------------------------------------------------
+function ContentNode({ node, selected, onSelect, mode }) {
+  const hint = {
+    paragraph: 'PARA',
+    heroImage: 'HERO',
+    inlineImage: 'INLINE',
+    pullQuote: 'QUOTE',
+    mediaEmbed: 'EMBED',
+    metaRow: 'META',
+  }[node.type];
+
+  const body = (() => {
+    switch (node.type) {
+      case 'paragraph':
+        return <p className="n-para">{node.content}</p>;
+      case 'metaRow':
+        return (
+          <div className="n-meta">
+            {node.content.map((c, i) => <span key={i}>{c}</span>)}
+          </div>
+        );
+      case 'heroImage':
+        return (
+          <div className="n-hero">
+            <Img label={node.caption} tone="warm" ratio={mode === 'cinema' ? '21/9' : '16/9'} className="frame" style={{ aspectRatio: 'auto', height: mode === 'cinema' ? 320 : 380 }} />
+            <div className="n-hero-cap">{node.caption}</div>
+          </div>
+        );
+      case 'inlineImage':
+        return (
+          <div className="n-inline">
+            <Img label={node.assetId.toUpperCase()} tone="warm" ratio="3/4" className="frame" style={{ aspectRatio: 'auto', height: 240 }} />
+            <div className="cap">{node.caption}</div>
+          </div>
+        );
+      case 'pullQuote':
+        return <blockquote className="n-pull">{node.content}</blockquote>;
+      case 'mediaEmbed':
+        return (
+          <div className="n-embed">
+            <Img label="IMG2VID · 03.0s" tone={mode === 'cinema' ? 'dark' : 'warm'} ratio="16/9" style={{ aspectRatio: 'auto', height: '100%' }} />
+            <div className="n-embed-tag">img2vid · done</div>
+            <div className="play">▶  play</div>
+          </div>
+        );
+    }
+  })();
+
+  return (
+    <div className="node" data-selected={selected} onClick={onSelect}>
+      {body}
+      <span className="node-hint">{hint}</span>
+    </div>
+  );
+}
+
+// ---- Postcard tile (preview, click to open editor) ------------------------
+function PostcardTile({ stop, mode }) {
+  const isDemo = stop.n === '05';
+  if (!isDemo) {
+    return (
+      <div style={{
+        aspectRatio: '7/5', maxWidth: 420,
+        border: '1px dashed oklch(from currentColor l c h / 0.35)',
+        display: 'grid', placeItems: 'center',
+      }}>
+        <div className="mono-sm" style={{ opacity: 0.6 }}>Postcard unavailable — needs hero + body</div>
+      </div>
+    );
+  }
+  return (
+    <div style={{ maxWidth: 520 }}>
+      <div style={{
+        aspectRatio: '7/5',
+        boxShadow: '0 18px 40px rgba(0,0,0,0.18)',
+        position: 'relative',
+      }}>
+        <PostcardFrontMini mode={mode} />
+      </div>
+      <div className="row between items-center" style={{ marginTop: 12 }}>
+        <span className="mono-sm" style={{ opacity: 0.6 }}>Postcard v3 · auto-regenerates on mode switch</span>
+        <button className="btn btn-sm">Open editor →</button>
+      </div>
+    </div>
+  );
+}
+
+function PostcardFrontMini({ mode }) {
+  if (mode === 'punk') {
+    return (
+      <div style={{ width: '100%', height: '100%', background: 'black', position: 'relative', overflow: 'hidden' }}>
+        <Img label="WATERLOO · DUSK" tone="punk" style={{ position: 'absolute', inset: 0, aspectRatio: 'auto', height: '100%' }} />
+        <div style={{ position: 'absolute', top: 14, left: 14, background: 'oklch(0.62 0.24 25)', color: 'white', padding: '4px 8px', fontFamily: 'var(--f-display)', fontSize: 16, transform: 'rotate(-3deg)' }}>SE1!!</div>
+        <div style={{ position: 'absolute', bottom: 18, left: 18, right: 18, fontFamily: 'var(--f-display)', fontSize: 40, color: 'white', textTransform: 'uppercase', lineHeight: 0.9, textShadow: '2px 2px 0 oklch(0.62 0.24 25)' }}>
+          GREETINGS<br/>FROM<br/>WATERLOO
+        </div>
+      </div>
+    );
+  }
+  if (mode === 'cinema') {
+    return (
+      <div style={{ width: '100%', height: '100%', background: 'oklch(0.1 0.015 250)', position: 'relative', overflow: 'hidden' }}>
+        <Img label="WATERLOO · 17:19 · DUSK" tone="dark" style={{ position: 'absolute', inset: 0, aspectRatio: 'auto', height: '100%' }} />
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 28, background: 'black' }} />
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 28, background: 'black' }} />
+        <div style={{ position: 'absolute', bottom: 38, left: 0, right: 0, textAlign: 'center' }}>
+          <div style={{ display: 'inline-block', background: 'rgba(0,0,0,0.5)', padding: '4px 10px', fontFamily: 'var(--f-mono)', fontSize: 11, color: 'oklch(0.88 0.14 90)' }}>
+            — Six minutes of gold, then nothing.
+          </div>
+        </div>
+        <div style={{ position: 'absolute', top: 38, left: 14, fontFamily: 'var(--f-mono)', fontSize: 9, color: 'oklch(0.88 0.14 90)', letterSpacing: '0.2em' }}>
+          SE1 · SCENE 05 · 17:19
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div style={{ width: '100%', height: '100%', background: 'oklch(0.98 0.008 75)', position: 'relative', overflow: 'hidden', display: 'grid', gridTemplateColumns: '2fr 3fr' }}>
+      <div style={{ padding: 22, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div className="mono-sm" style={{ letterSpacing: '0.3em' }}>LONDON · SE1</div>
+        <div>
+          <div style={{ fontFamily: 'var(--f-fashion)', fontSize: 34, fontStyle: 'italic', lineHeight: 1, color: 'oklch(0.2 0.02 40)' }}>
+            Waterloo<br/><em style={{ fontWeight: 300 }}>Bridge</em>
+          </div>
+          <div className="mono-sm" style={{ marginTop: 10, opacity: 0.6 }}>ED. 01 / 05 OF 12</div>
+        </div>
+      </div>
+      <Img label="BRIDGE · EAST · 17:19" tone="warm" style={{ height: '100%', aspectRatio: 'auto' }} />
+    </div>
+  );
+}
+
+// ---- Drawers (Assets pool · Media queue) ----------------------------------
+function WSDrawers({ tab, onTab, selectedStop, mode }) {
+  return (
+    <aside className="drawers">
+      <div className="drawer-tabs">
+        <button className="drawer-tab" data-active={tab === 'assets'} onClick={() => onTab('assets')}>
+          <TabGlyph char="A" />Assets pool
+        </button>
+        <button className="drawer-tab" data-active={tab === 'queue'} onClick={() => onTab('queue')}>
+          <TabGlyph char="Q" />Media queue
+        </button>
+      </div>
+      <div className="drawer-body">
+        {tab === 'assets' ? <AssetsPoolDrawer selectedStop={selectedStop} /> : <MediaQueueDrawer mode={mode} />}
+      </div>
+    </aside>
+  );
+}
+
+function AssetsPoolDrawer({ selectedStop }) {
+  const loose = POOL_ASSETS.filter(a => a.stop === null);
+  const assigned = POOL_ASSETS.filter(a => a.stop !== null);
+  return (
+    <div className="col gap-16">
+      <div>
+        <div className="row between items-baseline">
+          <div className="eyebrow">Uploads · 22 items</div>
+          <button className="mono-sm" style={{ opacity: 0.6 }}>Upload more</button>
+        </div>
+        <div className="mono-sm" style={{ opacity: 0.55, marginTop: 4 }}>
+          Drag any asset onto a stop in the spine to assign.
+        </div>
+      </div>
+
+      <div>
+        <div className="eyebrow" style={{ marginBottom: 8 }}>Loose · {loose.length}</div>
+        <div className="pool-grid">
+          {loose.map(a => (
+            <div key={a.id} className="pool-cell">
+              <Img label={a.id.toUpperCase()} tone={a.tone} ratio="1/1" style={{ aspectRatio: 'auto', height: '100%' }} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <div className="eyebrow" style={{ marginBottom: 8 }}>Assigned · {assigned.length}</div>
+        <div className="pool-grid">
+          {assigned.map(a => (
+            <div key={a.id} className="pool-cell" data-assigned={true} data-assigned-stop={a.stop}>
+              <Img label={a.id.toUpperCase()} tone={a.tone} ratio="1/1" style={{ aspectRatio: 'auto', height: '100%' }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MediaQueueDrawer({ mode }) {
+  const [tasks, setTasks] = React.useState(SEED_TASKS);
+  // Animate the two "running" bars so the queue feels live.
+  React.useEffect(() => {
+    const t = setInterval(() => {
+      setTasks(prev => prev.map(x =>
+        x.state === 'running'
+          ? { ...x, progress: Math.min(0.98, x.progress + 0.01 + Math.random() * 0.02) }
+          : x
+      ));
+    }, 420);
+    return () => clearInterval(t);
+  }, []);
+
+  const counts = {
+    running: tasks.filter(t => t.state === 'running').length,
+    queued:  tasks.filter(t => t.state === 'queued').length,
+    done:    tasks.filter(t => t.state === 'done').length,
+    failed:  tasks.filter(t => t.state === 'failed').length,
+  };
+
+  return (
+    <div className="col gap-16">
+      <div>
+        <div className="eyebrow">Tasks · {tasks.length}</div>
+        <div className="mono-sm" style={{ opacity: 0.55, marginTop: 4 }}>
+          {counts.running} running · {counts.queued} queued · {counts.done} done · {counts.failed} failed
+        </div>
+      </div>
+      <div>
+        {tasks.map(t => (
+          <div key={t.id} className="task-card" data-state={t.state}>
+            <div className="task-card-hdr">
+              <span className="mono-sm">
+                <span className="task-dot" data-s={t.state} />
+                STOP {t.stopId} · {t.kind}
+              </span>
+              <span className="mono-sm" style={{ opacity: 0.55 }}>{t.mode}</span>
+            </div>
+            <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8, lineHeight: 1.4 }}>{t.prompt}</div>
+            <div className="task-bar">
+              <div className="task-bar-fill" style={{ width: `${Math.round(t.progress * 100)}%` }} />
+            </div>
+            <div className="row between" style={{ marginTop: 6 }}>
+              <span className="mono-sm" style={{ opacity: 0.55 }}>
+                {t.state === 'running' ? `${Math.round(t.progress * 100)}%` :
+                 t.state === 'done'    ? 'result ready · drag →' :
+                 t.state === 'failed'  ? 'mock: lost frame' :
+                 'waiting in queue'}
+              </span>
+              {t.state === 'failed' && <button className="mono-sm" style={{ color: 'var(--status-failed)' }}>Retry</button>}
+              {t.state === 'done'   && <button className="mono-sm" style={{ opacity: 0.7 }}>Insert ↓</button>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { Workspace });
+
+</script>
+<script type="text/babel" data-src="src/publish.jsx">
+// publish.jsx — Publish as a slide-over (60vw from right).
+// Replaces V1 screen 12 as a contextual action that never leaves the workspace.
+
+function PublishSlideover({ mode, onClose }) {
+  const summary = projectSummary(STOPS);
+  const [slug, setSlug] = React.useState(PROJECT.slug);
+  const [visibility, setVisibility] = React.useState(PROJECT.visibility);
+  const blockers = [];
+  STOPS.forEach(s => {
+    if (!s.status.upload) blockers.push({ stop: s, kind: 'Missing uploads' });
+    if (!s.status.hero)   blockers.push({ stop: s, kind: 'No hero image' });
+    if (!s.status.body)   blockers.push({ stop: s, kind: 'Body empty' });
+  });
+
+  return (
+    <>
+      <div className="slideover-scrim" onClick={onClose} />
+      <div className="slideover" data-mode={mode}>
+        <div className="slideover-hdr">
+          <div>
+            <div className="eyebrow">Publish — Ed.01</div>
+            <div style={{ fontFamily: 'var(--mode-display-font)', fontSize: 26, marginTop: 6, lineHeight: 1 }}>
+              {PROJECT.title}
+            </div>
+          </div>
+          <div className="row gap-12">
+            <button className="btn" onClick={onClose}>Back to workspace</button>
+            <button className="btn btn-solid" disabled={blockers.length > 0}>
+              {blockers.length === 0 ? 'Publish →' : `${blockers.length} issues block publish`}
+            </button>
+          </div>
+        </div>
+
+        <div className="slideover-body">
+          <div className="slideover-col">
+            <div className="eyebrow">Pre-flight · {blockers.length ? `${blockers.length} issues` : 'all clear'}</div>
+            <div style={{ marginTop: 12 }}>
+              {STOPS.map(s => {
+                const okAll = s.status.upload && s.status.hero && s.status.body;
+                const issues = [];
+                if (!s.status.upload) issues.push('needs uploads');
+                if (!s.status.hero)   issues.push('no hero');
+                if (!s.status.body)   issues.push('body empty');
+                return (
+                  <div key={s.n} className="checklist-item" data-ok={okAll}>
+                    <span className="checklist-dot" />
+                    <div>
+                      <div className="checklist-label">
+                        <span className="mono-sm" style={{ opacity: 0.6, marginRight: 8 }}>{s.n}</span>
+                        {s.title}
+                      </div>
+                      {!okAll && (
+                        <div className="mono-sm" style={{ opacity: 0.65, marginTop: 2 }}>{issues.join(' · ')}</div>
+                      )}
+                    </div>
+                    <span className="checklist-jump">Jump →</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="overline-divider">Settings</div>
+            <div className="col gap-12">
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 6 }}>Slug</div>
+                <div className="row items-center gap-4 mono-sm" style={{ fontSize: 12 }}>
+                  <span style={{ opacity: 0.6 }}>londoncuts.com/@ana/</span>
+                  <input value={slug} onChange={e => setSlug(e.target.value)}
+                         style={{ borderBottom: '1px solid currentColor', padding: '2px 4px', minWidth: 180 }} />
+                </div>
+              </div>
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 6 }}>Visibility</div>
+                <div className="row gap-8">
+                  {['public', 'unlisted', 'private'].map(v => (
+                    <button key={v} className={'chip ' + (visibility === v ? 'chip-solid' : '')} onClick={() => setVisibility(v)}>
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 6 }}>Default mode for readers</div>
+                <ModePill mode={mode} onMode={() => {}} />
+                <div className="mono-sm" style={{ opacity: 0.5, marginTop: 6 }}>
+                  Readers can override client-side.
+                </div>
+              </div>
+            </div>
+
+            <div className="overline-divider">Share</div>
+            <div className="col gap-8">
+              <button className="btn btn-sm">Copy public link</button>
+              <button className="btn btn-sm">Open in new tab ↗</button>
+              <button className="btn btn-sm">Download postcard sheet (6 × PNG)</button>
+            </div>
+          </div>
+
+          <div className="slideover-col">
+            <div className="eyebrow">Live preview · {mode}</div>
+            <div style={{
+              marginTop: 12, border: '1px solid oklch(from currentColor l c h / 0.2)',
+              aspectRatio: '3/4', overflow: 'hidden', position: 'relative',
+            }}>
+              {/* A tiny scaled preview of the Public project hero */}
+              <div style={{
+                transform: 'scale(0.42)', transformOrigin: 'top left',
+                width: '238%', height: '238%',
+                pointerEvents: 'none',
+              }}>
+                <PublicProjectHeroPreview mode={mode} />
+              </div>
+            </div>
+            <div className="mono-sm" style={{ opacity: 0.55, marginTop: 8 }}>
+              Reflects current workspace state · updates as you edit.
+            </div>
+
+            <div className="overline-divider">Summary</div>
+            <table className="token-table" style={{ marginTop: 0 }}>
+              <tbody>
+                <tr><td>Stops</td><td>{summary.total}</td></tr>
+                <tr><td>Ready</td><td>{summary.totalComplete}</td></tr>
+                <tr><td>Missing heroes</td><td>{summary.missingHeroes}</td></tr>
+                <tr><td>Missing bodies</td><td>{summary.missingBodies}</td></tr>
+                <tr><td>Default mode</td><td>{mode}</td></tr>
+                <tr><td>Visibility</td><td>{visibility}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// Tiny preview used inside the slide-over
+function PublicProjectHeroPreview({ mode }) {
+  return (
+    <div className="page" data-mode={mode} style={{ minHeight: 0 }}>
+      <div className="pp-hero" style={{ minHeight: 760 }}>
+        <div className="pp-hero-txt">
+          <div>
+            <div className="eyebrow">A year in SE1 · Ed.01 · by Ana Ishii</div>
+            <h1 style={{ fontFamily: 'var(--mode-display-font)', fontSize: 92, lineHeight: 0.9, marginTop: 24, letterSpacing: '-0.02em' }}>
+              {mode === 'punk' ? 'TWELVE CUTS OF SE1' : mode === 'fashion' ? 'Twelve walks,\none postcode.' : 'Twelve scenes\nin SE1.'}
+            </h1>
+          </div>
+          <div className="mono-sm" style={{ opacity: 0.65 }}>
+            12 STOPS · 48 MIN READ · ED.01 · APR 2026
+          </div>
+        </div>
+        <div className="pp-hero-img">
+          <Img label={PROJECT.coverLabel} tone={mode === 'cinema' ? 'dark' : 'warm'} style={{ height: '100%', aspectRatio: 'auto' }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { PublishSlideover });
+
+</script>
+<script type="text/babel" data-src="src/postcard-editor.jsx">
+// postcard-editor.jsx — Postcard with editable message + recipient.
+// All three modes share state; per-mode treatments for view ↔ edit.
+
+function PostcardEditor({ mode, onMode, onClose }) {
+  const [flipped, setFlipped] = React.useState(true);  // show back (message/recipient) by default
+  const [editing, setEditing] = React.useState(null);  // 'message' | 'recipient' | null
+  const [message, setMessage] = React.useState(POSTCARD_05.message);
+  const [recipient, setRecipient] = React.useState(POSTCARD_05.recipient);
+
+  return (
+    <div className="page" data-mode={mode}>
+      <div className="ws-topbar">
+        <div className="row items-center gap-16">
+          <button className="mono-sm" onClick={onClose} style={{ opacity: 0.6 }}>← Back to workspace</button>
+          <Roundel />
+          <div style={{ fontFamily: 'var(--mode-display-font)', fontSize: 15 }}>Postcard · Stop 05 · Waterloo Bridge</div>
+        </div>
+        <div className="row items-center gap-16">
+          <ModePill mode={mode} onMode={onMode} />
+          <button className="btn" onClick={() => setFlipped(f => !f)}>Flip ↻</button>
+          <button className="btn btn-solid">Render new version →</button>
+        </div>
+      </div>
+
+      <div style={{ padding: '40px', display: 'grid', gridTemplateColumns: '7fr 3fr', gap: 32, maxWidth: 1680, margin: '0 auto' }}>
+        <div style={{ padding: 48, background: 'oklch(from currentColor l c h / 0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 620 }}>
+          <div style={{ perspective: 2000, width: '100%', maxWidth: 720 }}>
+            <div style={{
+              position: 'relative', width: '100%', aspectRatio: '7/5',
+              transformStyle: 'preserve-3d',
+              transition: 'transform 700ms cubic-bezier(0.2,0.8,0.3,1)',
+              transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+            }}>
+              <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.18)' }}>
+                <PostcardFrontView mode={mode} />
+              </div>
+              <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', boxShadow: '0 20px 40px rgba(0,0,0,0.18)' }}>
+                <PostcardBackEditor
+                  mode={mode}
+                  editing={editing} setEditing={setEditing}
+                  message={message} setMessage={setMessage}
+                  recipient={recipient} setRecipient={setRecipient}
+                />
+              </div>
+            </div>
+            <div className="row center gap-8" style={{ marginTop: 16 }}>
+              <span className="mono-sm" style={{ opacity: 0.6 }}>{flipped ? 'BACK — click to edit' : 'FRONT'}</span>
+              <span className="mono-sm" style={{ opacity: 0.3 }}>·</span>
+              <span className="mono-sm" style={{ opacity: 0.6 }}>148 × 105 mm · Ed.01 / 05 of 12</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="col gap-24">
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 8 }}>Message</div>
+            <div className="mono-sm" style={{ opacity: 0.65, lineHeight: 1.6 }}>
+              Handwriting field (Caveat). Max ~280 chars — wraps naturally; we keep a slight
+              baseline jitter so it still reads as handwritten, not typeset.
+            </div>
+            <button className="btn btn-sm" style={{ marginTop: 10 }} onClick={() => { setFlipped(true); setEditing('message'); }}>
+              Edit message
+            </button>
+          </div>
+          <div className="rule" />
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 8 }}>Recipient</div>
+            <div className="mono-sm" style={{ opacity: 0.65, lineHeight: 1.6 }}>
+              Name · two address lines · country. Each field is its own ruled row — looks like an
+              address, not a form.
+            </div>
+            <button className="btn btn-sm" style={{ marginTop: 10 }} onClick={() => { setFlipped(true); setEditing('recipient'); }}>
+              Edit recipient
+            </button>
+          </div>
+          <div className="rule" />
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 8 }}>Edit-state grammar</div>
+            <div className="mono-sm" style={{ opacity: 0.7, lineHeight: 1.6 }}>
+              {mode === 'punk'    && 'Taped label above each field. Dashed red-orange outline. Tilt preserved.'}
+              {mode === 'fashion' && 'Inline — field blends with the card. Oxblood underline marks active.'}
+              {mode === 'cinema'  && 'Slate frame darkens around the field. Subtitle-yellow outline.'}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// View-side (front) — uses the full PostcardFront look.
+function PostcardFrontView({ mode }) {
+  if (mode === 'punk') {
+    return (
+      <div style={{ width: '100%', height: '100%', background: 'black', position: 'relative', overflow: 'hidden' }}>
+        <Img label="WATERLOO · DUSK" tone="punk" style={{ position: 'absolute', inset: 0, aspectRatio: 'auto', height: '100%' }} />
+        <div style={{ position: 'absolute', top: 20, left: 20, background: 'oklch(0.62 0.24 25)', color: 'white', padding: '6px 10px', fontFamily: 'var(--f-display)', fontSize: 20, transform: 'rotate(-3deg)' }}>SE1!!</div>
+        <div style={{ position: 'absolute', bottom: 24, left: 24, right: 24, fontFamily: 'var(--f-display)', fontSize: 56, color: 'white', textTransform: 'uppercase', lineHeight: 0.9, textShadow: '3px 3px 0 oklch(0.62 0.24 25)' }}>
+          Greetings<br/>from<br/>Waterloo
+        </div>
+      </div>
+    );
+  }
+  if (mode === 'cinema') {
+    return (
+      <div style={{ width: '100%', height: '100%', background: 'oklch(0.1 0.015 250)', position: 'relative', overflow: 'hidden' }}>
+        <Img label="WATERLOO · 17:19 · DUSK" tone="dark" style={{ position: 'absolute', inset: 0, aspectRatio: 'auto', height: '100%' }} />
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 40, background: 'black' }} />
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 40, background: 'black' }} />
+        <div style={{ position: 'absolute', bottom: 56, left: 0, right: 0, textAlign: 'center' }}>
+          <div style={{ display: 'inline-block', background: 'rgba(0,0,0,0.5)', padding: '6px 14px', fontFamily: 'var(--f-mono)', fontSize: 13, color: 'oklch(0.88 0.14 90)' }}>
+            — Six minutes of gold, then nothing.
+          </div>
+        </div>
+        <div style={{ position: 'absolute', top: 50, left: 20, fontFamily: 'var(--f-mono)', fontSize: 10, color: 'oklch(0.88 0.14 90)', letterSpacing: '0.2em' }}>
+          SE1 · SCENE 05 · 17:19
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div style={{ width: '100%', height: '100%', background: 'oklch(0.98 0.008 75)', position: 'relative', overflow: 'hidden', display: 'grid', gridTemplateColumns: '2fr 3fr' }}>
+      <div style={{ padding: 32, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div className="mono-sm" style={{ letterSpacing: '0.3em' }}>LONDON · SE1</div>
+        <div>
+          <div style={{ fontFamily: 'var(--f-fashion)', fontSize: 48, fontStyle: 'italic', lineHeight: 1, color: 'oklch(0.2 0.02 40)' }}>
+            Waterloo<br/><em style={{ fontWeight: 300 }}>Bridge</em>
+          </div>
+          <div className="mono-sm" style={{ marginTop: 16, opacity: 0.6 }}>ED. 01 / 05 OF 12</div>
+        </div>
+      </div>
+      <Img label="BRIDGE · EAST · 17:19" tone="warm" style={{ height: '100%', aspectRatio: 'auto' }} />
+    </div>
+  );
+}
+
+// Back-side editor — message + recipient become editable in place.
+function PostcardBackEditor({ mode, editing, setEditing, message, setMessage, recipient, setRecipient }) {
+  const msgStyle = {
+    fontFamily: 'var(--f-hand)', fontSize: 22, lineHeight: 1.5,
+    color: 'oklch(0.25 0.02 240)',
+    width: '100%',
+    minHeight: 140,
+    resize: 'none',
+    background: 'transparent',
+  };
+  return (
+    <div style={{
+      width: '100%', height: '100%',
+      background: 'oklch(0.96 0.008 60)',
+      color: 'oklch(0.15 0.008 60)',
+      padding: 32,
+      display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 24,
+      fontFamily: 'var(--f-mono)',
+    }}>
+      <div
+        className="editable"
+        data-editing={editing === 'message'}
+        data-edit-label="MESSAGE — handwritten"
+        style={{ borderRight: '1px solid oklch(0.8 0.008 60)', paddingRight: 24 }}
+        onClick={() => setEditing('message')}
+      >
+        {editing === 'message' ? (
+          <textarea
+            autoFocus
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            onBlur={() => setEditing(null)}
+            style={msgStyle}
+          />
+        ) : (
+          <div style={{ fontFamily: 'var(--f-hand)', fontSize: 22, lineHeight: 1.5, color: 'oklch(0.25 0.02 240)', whiteSpace: 'pre-wrap' }}>
+            {message}
+          </div>
+        )}
+      </div>
+
+      <div
+        className="editable"
+        data-editing={editing === 'recipient'}
+        data-edit-label="RECIPIENT"
+        onClick={() => setEditing('recipient')}
+      >
+        <div className="mono-sm" style={{ letterSpacing: '0.25em', marginBottom: 12 }}>LONDON CUTS · ED.01 / 05</div>
+        {['name', 'line1', 'line2', 'country'].map(k => (
+          <div key={k} style={{ borderBottom: '1px solid oklch(0.4 0.008 60)', padding: '4px 0', fontSize: 12 }}>
+            {editing === 'recipient' ? (
+              <input
+                value={recipient[k]}
+                onChange={e => setRecipient({ ...recipient, [k]: e.target.value })}
+                onBlur={() => setEditing(null)}
+                autoFocus={k === 'name'}
+                style={{ fontFamily: 'var(--f-mono)', fontSize: 12, width: '100%' }}
+              />
+            ) : recipient[k]}
+          </div>
+        ))}
+        <div style={{ width: 60, height: 76, border: '1px dashed oklch(0.4 0.008 60)', marginTop: 16, marginLeft: 'auto', padding: 6, textAlign: 'center', fontSize: 8, lineHeight: 1.2 }}>
+          1ST<br/>CLASS<br/>—<br/>SE1
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { PostcardEditor });
+
+</script>
+<script type="text/babel" data-src="src/public-project.jsx">
+// public-project.jsx — Unified Public scroll:
+//   Hero (overview) → Atlas band → Stop detail.
+// No hard page breaks — the three were separate screens in V1; here they
+// are sections of a single scrolling surface with sticky chrome.
+
+function PublicProject({ mode, onMode, onExit }) {
+  const [hover, setHover] = React.useState(null);
+  const [selectedStop, setSelectedStop] = React.useState('05');
+  const stopRef = React.useRef(null);
+
+  const handlePick = (n) => {
+    setSelectedStop(n);
+    setTimeout(() => stopRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' }), 30);
+  };
+
+  return (
+    <div className="page" data-mode={mode}>
+      {/* Sticky public nav */}
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 50,
+        background: 'var(--mode-bg)',
+        borderBottom: '1px solid oklch(from currentColor l c h / 0.15)',
+      }}>
+        <div className="row items-center between" style={{ padding: '14px 40px', maxWidth: 1680, margin: '0 auto' }}>
+          <div className="row items-center gap-16">
+            <Roundel />
+            <div style={{ fontFamily: 'var(--mode-display-font)', fontSize: 15 }}>LONDON CUTS</div>
+            <span className="mono-sm" style={{ opacity: 0.5 }}>@ana · A Year in SE1</span>
+          </div>
+          <div className="row items-center gap-16">
+            <ModePill mode={mode} onMode={onMode} />
+            <button className="btn btn-sm" onClick={onExit}>Back to handoff</button>
+          </div>
+        </div>
+      </div>
+
+      {/* 1. HERO / OVERVIEW */}
+      <section className="pp-hero">
+        <div className="pp-hero-txt">
+          <div>
+            <div className="eyebrow">Ed. 01 · Apr 2026 · by Ana Ishii</div>
+            <h1 style={{
+              fontFamily: 'var(--mode-display-font)',
+              fontSize: mode === 'punk' ? 132 : 116,
+              lineHeight: 0.88, marginTop: 28, letterSpacing: '-0.02em',
+              textTransform: mode === 'punk' ? 'uppercase' : 'none',
+              fontStyle: mode === 'fashion' ? 'italic' : 'normal',
+            }}>
+              {mode === 'punk'    && <>Twelve<br/>cuts of<br/>SE1.</>}
+              {mode === 'fashion' && <>Twelve walks,<br/>one postcode.</>}
+              {mode === 'cinema'  && <>Twelve<br/>scenes<br/>in SE1.</>}
+            </h1>
+            <div className="n-para" style={{ marginTop: 24, maxWidth: '38ch', opacity: 0.85 }}>
+              A year walking between Bermondsey and Waterloo. Twelve stops, three
+              ways to read them — chosen by you, switched at the top.
+            </div>
+          </div>
+          <div className="row between items-end">
+            <div className="mono-sm" style={{ opacity: 0.6 }}>
+              12 STOPS · 48 MIN · ED.01 · APR 2026
+            </div>
+            <div className="mono-sm" style={{ opacity: 0.6 }}>
+              Scroll ↓ for the map
+            </div>
+          </div>
+        </div>
+        <div className="pp-hero-img" style={{ position: 'relative' }}>
+          <Img label={PROJECT.coverLabel}
+               tone={mode === 'cinema' ? 'dark' : mode === 'punk' ? 'punk' : 'warm'}
+               style={{ height: '100%', aspectRatio: 'auto' }} />
+          {mode === 'cinema' && (
+            <>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 48, background: 'black' }} />
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 48, background: 'black' }} />
+              <div style={{ position: 'absolute', bottom: 60, left: 24, right: 24, textAlign: 'center' }}>
+                <div style={{ display: 'inline-block', background: 'rgba(0,0,0,0.5)', padding: '6px 14px',
+                              fontFamily: 'var(--f-mono)', fontSize: 13, color: 'oklch(0.88 0.14 90)' }}>
+                  EXT. SOUTH BANK — GOLDEN HOUR
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* 2. ATLAS BAND */}
+      <section className="pp-atlas-band" id="atlas">
+        <div className="row between items-end" style={{ marginBottom: 20 }}>
+          <div>
+            <div className="eyebrow">The Atlas</div>
+            <h2 style={{
+              fontFamily: 'var(--mode-display-font)', fontSize: 56, lineHeight: 0.95,
+              marginTop: 10, letterSpacing: '-0.02em',
+              textTransform: mode === 'punk' ? 'uppercase' : 'none',
+              fontStyle: mode === 'fashion' ? 'italic' : 'normal',
+            }}>
+              Placed on SE1.
+            </h2>
+          </div>
+          <div className="mono-sm" style={{ opacity: 0.65 }}>
+            Pan, zoom, click a marker → jump to that stop below.
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24 }}>
+          <div className="atlas-map-wrap pp-atlas-map" data-mode={mode}>
+            <StylizedMap mode={mode} hover={hover} setHover={setHover} onPick={handlePick} selectedStop={selectedStop} />
+            {mode === 'cinema' && (
+              <>
+                <div className="atlas-letterbox atlas-letterbox-top" />
+                <div className="atlas-letterbox atlas-letterbox-bottom" />
+              </>
+            )}
+          </div>
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 12 }}>All stops</div>
+            <div className="col">
+              {STOPS.map(s => (
+                <div key={s.n} className="row between items-center"
+                     style={{ padding: '10px 0', borderBottom: '1px solid oklch(from currentColor l c h / 0.12)', cursor: 'pointer',
+                              background: selectedStop === s.n ? 'oklch(from currentColor l c h / 0.06)' : 'transparent' }}
+                     onClick={() => handlePick(s.n)}
+                     onMouseEnter={() => setHover(s.n)}
+                     onMouseLeave={() => setHover(null)}>
+                  <div className="row items-center gap-12">
+                    <span className="mono-sm" style={{ width: 24, opacity: 0.5 }}>{s.n}</span>
+                    <span style={{ fontFamily: 'var(--mode-display-font)', fontSize: 14, lineHeight: 1.15 }}>{s.title}</span>
+                  </div>
+                  <span className="mono-sm" style={{ opacity: 0.55 }}>{s.time}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. STOP DETAIL — scroll-anchored to selection */}
+      <section className="pp-stop-detail" ref={stopRef}>
+        <StopDetail stop={STOPS.find(s => s.n === selectedStop)} mode={mode} />
+      </section>
+    </div>
+  );
+}
+
+// --- Stylized stand-in for MapLibre (uses real SE1 coord bounds) ---
+// This is the prototype version — the engineering spec in HANDOFF-V2
+// ships the MapLibre style JSON per mode.
+function StylizedMap({ mode, hover, setHover, onPick, selectedStop }) {
+  // Project SE1 coords into viewBox 0..1000 × 0..600
+  const lats = STOPS.map(s => s.lat), lngs = STOPS.map(s => s.lng);
+  const minLat = Math.min(...lats) - 0.006, maxLat = Math.max(...lats) + 0.006;
+  const minLng = Math.min(...lngs) - 0.006, maxLng = Math.max(...lngs) + 0.006;
+  const x = lng => ((lng - minLng) / (maxLng - minLng)) * 1000;
+  const y = lat => (1 - (lat - minLat) / (maxLat - minLat)) * 600;
+
+  const bg = mode === 'cinema' ? '#050a18' : mode === 'punk' ? '#f0ece0' : '#f7f1e6';
+  const stroke = mode === 'cinema' ? '#16213a' : mode === 'punk' ? '#1a1a1a' : '#bfa886';
+  const river  = mode === 'cinema' ? '#0a1628' : mode === 'punk' ? '#d8d4c4' : '#e8d9b8';
+  const label  = mode === 'cinema' ? '#8a93a8' : mode === 'punk' ? '#4a4a4a' : '#9a7f54';
+
+  // A simple polyline for the Thames meander through SE1
+  const thames = 'M 40 180  C 200 140, 320 260, 480 220  S 780 300, 980 240';
+
+  return (
+    <div className="atlas-map" style={{ background: bg, position: 'relative' }}>
+      <svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice" style={{ width: '100%', height: '100%', display: 'block' }}>
+        {/* grid roads */}
+        <g stroke={stroke} strokeWidth={mode === 'punk' ? 1.2 : 0.8} opacity={mode === 'cinema' ? 0.25 : 0.35}>
+          {Array.from({length: 16}).map((_, i) => (
+            <line key={'h'+i} x1={0} x2={1000} y1={i * 40} y2={i * 40} />
+          ))}
+          {Array.from({length: 25}).map((_, i) => (
+            <line key={'v'+i} x1={i * 44} x2={i * 44} y1={0} y2={600} />
+          ))}
+        </g>
+        {/* major avenues */}
+        <g stroke={stroke} strokeWidth={mode === 'punk' ? 3.2 : 2.2} opacity={0.8}>
+          <line x1={0}   y1={320} x2={1000} y2={260} />
+          <line x1={260} y1={0}   x2={360}  y2={600} />
+          <line x1={680} y1={0}   x2={580}  y2={600} />
+        </g>
+        {/* Thames */}
+        <path d={thames} fill="none" stroke={river} strokeWidth={mode === 'punk' ? 28 : 36} strokeLinecap="round" />
+        <path d={thames} fill="none" stroke={stroke} strokeWidth={0.6} opacity={0.35} strokeDasharray={mode === 'punk' ? '2 3' : '0'} />
+        {/* Borough labels */}
+        <g fontFamily="var(--f-mono)" fontSize={mode === 'cinema' ? 10 : 11} fill={label} letterSpacing="2">
+          <text x={120} y={520} opacity={0.6}>BERMONDSEY</text>
+          <text x={420} y={90}  opacity={0.6}>BOROUGH</text>
+          <text x={760} y={140} opacity={0.6}>LAMBETH</text>
+          <text x={860} y={520} opacity={0.5}>WALWORTH</text>
+        </g>
+      </svg>
+
+      {/* Markers */}
+      {STOPS.map(s => (
+        <div
+          key={s.n}
+          className="atlas-marker"
+          data-mode={mode}
+          style={{
+            position: 'absolute',
+            left: `calc(${x(s.lng) / 10}% - 15px)`,
+            top:  `calc(${y(s.lat) / 6}% - 15px)`,
+            zIndex: selectedStop === s.n ? 20 : (hover === s.n ? 15 : 5),
+            transform: selectedStop === s.n
+              ? (mode === 'punk' ? 'rotate(-4deg) scale(1.25)' : 'scale(1.25)')
+              : undefined,
+            outline: selectedStop === s.n ? `2px solid var(--mode-accent)` : undefined,
+            outlineOffset: selectedStop === s.n ? 3 : undefined,
+          }}
+          onClick={() => onPick(s.n)}
+          onMouseEnter={() => setHover(s.n)}
+          onMouseLeave={() => setHover(null)}
+        >
+          <span className="atlas-marker-n">{s.n}</span>
+        </div>
+      ))}
+
+      {/* Hover preview card */}
+      {hover && (() => {
+        const s = STOPS.find(x => x.n === hover);
+        return s ? (
+          <div className="atlas-map-hover">
+            <div className="mono-sm" style={{ opacity: 0.6 }}>STOP {s.n} · {s.code}</div>
+            <div style={{ fontFamily: 'var(--mode-display-font)', fontSize: 18, marginTop: 4, lineHeight: 1.15 }}>{s.title}</div>
+            <div className="mono-sm" style={{ marginTop: 4, opacity: 0.7 }}>{s.time} · {s.mood}</div>
+          </div>
+        ) : null;
+      })()}
+
+      {/* attribution */}
+      <div className="atlas-attribution">© OpenStreetMap © CARTO</div>
+    </div>
+  );
+}
+
+// Stop detail renders content nodes in the current mode.
+function StopDetail({ stop, mode }) {
+  // Demo body for Stop 05; other stops get a short placeholder.
+  const body = stop.n === '05' ? BODY_05 : [
+    { type: 'metaRow',   content: [stop.time, stop.mood, stop.code, stop.label] },
+    { type: 'heroImage', assetId: 'hero-' + stop.n, caption: stop.label },
+    { type: 'paragraph', content: `Stop ${stop.n}: ${stop.title}. This chapter is still in draft.` },
+  ];
+
+  return (
+    <div style={{ maxWidth: 1180, margin: '0 auto' }}>
+      <div className="row items-baseline between" style={{ marginBottom: 24 }}>
+        <div>
+          <div className="eyebrow">Stop {stop.n} · {stop.code} · {stop.time}</div>
+          <h2 style={{
+            fontFamily: 'var(--mode-display-font)',
+            fontSize: mode === 'punk' ? 80 : 72,
+            lineHeight: 0.92, marginTop: 12, letterSpacing: '-0.02em',
+            textTransform: mode === 'punk' ? 'uppercase' : 'none',
+            fontStyle: mode === 'fashion' ? 'italic' : 'normal',
+          }}>{stop.title}</h2>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: mode === 'cinema' ? 780 : 920 }}>
+        {body.map((node, i) => (
+          <ContentNode key={i} node={node} selected={false} onSelect={() => {}} mode={mode} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { PublicProject });
+
+</script>
+<script type="text/babel" data-src="src/projects-list.jsx">
+// projects-list.jsx — V1 screens 06 + 07 merged.
+// Cards grid + "New project" opens a modal (not a separate page).
+
+function ProjectsList({ onOpenWorkspace, onExit }) {
+  const [modal, setModal] = React.useState(false);
+  return (
+    <div className="page" data-mode="fashion">
+      <div className="ws-topbar">
+        <div className="row items-center gap-16">
+          <Roundel />
+          <div style={{ fontFamily: 'var(--mode-display-font)', fontSize: 15 }}>London Cuts Studio</div>
+          <span className="mono-sm" style={{ opacity: 0.5 }}>Ana Ishii</span>
+        </div>
+        <div className="row items-center gap-16">
+          <button className="btn btn-sm" onClick={onExit}>Back to handoff</button>
+          <button className="btn btn-solid" onClick={() => setModal(true)}>+ New project</button>
+        </div>
+      </div>
+
+      <div style={{ padding: '48px 40px', maxWidth: 1680, margin: '0 auto' }}>
+        <div className="row between items-end" style={{ marginBottom: 32 }}>
+          <div>
+            <div className="eyebrow">Studio · 3 projects</div>
+            <h1 style={{ fontFamily: 'var(--f-fashion)', fontSize: 72, fontStyle: 'italic', lineHeight: 1, marginTop: 8, letterSpacing: '-0.02em' }}>Your work.</h1>
+          </div>
+          <div className="row gap-16 mono-sm" style={{ opacity: 0.65 }}>
+            <span>Sort: Last edited ▾</span>
+            <span>Status: All ▾</span>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          {/* Active project — A Year in SE1 */}
+          <div
+            onClick={onOpenWorkspace}
+            style={{ cursor: 'pointer', border: '1px solid var(--rule)', padding: 16 }}
+          >
+            <Img label="SE1 · COVER" tone="warm" ratio="4/3" />
+            <div className="row between items-baseline" style={{ marginTop: 14 }}>
+              <div style={{ fontFamily: 'var(--f-fashion)', fontStyle: 'italic', fontSize: 22, lineHeight: 1.1 }}>A Year in SE1</div>
+              <span className="chip chip-solid">Draft</span>
+            </div>
+            <div className="mono-sm" style={{ marginTop: 6, opacity: 0.65 }}>12 STOPS · 7/12 READY · MODE: FASHION</div>
+            <div className="mono-sm" style={{ marginTop: 2, opacity: 0.55 }}>Updated 2 minutes ago</div>
+            <div style={{ marginTop: 12, height: 4, background: 'var(--paper-3)' }}>
+              <div style={{ width: '58%', height: '100%', background: 'var(--ink)' }} />
+            </div>
+          </div>
+
+          {/* Published project */}
+          <div style={{ cursor: 'pointer', border: '1px solid var(--rule)', padding: 16 }}>
+            <Img label="E1 · BRICK LANE" tone="punk" ratio="4/3" />
+            <div className="row between items-baseline" style={{ marginTop: 14 }}>
+              <div style={{ fontFamily: 'var(--f-fashion)', fontStyle: 'italic', fontSize: 22, lineHeight: 1.1 }}>Brick Lane after rain</div>
+              <span className="chip">Published</span>
+            </div>
+            <div className="mono-sm" style={{ marginTop: 6, opacity: 0.65 }}>9 STOPS · LIVE · MODE: PUNK</div>
+            <div className="mono-sm" style={{ marginTop: 2, opacity: 0.55 }}>Published 2 weeks ago · 624 reads</div>
+          </div>
+
+          {/* Archived */}
+          <div style={{ cursor: 'pointer', border: '1px solid var(--rule)', padding: 16, opacity: 0.75 }}>
+            <Img label="N1 · CANAL" tone="cool" ratio="4/3" />
+            <div className="row between items-baseline" style={{ marginTop: 14 }}>
+              <div style={{ fontFamily: 'var(--f-fashion)', fontStyle: 'italic', fontSize: 22, lineHeight: 1.1 }}>Regent's Canal (draft)</div>
+              <span className="chip">Archived</span>
+            </div>
+            <div className="mono-sm" style={{ marginTop: 6, opacity: 0.65 }}>4 STOPS · 2/4 READY · MODE: CINEMA</div>
+            <div className="mono-sm" style={{ marginTop: 2, opacity: 0.55 }}>Last touched 3 months ago</div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 56 }}>
+          <div className="eyebrow" style={{ marginBottom: 12 }}>Activity</div>
+          <div className="col" style={{ fontSize: 13 }}>
+            {[
+              ['2 MIN AGO',  'Postcard v3 rendered for Stop 05 · Waterloo Bridge'],
+              ['14 MIN AGO', 'img2img done for Stop 01 · Borough Market'],
+              ['1 HR AGO',   'Uploaded 12 assets to Assets pool'],
+              ['YESTERDAY',  'Changed default mode from cinema → fashion'],
+              ['2 DAYS AGO', 'Published: Brick Lane after rain'],
+            ].map(([t, msg], i) => (
+              <div key={i} className="row gap-24" style={{ padding: '10px 0', borderBottom: '1px dashed var(--rule)' }}>
+                <span className="mono-sm" style={{ opacity: 0.55, width: 100 }}>{t}</span>
+                <span>{msg}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {modal && <NewProjectModal onClose={() => setModal(false)} onCreate={onOpenWorkspace} />}
+    </div>
+  );
+}
+
+function NewProjectModal({ onClose, onCreate }) {
+  const [title, setTitle] = React.useState('New walk');
+  const [defaultMode, setDefaultMode] = React.useState('fashion');
+  return (
+    <>
+      <div className="slideover-scrim" onClick={onClose} />
+      <div style={{
+        position: 'fixed', top: '50%', left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: 560, maxWidth: '92vw',
+        background: 'var(--paper)', color: 'var(--ink)',
+        border: '1px solid var(--ink)',
+        zIndex: 102,
+        padding: 28,
+      }}>
+        <div className="eyebrow" style={{ marginBottom: 4 }}>New project</div>
+        <div style={{ fontFamily: 'var(--f-fashion)', fontStyle: 'italic', fontSize: 32, lineHeight: 1 }}>Start a walk.</div>
+
+        <div className="col gap-16" style={{ marginTop: 24 }}>
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 6 }}>Title</div>
+            <input value={title} onChange={e => setTitle(e.target.value)}
+                   style={{ width: '100%', borderBottom: '1.5px solid var(--ink)', padding: '6px 0', fontSize: 18 }} />
+          </div>
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 6 }}>Default mode for readers</div>
+            <ModePill mode={defaultMode} onMode={setDefaultMode} />
+          </div>
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 6 }}>Postcode area</div>
+            <div className="row gap-8">
+              {['SE1', 'E1', 'N1', 'SW8', 'other'].map(c => (
+                <button key={c} className={'chip ' + (c === 'SE1' ? 'chip-solid' : '')}>{c}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="row gap-12" style={{ marginTop: 28, justifyContent: 'flex-end' }}>
+          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn btn-solid" onClick={onCreate}>Create &amp; open workspace →</button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+Object.assign(window, { ProjectsList });
+
+</script>
+<script type="text/babel" data-src="src/handoff-doc.jsx">
+// handoff-doc.jsx — The V2 handoff document itself.
+// Scrolling long-form with embedded live prototypes (each in its own chrome).
+// Think of it as a spec doc the implementation side reads top to bottom.
+
+const { useState } = React;
+
+function App() {
+  // The doc can navigate into full-screen live views for each prototype.
+  const [route, setRoute] = useState('doc');        // doc | workspace | public | postcard | projects | publish
+  const [mode, setMode] = useState('fashion');
+  const [publishOpen, setPublishOpen] = useState(false);
+
+  if (route === 'workspace') {
+    return (
+      <>
+        <Workspace
+          mode={mode} onMode={setMode}
+          onOpenPublish={() => setPublishOpen(true)}
+          onExitToProjects={() => setRoute('projects')}
+        />
+        {publishOpen && <PublishSlideover mode={mode} onClose={() => setPublishOpen(false)} />}
+      </>
+    );
+  }
+  if (route === 'public')    return <PublicProject mode={mode} onMode={setMode} onExit={() => setRoute('doc')} />;
+  if (route === 'postcard')  return <PostcardEditor mode={mode} onMode={setMode} onClose={() => setRoute('workspace')} />;
+  if (route === 'projects')  return <ProjectsList onOpenWorkspace={() => setRoute('workspace')} onExit={() => setRoute('doc')} />;
+
+  return <HandoffDoc goTo={setRoute} mode={mode} setMode={setMode} />;
+}
+
+function HandoffDoc({ goTo, mode, setMode }) {
+  return (
+    <div className="doc">
+      <DocTopBar />
+      <HeroIntro goTo={goTo} />
+      <S1_IA />
+      <S2_Workspace mode={mode} setMode={setMode} goTo={goTo} />
+      <S3_PublicScroll mode={mode} setMode={setMode} goTo={goTo} />
+      <S4_AtlasKits />
+      <S5_ContentNodes mode={mode} setMode={setMode} />
+      <S6_PostcardEditor mode={mode} setMode={setMode} goTo={goTo} />
+      <S7_PublishSlideover mode={mode} setMode={setMode} />
+      <S8_SystemDiff />
+      <S9_EngNotes />
+      <S10_Responsive />
+      <Footer />
+    </div>
+  );
+}
+
+function DocTopBar() {
+  const sections = [
+    ['ia', '01 IA'],
+    ['workspace', '02 Workspace'],
+    ['public', '03 Public'],
+    ['atlas', '04 Atlas'],
+    ['nodes', '05 Nodes'],
+    ['postcard', '06 Postcard'],
+    ['publish', '07 Publish'],
+    ['diff', '08 Diff'],
+    ['eng', '09 Eng'],
+    ['resp', '10 Resp'],
+  ];
+  return (
+    <div className="doc-top">
+      <div className="row between items-center">
+        <div className="row items-center gap-16">
+          <Roundel />
+          <span style={{ fontFamily: 'var(--f-fashion)', fontStyle: 'italic', fontSize: 18 }}>London Cuts</span>
+          <span className="mono-sm" style={{ opacity: 0.55 }}>V2 HANDOFF · ED.02 DRAFT</span>
+        </div>
+        <div className="row gap-4" style={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {sections.map(([id, label]) => (
+            <a key={id} href={'#' + id} className="mono-sm"
+               style={{ padding: '6px 10px', opacity: 0.65 }}>{label}</a>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroIntro({ goTo }) {
+  return (
+    <section className="handoff-hero" style={{ borderBottom: '1px solid var(--rule)' }}>
+      <div style={{ maxWidth: 1680, margin: '0 auto' }}>
+        <div className="kicker">London Cuts · V2 Handoff · for Claude Code / Cowork</div>
+        <h1>Twelve stops,<br/>one screen.</h1>
+        <p style={{ maxWidth: '62ch', fontSize: 20, lineHeight: 1.55, marginTop: 32, color: 'var(--ink-2)', textWrap: 'pretty' }}>
+          V1 sliced the Studio by pipeline phase. Users don't think in phases — they
+          think in stops. V2 collapses twelve screens into five and puts the whole
+          writing act in one spine-plus-canvas workspace. Everything else stays:
+          the three mode grammars, the typographic system, the London signals.
+        </p>
+        <div className="row gap-8" style={{ marginTop: 32 }}>
+          <button className="btn btn-solid" onClick={() => goTo('workspace')}>Open the workspace →</button>
+          <button className="btn" onClick={() => goTo('public')}>Public project scroll →</button>
+          <button className="btn" onClick={() => goTo('postcard')}>Postcard editor →</button>
+          <button className="btn" onClick={() => goTo('projects')}>Projects list →</button>
+        </div>
+
+        <div className="summary">
+          <div className="summary-card">
+            <div className="n">12 → 5</div>
+            <div className="l">Screens consolidated</div>
+          </div>
+          <div className="summary-card">
+            <div className="n">1</div>
+            <div className="l">Workspace replaces five studio pages</div>
+          </div>
+          <div className="summary-card">
+            <div className="n">3</div>
+            <div className="l">MapLibre style kits (punk / fashion / cinema)</div>
+          </div>
+          <div className="summary-card">
+            <div className="n">6</div>
+            <div className="l">Content node types for TipTap / Lexical</div>
+          </div>
+        </div>
+
+        <div className="toc">
+          <a href="#ia">01 · Information architecture</a>
+          <a href="#workspace">02 · Workspace (3 modes)</a>
+          <a href="#public">03 · Public project scroll</a>
+          <a href="#atlas">04 · Atlas style kits</a>
+          <a href="#nodes">05 · Content node types</a>
+          <a href="#postcard">06 · Postcard editor states</a>
+          <a href="#publish">07 · Publish slide-over</a>
+          <a href="#diff">08 · Design system diff</a>
+          <a href="#eng">09 · Engineering handoff</a>
+          <a href="#resp">10 · Responsive rules</a>
+          <a href="#" onClick={e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>↑ Back to top</a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ---- 01 IA ---------------------------------------------------------------
+function S1_IA() {
+  return (
+    <section id="ia">
+      <div className="section-hdr">
+        <div className="section-n">01 — Information Architecture</div>
+        <h2 className="section-h">Five screens, two surfaces.</h2>
+        <p className="section-lede">
+          The public surface is one continuous scroll (overview → atlas → stop) plus
+          a postcard detail page. The studio surface is a projects list plus a
+          project workspace. Publish is not a screen — it's a slide-over that keeps
+          the user inside their workspace.
+        </p>
+      </div>
+
+      <div className="frame-wrap" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40 }}>
+        <div>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>V1 → V2 map</div>
+          <div className="ia-diagram">{`V1 (12 screens)                          V2 (5 screens)
+──────────────────────────────────        ──────────────────────────────────
+01 Landing                                 01 Landing
+02 Public project                  ─┐
+03 Atlas                            ├───→  02 Public project
+04 Stop / Chapter                  ─┘       (hero → atlas → stop, one scroll)
+05 Postcard                         ───→   03 Postcard (+ editable)
+
+06 Studio dashboard                 ─┐
+07 Create project                    ├──→  04 Projects list
+                                     │     (+ "New" as a modal)
+08 Upload
+09 Organize                          ┐
+10 Story editor                       ├─→  05 Project workspace
+11 Media panel                        │    (spine + canvas + drawers A/B)
+12 Publish                           ─┘    Publish = slide-over, not a page`}</div>
+        </div>
+
+        <div>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>Navigation rules</div>
+          <div className="col gap-12" style={{ fontSize: 14, lineHeight: 1.6 }}>
+            <div>
+              <div className="mono-sm" style={{ opacity: 0.6 }}>WITHIN PUBLIC PROJECT</div>
+              <div>Hero, atlas, and stop detail share one page and one URL base.
+              Atlas markers scroll-jump to stop detail; the stop section is deep-linkable
+              via <code className="mono">#stop-05</code>. No hard page transition.</div>
+            </div>
+            <div>
+              <div className="mono-sm" style={{ opacity: 0.6 }}>WITHIN WORKSPACE</div>
+              <div>The <strong>spine</strong> is the only primary navigator — everything
+              else is panel state. Clicking a stop in the spine swaps the canvas;
+              the URL updates to <code className="mono">?stop=05</code> for deep-link
+              refresh.</div>
+            </div>
+            <div>
+              <div className="mono-sm" style={{ opacity: 0.6 }}>PUBLISH</div>
+              <div>Opens a slide-over at 60vw. <kbd className="mono" style={{ border: '1px solid currentColor', padding: '0 4px' }}>Esc</kbd> or
+              scrim-click dismisses back to the exact workspace state the user left.</div>
+            </div>
+            <div>
+              <div className="mono-sm" style={{ opacity: 0.6 }}>POSTCARD</div>
+              <div>Postcard gets its own detail page (still 1 of 5) because postcards
+              are shareable artifacts with their own OG images and download flow. The
+              workspace links to it via the postcard preview tile.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ---- 02 Workspace --------------------------------------------------------
+function S2_Workspace({ mode, setMode, goTo }) {
+  return (
+    <section id="workspace">
+      <div className="section-hdr">
+        <div className="section-n">02 — Project Workspace</div>
+        <h2 className="section-h">The whole writing act, one view.</h2>
+        <p className="section-lede">
+          Spine left · canvas middle · two drawers right (Assets pool / Media queue).
+          The canvas contains hero, asset strip, body editor, and postcard preview
+          for the currently selected stop. The same layout runs in three modes with
+          meaningfully different grammar — not a theme.
+        </p>
+      </div>
+
+      <div className="frame-wrap">
+        <div className="row items-center gap-16" style={{ marginBottom: 16 }}>
+          <div className="tabs">
+            {['punk', 'fashion', 'cinema'].map(m => (
+              <button key={m} data-active={mode === m} onClick={() => setMode(m)}>{m}</button>
+            ))}
+          </div>
+          <span className="mono-sm" style={{ opacity: 0.6 }}>Preview the workspace in each mode</span>
+          <span style={{ flex: 1 }} />
+          <button className="btn" onClick={() => goTo('workspace')}>Open fullscreen →</button>
+        </div>
+
+        <div className="demo-embed">
+          <div className="demo-embed-chrome">
+            <span className="dot" /><span className="dot" /><span className="dot" />
+            <span style={{ marginLeft: 12 }}>studio / a-year-in-se1 / workspace · mode: {mode}</span>
+          </div>
+          <div className="demo-embed-body tall">
+            <WorkspaceScaled mode={mode} />
+          </div>
+        </div>
+        <FigCap n="2a" text={`Workspace in ${mode} mode — spine 288px, drawers 340px, canvas fluid. Stop 05 selected.`} />
+
+        <div className="overline-divider">Per-mode grammar</div>
+        <div className="kit-grid" style={{ marginTop: 10 }}>
+          <div className="kit-card">
+            <div className="eyebrow">PUNK WORKSPACE</div>
+            <div style={{ fontFamily: 'var(--f-display)', fontSize: 28, marginTop: 10, lineHeight: 1, textTransform: 'uppercase' }}>ASYMMETRIC</div>
+            <p style={{ marginTop: 10, fontSize: 13, lineHeight: 1.55 }}>
+              Hero slot tilts ~1.2°. Pull quotes are taped ransom blocks over the body.
+              The asset strip overlaps the hero's bottom edge — pool drawer sits
+              closer. Spine titles are caps, Archivo Black, tight.
+            </p>
+          </div>
+          <div className="kit-card">
+            <div className="eyebrow">FASHION WORKSPACE</div>
+            <div style={{ fontFamily: 'var(--f-fashion)', fontStyle: 'italic', fontSize: 32, marginTop: 10, lineHeight: 1 }}>Whitespace</div>
+            <p style={{ marginTop: 10, fontSize: 13, lineHeight: 1.55 }}>
+              Canvas max-width 880px and centered — deliberate margin around the
+              body column. Spine titles italic Bodoni. Pull quotes are centered,
+              with no border rule. The postcard preview sits flush left.
+            </p>
+          </div>
+          <div className="kit-card">
+            <div className="eyebrow">CINEMA WORKSPACE</div>
+            <div style={{ fontFamily: 'var(--f-serif)', fontSize: 32, marginTop: 10, lineHeight: 1 }}>Letterbox</div>
+            <p style={{ marginTop: 10, fontSize: 13, lineHeight: 1.55 }}>
+              Canvas is wrapped in 28px black bars (top + bottom). Hero is 21:9.
+              Body is JetBrains Mono at 14px on deep blue-black. Pull quotes
+              render as subtitle cards at the bottom-center of their block.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// A down-scaled live Workspace used for in-doc previews.
+function WorkspaceScaled({ mode }) {
+  return (
+    <div style={{ transform: 'scale(0.72)', transformOrigin: 'top left', width: '139%' }}>
+      <WorkspaceInert mode={mode} />
+    </div>
+  );
+}
+
+// An inert Workspace (same component, no full-screen nav).
+function WorkspaceInert({ mode }) {
+  const [m, setM] = useState(mode);
+  React.useEffect(() => { setM(mode); }, [mode]);
+  return (
+    <Workspace
+      mode={m} onMode={setM}
+      onOpenPublish={() => {}}
+      onExitToProjects={() => {}}
+    />
+  );
+}
+
+// ---- 03 Public project scroll --------------------------------------------
+function S3_PublicScroll({ mode, setMode, goTo }) {
+  return (
+    <section id="public">
+      <div className="section-hdr">
+        <div className="section-n">03 — Public project surface</div>
+        <h2 className="section-h">One scroll: overview, atlas, stop.</h2>
+        <p className="section-lede">
+          V1 made readers click from Public project → Atlas → Stop. In V2 these are
+          three sections of one page. Atlas markers are wired to scroll-jump into
+          the stop detail immediately below the map; the stop section re-renders
+          when the selection changes. The mode pill stays sticky at the top.
+        </p>
+      </div>
+
+      <div className="frame-wrap">
+        <div className="row items-center gap-16" style={{ marginBottom: 16 }}>
+          <div className="tabs">
+            {['punk', 'fashion', 'cinema'].map(m => (
+              <button key={m} data-active={mode === m} onClick={() => setMode(m)}>{m}</button>
+            ))}
+          </div>
+          <span className="mono-sm" style={{ opacity: 0.6 }}>Scroll, then click a marker</span>
+          <span style={{ flex: 1 }} />
+          <button className="btn" onClick={() => goTo('public')}>Open fullscreen →</button>
+        </div>
+
+        <div className="demo-embed">
+          <div className="demo-embed-chrome">
+            <span className="dot" /><span className="dot" /><span className="dot" />
+            <span style={{ marginLeft: 12 }}>londoncuts.com/@ana/a-year-in-se1 · mode: {mode}</span>
+          </div>
+          <div className="demo-embed-body tall">
+            <PublicProject mode={mode} onMode={setMode} onExit={() => {}} />
+          </div>
+        </div>
+        <FigCap n="3a" text="Public project — single scroll. Atlas is embedded. Markers jump to the stop below." />
+      </div>
+    </section>
+  );
+}
+
+// ---- 04 Atlas kits -------------------------------------------------------
+function S4_AtlasKits() {
+  const kits = [
+    {
+      mode: 'punk',
+      title: 'Punk map',
+      base: '#f0ece0 (newsprint)',
+      water: '#d8d4c4',
+      road: '#1a1a1a',
+      label: '#4a4a4a · JetBrains Mono 11, letterspace 2px',
+      marker: 'Red-orange 30px chip, white numeral, Archivo Black 12, 2px black border, rotate(-4°), 2px black drop shadow',
+      hover: 'scale(1.2), rotation preserved',
+      vibe: 'High-contrast xerox / zine. Sparse labels, chunky roads, hand-drawn Thames.',
+      rasterPaint: {
+        'raster-saturation': -1,
+        'raster-contrast': 0.5,
+        'raster-brightness-min': 0.08,
+        'raster-brightness-max': 0.92,
+      },
+    },
+    {
+      mode: 'fashion',
+      title: 'Fashion map',
+      base: '#f7f1e6 (warm cream)',
+      water: '#e8d9b8 (soft ochre)',
+      road: '#bfa886 (low-sat warm ink)',
+      label: '#9a7f54 · JetBrains Mono 11, letterspace 2px, sparse',
+      marker: 'Cream 30px disc, 1.5px oxblood ring, Bodoni italic numeral 13, oxblood fill',
+      hover: 'scale(1.2), no rotation',
+      vibe: 'Editorial. Paper base. Minimal oxblood rings. Lots of air between labels.',
+      rasterPaint: {
+        'raster-saturation': -0.55,
+        'raster-hue-rotate': 10,
+        'raster-brightness-min': 0.8,
+        'raster-brightness-max': 1.0,
+        'raster-opacity': 0.8,
+        'raster-contrast': -0.05,
+      },
+    },
+    {
+      mode: 'cinema',
+      title: 'Cinema map',
+      base: '#050a18 (deep blue-black)',
+      water: '#0a1628',
+      road: '#16213a (low-sat)',
+      label: '#8a93a8 · JetBrains Mono 10, letterspace 2px',
+      marker: '28px blue-black disc, 1.5px subtitle-yellow ring, yellow numeral, 14px yellow glow',
+      hover: 'scale(1.22), glow intensifies to 22px',
+      vibe: 'Noir. Letterbox at top and bottom of the viewport. Neon-amber pins on near-black.',
+      rasterPaint: {
+        'raster-saturation': -0.4,
+        'raster-hue-rotate': 210,
+        'raster-brightness-min': 0.0,
+        'raster-brightness-max': 0.6,
+        'raster-contrast': 0.15,
+        'raster-opacity': 0.95,
+      },
+    },
+  ];
+  return (
+    <section id="atlas">
+      <div className="section-hdr">
+        <div className="section-n">04 — Atlas style kits</div>
+        <h2 className="section-h">Three maps, one library.</h2>
+        <p className="section-lede">
+          MapLibre GL + OSM raster tiles (no token). Three tile styles and three
+          marker grammars — one per mode. Tokens below; MapLibre style JSON
+          skeletons are in <a href="#eng">§09 Engineering</a>.
+        </p>
+      </div>
+
+      <div className="frame-wrap" style={{ display: 'grid', gap: 24 }}>
+        {kits.map(k => (
+          <div key={k.mode} className="mode-swatch" data-m={k.mode}>
+            <div>
+              <div className="eyebrow" style={{ opacity: 0.75 }}>{k.mode.toUpperCase()}</div>
+              <div style={{
+                fontFamily: k.mode === 'punk' ? 'var(--f-display)' : k.mode === 'fashion' ? 'var(--f-fashion)' : 'var(--f-serif)',
+                fontStyle: k.mode === 'fashion' ? 'italic' : 'normal',
+                fontSize: 42, marginTop: 8, lineHeight: 1,
+                textTransform: k.mode === 'punk' ? 'uppercase' : 'none',
+              }}>{k.title}</div>
+              <p style={{ marginTop: 16, fontSize: 13, lineHeight: 1.55, opacity: 0.85 }}>{k.vibe}</p>
+
+              <div className="overline-divider" style={{ opacity: 0.5 }}>Sample markers</div>
+              <div className="row gap-8" style={{ padding: '8px 0' }}>
+                {['01','02','03','04','05'].map(n => (
+                  <div key={n} className="atlas-marker" data-mode={k.mode} style={{ position: 'static' }}>
+                    <span className="atlas-marker-n">{n}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <table className="token-table">
+                <thead><tr><th>Token</th><th>Value</th></tr></thead>
+                <tbody>
+                  <tr><td>Base</td><td><code>{k.base}</code></td></tr>
+                  <tr><td>Water</td><td><code>{k.water}</code></td></tr>
+                  <tr><td>Road</td><td><code>{k.road}</code></td></tr>
+                  <tr><td>Label</td><td>{k.label}</td></tr>
+                  <tr><td>Marker</td><td>{k.marker}</td></tr>
+                  <tr><td>Hover</td><td>{k.hover}</td></tr>
+                  <tr><td>Raster paint</td><td><code>{JSON.stringify(k.rasterPaint)}</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ---- 05 Content nodes ----------------------------------------------------
+function S5_ContentNodes({ mode, setMode }) {
+  const demoNodes = [
+    { type: 'metaRow',   content: ['17:19', '28 OCT 2025', '8°C · SW', 'WATERLOO BR · DUSK'] },
+    { type: 'heroImage', assetId: 'demo', caption: 'WATERLOO BRIDGE, FACING EAST · 17:19' },
+    { type: 'paragraph', content: 'The river is the only thing in London that tells the time. Everything else lies — the sky, the lamps on the embankment, the hour on your phone — but the Thames knows exactly where the sun is.' },
+    { type: 'pullQuote', content: 'Six minutes of gold, then nothing.' },
+    { type: 'inlineImage', assetId: 'demo2', caption: 'The near railings catch last; the far side is gone first.', align: 'left' },
+    { type: 'mediaEmbed', taskId: 'demo', caption: 'img2vid · 3s pan' },
+  ];
+
+  const specs = [
+    ['paragraph', 'Body copy. text-wrap: pretty. 64ch (punk/fashion) / 56ch (cinema). Enter = new paragraph. "/" at the start of an empty line = slash menu.'],
+    ['heroImage', 'Full-width image; 16:9 (21:9 in cinema). One per stop max. Resize handles clamp to 16:9. Caption in JetBrains Mono uppercase. Enter after caption = new paragraph.'],
+    ['inlineImage','In-flow, 180px wide (240px in fashion). Left-aligned by default; toggle right. Caption field inline. Alt text stored but not shown. Enter = new paragraph.'],
+    ['pullQuote',  'Large styled quote. Centered italic in fashion; taped rotated block in punk; subtitle card in cinema. Multi-line allowed. Enter inside = soft break; Enter on empty line = new paragraph.'],
+    ['mediaEmbed', 'Finished img2vid clip (or img2img when needed as a post-effect). Bound to an immutable result_asset_id. Shows play overlay + task status tag. Click to play inline.'],
+    ['metaRow',    'Structured metadata chips (time, weather, postcode, etc). Comma-separated entries. Used for establishing shots. 10-11px mono, bordered top+bottom.'],
+  ];
+
+  return (
+    <section id="nodes">
+      <div className="section-hdr">
+        <div className="section-n">05 — Content node types</div>
+        <h2 className="section-h">Six nodes. Three grammars.</h2>
+        <p className="section-lede">
+          The editor uses TipTap / Lexical on the implementation side. Six node
+          types cover the whole writing surface — each renders differently per
+          mode, but the underlying document is mode-agnostic. The doc switches
+          mode by swapping render schemas, not by changing content.
+        </p>
+      </div>
+
+      <div className="frame-wrap">
+        <div className="tabs" style={{ marginBottom: 16 }}>
+          {['punk', 'fashion', 'cinema'].map(m => (
+            <button key={m} data-active={mode === m} onClick={() => setMode(m)}>{m}</button>
+          ))}
+        </div>
+
+        <div className="page" data-mode={mode} style={{ border: '1px solid var(--rule)', padding: 40, minHeight: 640 }}>
+          <div style={{ maxWidth: mode === 'cinema' ? 780 : 860 }}>
+            {demoNodes.map((n, i) => (
+              <ContentNode key={i} node={n} mode={mode} selected={i === 3} onSelect={() => {}} />
+            ))}
+          </div>
+        </div>
+        <FigCap n="5a" text={`All six node types rendered in ${mode}. Pull quote is selected (blue rail).`} />
+
+        <div className="overline-divider">Keyboard + spec</div>
+        <table className="token-table">
+          <thead><tr><th style={{width:140}}>Node</th><th>Spec</th></tr></thead>
+          <tbody>
+            {specs.map(([name, spec]) => (
+              <tr key={name}><td><code>{name}</code></td><td>{spec}</td></tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="overline-divider">Slash menu</div>
+        <p style={{ fontSize: 14, lineHeight: 1.6, maxWidth: '68ch' }}>
+          Pressing <kbd className="mono" style={{ border: '1px solid currentColor', padding: '0 4px' }}>/</kbd> on
+          an empty line opens an inline menu anchored 6px below the caret. Items are Paragraph, Hero image,
+          Inline image, Pull quote, Media embed, Meta row. Typing filters; Enter inserts. Esc dismisses.
+          On selection of an existing block, a block-level toolbar appears above it
+          (convert, move up/down, delete). Selection state writes <code>data-selected="true"</code> for styling.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+// ---- 06 Postcard editor --------------------------------------------------
+function S6_PostcardEditor({ mode, setMode, goTo }) {
+  return (
+    <section id="postcard">
+      <div className="section-hdr">
+        <div className="section-n">06 — Postcard editor</div>
+        <h2 className="section-h">Message and recipient, editable.</h2>
+        <p className="section-lede">
+          V1 postcards had hard-coded text. V2 makes the handwritten message and
+          the recipient block editable per stop. Both fields keep their physical
+          nature — the message still looks handwritten (Caveat), the recipient
+          still reads like a ruled address, not a form. Click either field to edit.
+        </p>
+      </div>
+
+      <div className="frame-wrap">
+        <div className="row items-center gap-16" style={{ marginBottom: 16 }}>
+          <div className="tabs">
+            {['punk', 'fashion', 'cinema'].map(m => (
+              <button key={m} data-active={mode === m} onClick={() => setMode(m)}>{m}</button>
+            ))}
+          </div>
+          <span style={{ flex: 1 }} />
+          <button className="btn" onClick={() => goTo('postcard')}>Open fullscreen →</button>
+        </div>
+
+        <div className="demo-embed">
+          <div className="demo-embed-chrome">
+            <span className="dot" /><span className="dot" /><span className="dot" />
+            <span style={{ marginLeft: 12 }}>/p/05/postcard — click the handwritten message or the address to edit</span>
+          </div>
+          <div className="demo-embed-body">
+            <PostcardEditor mode={mode} onMode={setMode} onClose={() => {}} />
+          </div>
+        </div>
+        <FigCap n="6a" text="Postcard editor. Back is flipped in by default; click the message or the address to enter edit state." />
+
+        <div className="overline-divider">Edit-state grammar per mode</div>
+        <div className="kit-grid">
+          <div className="kit-card">
+            <div className="eyebrow">PUNK</div>
+            <p style={{ marginTop: 10, fontSize: 13, lineHeight: 1.55 }}>
+              Active field gets a taped red-orange label above the field, rotated
+              -3°. Dashed outline is red-orange. The field's original rotation is
+              preserved while editing — you're writing on the postcard, not in a form.
+            </p>
+          </div>
+          <div className="kit-card">
+            <div className="eyebrow">FASHION</div>
+            <p style={{ marginTop: 10, fontSize: 13, lineHeight: 1.55 }}>
+              The field just underlines itself in oxblood. No label chip — the
+              eyebrow ("MESSAGE — handwritten") appears above. Whitespace around
+              the field is preserved. Most restrained transition.
+            </p>
+          </div>
+          <div className="kit-card">
+            <div className="eyebrow">CINEMA</div>
+            <p style={{ marginTop: 10, fontSize: 13, lineHeight: 1.55 }}>
+              A slate frame darkens behind the active field. Outline is subtitle-yellow
+              at 60% opacity. The field glow mirrors the atlas marker glow — same
+              visual language.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ---- 07 Publish slide-over -----------------------------------------------
+function S7_PublishSlideover({ mode, setMode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section id="publish">
+      <div className="section-hdr">
+        <div className="section-n">07 — Publish</div>
+        <h2 className="section-h">Contextual, not a screen.</h2>
+        <p className="section-lede">
+          Publish is the only write-action that touched its own page in V1. V2
+          makes it a slide-over: 60vw from the right edge, scrim-dismissable,
+          preserves all workspace state. Pre-flight checklist on the left; live
+          preview on the right.
+        </p>
+      </div>
+
+      <div className="frame-wrap">
+        <div className="row items-center gap-16" style={{ marginBottom: 16 }}>
+          <div className="tabs">
+            {['punk', 'fashion', 'cinema'].map(m => (
+              <button key={m} data-active={mode === m} onClick={() => setMode(m)}>{m}</button>
+            ))}
+          </div>
+          <span className="mono-sm" style={{ opacity: 0.6 }}>Click "Open publish" to slide the panel over a sample workspace</span>
+          <span style={{ flex: 1 }} />
+          <button className="btn btn-solid" onClick={() => setOpen(true)}>Open publish →</button>
+        </div>
+
+        <div className="demo-embed" style={{ position: 'relative' }}>
+          <div className="demo-embed-chrome">
+            <span className="dot" /><span className="dot" /><span className="dot" />
+            <span style={{ marginLeft: 12 }}>workspace · publish slide-over</span>
+          </div>
+          <div className="demo-embed-body tall" style={{ position: 'relative' }}>
+            <Workspace mode={mode} onMode={setMode} onOpenPublish={() => setOpen(true)} onExitToProjects={() => {}} />
+            {open && (
+              <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+                <PublishSlideover mode={mode} onClose={() => setOpen(false)} />
+              </div>
+            )}
+          </div>
+        </div>
+        <FigCap n="7a" text="Publish slide-over at 60vw. Pre-flight on the left, live preview + summary on the right." />
+      </div>
+    </section>
+  );
+}
+
+// ---- 08 Design system diff -----------------------------------------------
+function S8_SystemDiff() {
+  return (
+    <section id="diff">
+      <div className="section-hdr">
+        <div className="section-n">08 — Design system diff</div>
+        <h2 className="section-h">What stayed, what changed.</h2>
+        <p className="section-lede">
+          V2 is an IA and interaction redesign, not a visual reset. The V1 token
+          model, typography, mode grammars, and London signals are preserved. The
+          only additions are structural tokens for the new components.
+        </p>
+      </div>
+
+      <div className="frame-wrap">
+        <div className="ia-grid">
+          <div>
+            <div className="eyebrow">STAYED · from V1</div>
+            <table className="token-table">
+              <tbody>
+                <tr><td>Warm paper stack</td><td><code>--paper / --paper-2 / --paper-3</code></td></tr>
+                <tr><td>Warm ink stack</td><td><code>--ink / --ink-2 / --ink-3</code></td></tr>
+                <tr><td>Punk accent</td><td><code>oklch(0.62 0.24 25)</code> red-orange</td></tr>
+                <tr><td>Fashion accent</td><td><code>oklch(0.55 0.14 20)</code> oxblood</td></tr>
+                <tr><td>Cinema accent</td><td><code>oklch(0.88 0.14 90)</code> subtitle yellow</td></tr>
+                <tr><td>Cinema bg</td><td><code>oklch(0.12 0.015 250)</code></td></tr>
+                <tr><td>Display fonts</td><td>Archivo Black · Bodoni Moda italic · Instrument Serif</td></tr>
+                <tr><td>Body fonts</td><td>Archivo · JetBrains Mono (cinema)</td></tr>
+                <tr><td>Handwriting</td><td>Caveat</td></tr>
+                <tr><td>Mode dispatch</td><td><code>data-mode="…"</code> on page root, CSS var overrides</td></tr>
+                <tr><td>Roundel marker</td><td>Underground wayfinding primitive, unchanged</td></tr>
+                <tr><td>Striped placeholders</td><td><code>.img-ph</code> unchanged</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <div className="eyebrow">ADDED · in V2</div>
+            <table className="token-table">
+              <tbody>
+                <tr><td><code>--spine-w: 288px</code></td><td>Workspace spine width</td></tr>
+                <tr><td><code>--drawer-w: 340px</code></td><td>Drawers A/B width (collapsed → 0)</td></tr>
+                <tr><td><code>--topbar-h: 60px</code></td><td>Workspace top bar</td></tr>
+                <tr><td><code>--pip-size: 8px</code></td><td>Progress dot on spine</td></tr>
+                <tr><td><code>--edit-ring</code></td><td>Editable-state outline (per-mode variants exist)</td></tr>
+                <tr><td><code>--status-queued/running/done/failed</code></td><td>Media task pip colours</td></tr>
+                <tr><td><code>.spine, .canvas, .drawers</code></td><td>Workspace 3-pane primitives</td></tr>
+                <tr><td><code>.pip, .pip-group</code></td><td>Progress dots (4 per stop)</td></tr>
+                <tr><td><code>.slideover, .slideover-scrim</code></td><td>Publish panel</td></tr>
+                <tr><td><code>.editable[data-editing]</code></td><td>Postcard inline edit affordance</td></tr>
+                <tr><td><code>.node, .n-para, .n-hero, .n-inline, .n-pull, .n-embed, .n-meta</code></td><td>TipTap render classes</td></tr>
+                <tr><td><code>.slash, .slash-item</code></td><td>Editor slash-command menu</td></tr>
+                <tr><td><code>.task-card, .task-bar, .task-dot</code></td><td>Media queue drawer</td></tr>
+                <tr><td><code>.pool-grid, .pool-cell</code></td><td>Assets pool drawer</td></tr>
+                <tr><td><code>.mode-pill</code></td><td>Top-bar mode switcher (squared)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="overline-divider">Data shape · additions</div>
+        <table className="token-table">
+          <thead><tr><th style={{width: 220}}>Shape</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>stop.status</code></td>
+              <td>Derived per stop: <code>{'{ upload, hero, body, media: null | queued | running | done | failed }'}</code>. Feeds spine pips and publish pre-flight.</td>
+            </tr>
+            <tr>
+              <td><code>stop.postcard</code></td>
+              <td>Now includes <code>{'{ message: string, recipient: { name, line1, line2, country } }'}</code>. Persisted on each edit; versions continue to snapshot prior content.</td>
+            </tr>
+            <tr>
+              <td><code>stop.body</code></td>
+              <td>Array of content nodes (TipTap JSON-compatible). See <a href="#eng">§09</a> for the render spec.</td>
+            </tr>
+            <tr>
+              <td><code>project.visibility</code></td>
+              <td>Was implicit; now explicit in store and exposed in publish slide-over.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+// ---- 09 Engineering notes ------------------------------------------------
+function S9_EngNotes() {
+  const mlStyle = `// src/atlas/style-punk.ts
+export const PUNK_STYLE: StyleSpecification = {
+  version: 8,
+  sources: {
+    osm: { type: 'raster',
+      tiles: ['https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'],
+      tileSize: 256,
+      attribution: '© OpenStreetMap © CARTO' }
+  },
+  layers: [
+    { id: 'bg', type: 'background', paint: { 'background-color': '#f0ece0' } },
+    { id: 'osm', type: 'raster', source: 'osm', paint: {
+      'raster-saturation': -1,
+      'raster-contrast': 0.5,
+      'raster-brightness-min': 0.08,
+      'raster-brightness-max': 0.92
+    } }
+  ]
+};
+
+// Fashion + Cinema follow the same shape; see §04 Atlas for exact paint values.`;
+
+  const tipTap = `// src/editor/nodes.ts — TipTap node specs (Lexical equivalents symmetric)
+paragraph:     Node<{}>              // renders <p class="n-para">
+heroImage:     Node<{ assetId, caption }>          // <figure class="n-hero">
+inlineImage:   Node<{ assetId, caption, align }>   // <figure class="n-inline">
+pullQuote:     Node<{}>              // <blockquote class="n-pull">
+mediaEmbed:    Node<{ taskId, resultAssetId }>     // <div class="n-embed">
+metaRow:       Node<{ items: string[] }>           // <div class="n-meta">
+
+// Mode is a separate CSS concern: the TipTap schema is identical across
+// modes; [data-mode] on the page root swaps typography, colour, rhythm.`;
+
+  return (
+    <section id="eng">
+      <div className="section-hdr">
+        <div className="section-n">09 — Engineering handoff</div>
+        <h2 className="section-h">How to land V2 on top of V1.</h2>
+        <p className="section-lede">
+          No breaking changes to <code>store.jsx</code> or <code>MediaProvider</code>.
+          The workspace uses the same store mutations V1 already exposes —
+          <code>assignAssetToStop</code>, <code>setHero</code>, <code>upsertTask</code>.
+          The public project scroll uses the existing <code>STOP_COORDS</code> and
+          MapLibre loader. The items below are the additive pieces.
+        </p>
+      </div>
+
+      <div className="frame-wrap">
+        <div className="ia-grid">
+          <div>
+            <div className="eyebrow">New state slices</div>
+            <table className="token-table">
+              <tbody>
+                <tr><td><code>stop.body: Node[]</code></td><td>TipTap/Lexical doc per stop; persist as JSON in project store</td></tr>
+                <tr><td><code>stop.postcard.message: string</code></td><td>Handwritten text, persisted</td></tr>
+                <tr><td><code>stop.postcard.recipient: {'{name,line1,line2,country}'}</code></td><td>Address block, persisted</td></tr>
+                <tr><td><code>ui.drawerOpen: boolean</code></td><td>Workspace drawer state, localStorage-backed</td></tr>
+                <tr><td><code>ui.drawerTab: 'assets' | 'queue'</code></td><td>Workspace drawer tab</td></tr>
+                <tr><td><code>ui.publishOpen: boolean</code></td><td>Controls slide-over</td></tr>
+              </tbody>
+            </table>
+
+            <div className="overline-divider">New store actions</div>
+            <pre className="ia-diagram" style={{ fontSize: 11 }}>{`storeActions.setBody(stopId, nodes)
+storeActions.setPostcardMessage(stopId, message)
+storeActions.setRecipient(stopId, recipient)
+storeActions.setVisibility(visibility)
+storeActions.setDefaultMode(mode)
+storeActions.setSlug(slug)`}</pre>
+
+            <div className="overline-divider">MediaProvider</div>
+            <p style={{ fontSize: 13, lineHeight: 1.55 }}>
+              Unchanged. The queue drawer subscribes to <code>useMediaTasks()</code>.
+              A running task posts progress — we already paint that on the spine pip
+              via the same subscription (no second channel needed). Dropping a
+              completed result into the canvas inserts a <code>mediaEmbed</code> node
+              bound to <code>task.resultAssetId</code>.
+            </p>
+          </div>
+
+          <div>
+            <div className="eyebrow">MapLibre style skeleton (punk)</div>
+            <pre className="ia-diagram">{mlStyle}</pre>
+
+            <div className="overline-divider">TipTap node map</div>
+            <pre className="ia-diagram">{tipTap}</pre>
+
+            <div className="overline-divider">Component inventory delta</div>
+            <table className="token-table">
+              <tbody>
+                <tr><td style={{width:200}}><strong>New</strong></td><td></td></tr>
+                <tr><td><code>Workspace</code></td><td>Shell that renders Spine + Canvas + Drawers</td></tr>
+                <tr><td><code>Spine</code></td><td>Stop list + pips + progress footer</td></tr>
+                <tr><td><code>WSCanvas</code></td><td>Hero slot + asset strip + body editor + postcard tile</td></tr>
+                <tr><td><code>WSDrawers</code></td><td>Tabbed Assets pool / Media queue</td></tr>
+                <tr><td><code>ContentNode</code></td><td>Render any of 6 node types; reused in public + workspace</td></tr>
+                <tr><td><code>PublishSlideover</code></td><td>60vw slide-over; replaces <code>Publish</code> page</td></tr>
+                <tr><td><code>PostcardEditor</code></td><td>Replaces V1 <code>Postcard</code>; back is editable</td></tr>
+                <tr><td><code>Pips</code>, <code>ModePill</code></td><td>Shared primitives</td></tr>
+                <tr><td><strong>Retired</strong></td><td></td></tr>
+                <tr><td><code>StudioSidebar</code></td><td>Replaced by Spine. Remove after migration.</td></tr>
+                <tr><td><code>UploadMemories, OrganizeStops, StoryEditor, MediaPanel, Publish</code></td><td>Folded into Workspace. Logic moves; components delete.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ---- 10 Responsive -------------------------------------------------------
+function S10_Responsive() {
+  return (
+    <section id="resp">
+      <div className="section-hdr">
+        <div className="section-n">10 — Responsive</div>
+        <h2 className="section-h">Workspace is desktop-first. Public scales down.</h2>
+      </div>
+
+      <div className="frame-wrap">
+        <table className="token-table">
+          <thead>
+            <tr><th style={{width:160}}>Viewport</th><th>Workspace</th><th>Public project</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>≥ 1440</code></td>
+              <td>Design target. Spine 288 · canvas fluid · drawers 340 (both).</td>
+              <td>Full 2-column hero. Atlas + sidebar. Stop detail at 1180.</td>
+            </tr>
+            <tr>
+              <td><code>1280 – 1439</code></td>
+              <td>Drawers collapse to icon rail; one drawer open at a time. Spine stays.</td>
+              <td>Atlas full-width; stop list moves below map.</td>
+            </tr>
+            <tr>
+              <td><code>1024 – 1279</code></td>
+              <td>Right drawers become bottom sheets (swipe-up). Spine stays. Canvas gets full width.</td>
+              <td>Single-column public; hero image becomes a full-bleed band.</td>
+            </tr>
+            <tr>
+              <td><code>768 – 1023</code></td>
+              <td>Spine collapses into a horizontal swipe strip at the top of the canvas.
+                  Bottom sheets for drawers. Canvas full-width.</td>
+              <td>Mode pill stays in the top nav; atlas retains pan/zoom.</td>
+            </tr>
+            <tr>
+              <td><code>≤ 767</code></td>
+              <td>Studio is desktop-first. Mobile shows a "continue on desktop" page with
+                  link and a scannable QR to current stop.</td>
+              <td>Full public read. Atlas fits viewport height; letterbox clamps
+                  to 20px in cinema. Postcard 3D flip retained.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div className="overline-divider">Container queries</div>
+        <p style={{ fontSize: 14, lineHeight: 1.6, maxWidth: '68ch' }}>
+          The drawers respond to their own container width (not viewport) so they
+          can be docked at different sizes in different layouts. Canvas body uses
+          container queries too: when narrower than 640, <code>heroImage</code> shifts
+          from 16:9 to 3:2, and <code>inlineImage</code> left-aligned drops its text column below.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function Footer() {
+  return (
+    <section style={{ padding: '80px 40px 100px', borderBottom: 'none' }}>
+      <div className="frame-wrap" style={{ textAlign: 'center' }}>
+        <Roundel size="xl" />
+        <div style={{ fontFamily: 'var(--f-fashion)', fontStyle: 'italic', fontSize: 48, marginTop: 20, lineHeight: 1 }}>
+          Hand it back to Cowork.
+        </div>
+        <p style={{ marginTop: 20, fontSize: 15, lineHeight: 1.6, maxWidth: '58ch', margin: '20px auto 0', opacity: 0.75 }}>
+          The V2 prototype is embedded above; each section links to a fullscreen
+          version. No contract changes expected: store + MediaProvider carry V2
+          as-is. New state slices and component deltas are in §08 and §09.
+        </p>
+        <div className="mono-sm" style={{ marginTop: 36, opacity: 0.45, letterSpacing: '0.2em' }}>
+          LONDON CUTS · ED.02 · V2 HANDOFF · APR 2026
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ----- Mount -------------------------------------------------------------
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+</script>
+
+</body>
+</html>

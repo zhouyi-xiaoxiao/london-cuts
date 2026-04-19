@@ -1,0 +1,39 @@
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+.next/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local configs / secrets
+app/local-config.js
+.env
+.env.*
+!.env.example
+*.key
+
+# Editor / tooling
+.vscode/
+.idea/
+*.swp
+*.bak
+
+# Build artifacts
+dist/
+build/
+out/
+
+# OS / misc
+Thumbs.db
+.cwd-placeholder

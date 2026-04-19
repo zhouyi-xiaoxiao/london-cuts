@@ -1,0 +1,229 @@
+<\!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>London Cuts — MVP prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Black&family=Instrument+Serif:ital@0;1&family=Bodoni+Moda:ital,wght@0,400;0,500;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@400;700&display=swap" />
+<link rel="stylesheet" href="styles/base.css" />
+<style>
+  /* root app chrome — collapsible floating screen switcher.
+     Default: a small pill in the bottom-right (stays out of the content).
+     Click to expand into the full 5-screen bar + power-user menu for 01–12. Click outside or press Esc to collapse. */
+  .app-dock {
+    position: fixed; right: 16px; bottom: 16px; z-index: 100;
+    font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .app-dock-handle {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; background: oklch(0.12 0.008 60); color: oklch(0.96 0.005 60);
+    border-radius: 999px; box-shadow: 0 6px 24px rgba(0,0,0,0.22);
+    cursor: pointer; user-select: none;
+  }
+  .app-dock-handle:hover { filter: brightness(1.15); }
+  .app-dock-handle .dot { width: 6px; height: 6px; border-radius: 50%; background: oklch(0.75 0.14 80); box-shadow: 0 0 0 3px oklch(0.75 0.14 80 / 0.25); }
+  .app-toolbar {
+    display: none;
+    position: absolute; right: 0; bottom: calc(100% + 10px);
+    gap: 6px; padding: 6px;
+    background: oklch(0.12 0.008 60); color: oklch(0.96 0.005 60);
+    border-radius: 999px; box-shadow: 0 6px 24px rgba(0,0,0,0.22);
+    white-space: nowrap;
+  }
+  .app-dock[data-open="true"] .app-toolbar { display: flex; }
+  .app-dock[data-open="true"] .app-dock-handle { background: oklch(0.2 0.008 60); }
+  .app-toolbar button { padding: 6px 10px; border-radius: 999px; color: inherit; opacity: 0.7; }
+  .app-toolbar button:hover { opacity: 1; }
+  .app-toolbar button[data-active="true"] { background: oklch(0.96 0.005 60); color: oklch(0.12 0.008 60); opacity: 1; }
+  .app-toolbar .sep { width: 1px; background: oklch(0.96 0.005 60 / 0.2); margin: 2px 4px; }
+  
+  /* Power-user menu — nested under ellipsis button */
+  .app-power-user-menu {
+    display: none;
+    position: absolute; right: 0; bottom: calc(100% + 10px);
+    flex-direction: column; gap: 2px; padding: 4px;
+    background: oklch(0.12 0.008 60); color: oklch(0.96 0.005 60);
+    border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,0.22);
+    white-space: nowrap; max-height: 400px; overflow-y: auto;
+  }
+  .app-dock[data-power-user="true"] .app-power-user-menu { display: flex; }
+  .app-power-user-menu button { padding: 6px 10px; border-radius: 4px; color: inherit; opacity: 0.7; text-align: left; }
+  .app-power-user-menu button:hover { opacity: 1; background: oklch(0.2 0.008 60); }
+  .app-power-user-menu button[data-active="true"] { background: oklch(0.96 0.005 60); color: oklch(0.12 0.008 60); opacity: 1; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="src/data.jsx"></script>
+<script type="text/babel" src="src/store.jsx"></script>
+<script type="text/babel" src="src/media-provider.jsx"></script>
+<script type="text/babel" src="src/postcard-export.jsx"></script>
+<script type="text/babel" src="src/shared.jsx"></script>
+<script type="text/babel" src="src/public-landing.jsx"></script>
+<script type="text/babel" src="src/public-project.jsx"></script>
+<script type="text/babel" src="src/public-atlas.jsx"></script>
+<script type="text/babel" src="src/public-stop.jsx"></script>
+<script type="text/babel" src="src/public-postcard.jsx"></script>
+<script type="text/babel" src="src/studio-dashboard.jsx"></script>
+<script type="text/babel" src="src/studio-organize.jsx"></script>
+<script type="text/babel" src="src/studio-editor.jsx"></script>
+<script type="text/babel" src="src/workspace.jsx"></script>
+
+<script type="text/babel">
+// ————————————————————————————————————————————————————
+// V2 Router: 5-screen IA
+// ————————————————————————————————————————————————————
+
+const SCREENS_V2 = [
+  { id: 'landing',  label: 'Landing',     Comp: Landing,        surface: 'public' },
+  { id: 'public',   label: 'Public',      Comp: PublicProject,  surface: 'public' },
+  { id: 'postcard', label: 'Postcard',    Comp: Postcard,       surface: 'public' },
+  { id: 'projects', label: 'Projects',    Comp: StudioDashboard, surface: 'studio' },
+  { id: 'workspace', label: 'Workspace',  Comp: Workspace,      surface: 'studio' },
+];
+
+// Legacy screens for power-user menu (01–12)
+const SCREENS_LEGACY = [
+  { id: 'landing',         label: '01 · Landing',      Comp: Landing,         surface: 'public' },
+  { id: 'public-project',  label: '02 · Public project', Comp: PublicProject, surface: 'public' },
+  { id: 'atlas',           label: '03 · Atlas',        Comp: Atlas,           surface: 'public' },
+  { id: 'stop',            label: '04 · Stop',         Comp: Stop,            surface: 'public' },
+  { id: 'postcard',        label: '05 · Postcard',     Comp: Postcard,        surface: 'public' },
+  { id: 'studio',          label: '06 · Studio dashboard', Comp: StudioDashboard, surface: 'studio' },
+  { id: 'create',          label: '07 · Create project', Comp: CreateProject, surface: 'studio' },
+  { id: 'upload',          label: '08 · Upload memories', Comp: UploadMemories, surface: 'studio' },
+  { id: 'organize',        label: '09 · Organize stops', Comp: OrganizeStops, surface: 'studio' },
+  { id: 'editor',          label: '10 · Story editor', Comp: StoryEditor,     surface: 'studio' },
+  { id: 'media',           label: '11 · Media panel',  Comp: MediaPanel,      surface: 'studio' },
+  { id: 'publish',         label: '12 · Publish',      Comp: Publish,         surface: 'studio' },
+];
+
+// Hash-route aliasing for V1 → V2 migration
+function mapLegacyHash(hash) {
+  // Handle old hashes and redirect to new ones
+  if (hash === 'public-project') return 'public';
+  if (hash === 'upload' || hash === 'organize' || hash === 'editor' || hash === 'media' || hash === 'publish') return 'workspace';
+  if (hash === 'studio' || hash === 'create') return 'projects';
+  if (hash === 'atlas' || hash === 'stop') return 'public'; // Keep in public surface for now
+  return hash;
+}
+
+function App() {
+  const [screen, setScreen] = React.useState(() => {
+    let h = location.hash.replace('#', '');
+    // Support V2 routes and legacy routes
+    h = mapLegacyHash(h);
+    return SCREENS_V2.find(s => s.id === h)?.id || 'landing';
+  });
+  const [mode, setMode] = React.useState(() => localStorage.getItem('lc_mode') || 'fashion');
+  const [dockOpen, setDockOpen] = React.useState(false);
+  const [powerUserOpen, setPowerUserOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    location.hash = screen;
+    localStorage.setItem('lc_screen', screen);
+  }, [screen]);
+  React.useEffect(() => { localStorage.setItem('lc_mode', mode); }, [mode]);
+
+  // Close on Esc + on click outside the dock
+  React.useEffect(() => {
+    if (\!dockOpen && \!powerUserOpen) return;
+    const onKey = (e) => { if (e.key === 'Escape') { setDockOpen(false); setPowerUserOpen(false); } };
+    const onClick = (e) => {
+      if (\!e.target.closest || \!e.target.closest('.app-dock')) {
+        setDockOpen(false);
+        setPowerUserOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('mousedown', onClick);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('mousedown', onClick);
+    };
+  }, [dockOpen, powerUserOpen]);
+
+  const cur = SCREENS_V2.find(s => s.id === screen);
+  const Comp = cur?.Comp || Landing;
+  const pick = (id) => { setScreen(id); setDockOpen(false); setPowerUserOpen(false); };
+  const pickLegacy = (id) => {
+    // Map legacy ID back to V2 if needed, or render directly
+    const mapped = mapLegacyHash(id);
+    setScreen(mapped);
+    setDockOpen(false);
+    setPowerUserOpen(false);
+  };
+
+  return (
+    <div data-screen-label={cur?.label}>
+      <Comp mode={mode} onMode={setMode} onNav={setScreen} />
+
+      <div className="app-dock" data-open={dockOpen} data-power-user={powerUserOpen}>
+        {/* Main V2 toolbar (5 screens) */}
+        <div className="app-toolbar">
+          {SCREENS_V2.map(s => (
+            <button key={s.id} data-active={screen === s.id} onClick={() => pick(s.id)} title={s.label}>
+              {s.label}
+            </button>
+          ))}
+          <span className="sep" />
+          {/* Power-user menu button */}
+          <button
+            title={powerUserOpen ? 'Close debug menu (Esc)' : 'Open legacy 01–12 screens'}
+            onClick={() => setPowerUserOpen(\!powerUserOpen)}
+          >
+            ⋯
+          </button>
+          <span className="sep" />
+          <button
+            title="Reset persistent store (clears uploads, tasks, postcard versions)"
+            onClick={() => {
+              if (confirm('Reset demo store? This clears uploaded assets, media tasks, and postcard versions.')) {
+                lcResetStore();
+                location.reload();
+              }
+            }}
+          >
+            Reset
+          </button>
+        </div>
+
+        {/* Power-user menu: legacy 01–12 screens */}
+        <div className="app-power-user-menu">
+          {SCREENS_LEGACY.map(s => (
+            <button
+              key={s.id}
+              data-active={screen === s.id}
+              onClick={() => pickLegacy(s.id)}
+              title={s.label}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        <div
+          className="app-dock-handle"
+          title={dockOpen ? 'Close (Esc)' : 'Open screen switcher'}
+          onClick={() => { setDockOpen(o => \!o); setPowerUserOpen(false); }}
+        >
+          <span className="dot" />
+          <span>{cur?.label || 'Screens'}</span>
+          <span style={{ opacity: 0.5, marginLeft: 2 }}>{dockOpen ? '×' : '⌃'}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

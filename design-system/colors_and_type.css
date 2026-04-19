@@ -1,0 +1,207 @@
+/* =========================================================================
+   LONDON CUTS — colors_and_type.css
+   Extracted from the v3 codebase (styles/base.css + v2.css).
+   Drop-in stylesheet: exposes the full design-token layer + semantic
+   typography defaults. Consumers select a mode via `data-mode` on <html> or
+   any container: "fashion" (default), "cinema", or "punk".
+   =========================================================================
+*/
+
+/* Google Fonts — Archivo / Archivo Black / Instrument Serif / Bodoni Moda /
+   JetBrains Mono / Caveat. */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Archivo+Black&family=Instrument+Serif:ital@0;1&family=Bodoni+Moda:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@400;500;600&display=swap');
+
+:root {
+  /* ---------- NEUTRALS — warm paper ---------- */
+  --paper:    oklch(0.985 0.004 60);   /* #fbf9f6 — main page bg              */
+  --paper-2:  oklch(0.96  0.005 60);   /* raised bg / token card              */
+  --paper-3:  oklch(0.92  0.006 60);   /* inset / striped placeholder base    */
+  --ink:      oklch(0.14  0.008 60);   /* body text, primary ink              */
+  --ink-2:    oklch(0.32  0.008 60);   /* secondary text                      */
+  --ink-3:    oklch(0.55  0.008 60);   /* muted / captions                    */
+  --rule:     oklch(0.88  0.006 60);   /* hairline borders                    */
+
+  /* ---------- BRAND ACCENT (mode-agnostic fallback) ---------- */
+  --accent:   oklch(0.55  0.14  20);   /* oxblood / Underground red           */
+
+  /* ---------- STATUS (media tasks) ---------- */
+  --status-queued:  oklch(0.70 0.04 60);    /* warm grey                     */
+  --status-running: oklch(0.72 0.17 90);    /* tungsten amber                */
+  --status-done:    oklch(0.62 0.14 150);   /* pub-sign green                */
+  --status-failed:  oklch(0.58 0.22 25);    /* signal red                    */
+
+  /* ---------- EDIT-MODE RING (per mode) ---------- */
+  --edit-ring:         oklch(0.62 0.18 230);   /* dim blue pencil            */
+  --edit-ring-punk:    oklch(0.62 0.24  25);
+  --edit-ring-fashion: oklch(0.55 0.14  20);
+  --edit-ring-cinema:  oklch(0.88 0.14  90);
+
+  /* ---------- TYPE FAMILIES ---------- */
+  --f-display: 'Archivo Black', 'Archivo', system-ui, sans-serif;   /* punk display */
+  --f-serif:   'Instrument Serif', 'Times New Roman', serif;         /* editorial */
+  --f-fashion: 'Bodoni Moda', 'Didot', 'Bodoni 72', serif;           /* fashion display */
+  --f-sans:    'Archivo', system-ui, -apple-system, sans-serif;      /* default body */
+  --f-mono:    'JetBrains Mono', 'SF Mono', ui-monospace, monospace; /* meta, eyebrows, chips */
+  --f-hand:    'Caveat', cursive;                                    /* postcard handwriting */
+
+  /* ---------- TYPE SCALE ---------- */
+  --fs-eyebrow: 10px;       --ls-eyebrow: 0.18em;
+  --fs-mono:    11px;       --ls-mono:    0.08em;
+  --fs-mono-sm:  10px;      --ls-mono-sm: 0.08em;
+  --fs-body:    15px;       --lh-body:    1.5;
+  --fs-para:    17px;       --lh-para:    1.6;
+  --fs-h3:      28px;
+  --fs-h2:      56px;
+  --fs-h1:      72px;       /* canvas title baseline */
+  --fs-hero:   116px;       /* public hero */
+
+  /* ---------- GRID / SPACING ---------- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;  /* default gutter */
+  --space-8: 32px;
+  --space-10: 40px; /* default edge */
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+  --gutter:   24px;
+  --edge:     40px;
+
+  /* ---------- STRUCTURE (workspace shell) ---------- */
+  --spine-w:  288px;
+  --drawer-w: 340px;
+  --topbar-h:  60px;
+  --pip-size:   8px;
+
+  /* ---------- MODE TOKENS — overridden per [data-mode] ---------- */
+  --mode-bg:           var(--paper);
+  --mode-ink:          var(--ink);
+  --mode-accent:       var(--accent);
+  --mode-display-font: var(--f-serif);
+  --mode-body-font:    var(--f-sans);
+}
+
+/* =========================================================================
+   MODE GRAMMARS — change typography, palette, tonal temperature
+   ========================================================================= */
+
+/* FASHION — editorial, whitespace, bold crop, elegant serif */
+[data-mode="fashion"] {
+  --mode-bg:           oklch(0.98 0.008 75);
+  --mode-ink:          oklch(0.16 0.01  40);
+  --mode-accent:       oklch(0.45 0.12  25);   /* deeper oxblood */
+  --mode-display-font: var(--f-fashion);
+  --mode-body-font:    var(--f-sans);
+}
+
+/* PUNK — zine, collage, raw, asymmetric, black on white with red */
+[data-mode="punk"] {
+  --mode-bg:           oklch(0.97 0 0);
+  --mode-ink:          oklch(0.08 0 0);
+  --mode-accent:       oklch(0.62 0.24 25);    /* electric red */
+  --mode-display-font: var(--f-display);
+  --mode-body-font:    var(--f-sans);
+}
+
+/* CINEMA — scene card, subtitle, moody, dark */
+[data-mode="cinema"] {
+  --mode-bg:           oklch(0.12 0.015 250);
+  --mode-ink:          oklch(0.92 0.01   80);
+  --mode-accent:       oklch(0.88 0.14   90);  /* subtitle yellow */
+  --mode-display-font: var(--f-serif);
+  --mode-body-font:    var(--f-mono);
+}
+
+/* =========================================================================
+   SEMANTIC TYPOGRAPHY DEFAULTS
+   Use these class-free whenever possible; HTML stays clean.
+   ========================================================================= */
+
+html, body {
+  background: var(--mode-bg, var(--paper));
+  color: var(--mode-ink, var(--ink));
+  font-family: var(--mode-body-font, var(--f-sans));
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1 {
+  font-family: var(--mode-display-font, var(--f-serif));
+  font-size: var(--fs-h1);
+  line-height: 0.96;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+[data-mode="fashion"] h1 { font-style: italic; }
+[data-mode="punk"]    h1 { text-transform: uppercase; line-height: 0.88; }
+
+h2 {
+  font-family: var(--mode-display-font, var(--f-serif));
+  font-size: var(--fs-h2);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+}
+
+h3 {
+  font-family: var(--mode-display-font, var(--f-serif));
+  font-size: var(--fs-h3);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+p {
+  font-size: var(--fs-para);
+  line-height: var(--lh-para);
+  max-width: 64ch;
+  text-wrap: pretty;
+}
+
+code, kbd, pre, samp { font-family: var(--f-mono); font-size: 12px; }
+
+blockquote {
+  margin: 28px 0;
+  padding-left: 20px;
+  border-left: 3px solid var(--mode-accent);
+  font-family: var(--mode-display-font);
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+hr { height: 1px; background: currentColor; opacity: 0.15; border: 0; }
+
+/* ---- Semantic token classes ---- */
+.eyebrow {
+  font-family: var(--f-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.mono {
+  font-family: var(--f-mono);
+  font-size: var(--fs-mono);
+  letter-spacing: var(--ls-mono);
+  text-transform: uppercase;
+}
+.mono-sm {
+  font-family: var(--f-mono);
+  font-size: var(--fs-mono-sm);
+  letter-spacing: var(--ls-mono-sm);
+  text-transform: uppercase;
+}
+.hand {
+  font-family: var(--f-hand);
+  font-size: 22px;
+  line-height: 1.3;
+}
+.caption {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}

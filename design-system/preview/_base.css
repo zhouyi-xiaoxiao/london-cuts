@@ -1,0 +1,47 @@
+@import url('../colors_and_type.css');
+
+html, body {
+  margin: 0; padding: 0;
+  width: 700px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-sans);
+  overflow: hidden;
+}
+.card {
+  padding: 24px 28px;
+  box-sizing: border-box;
+  width: 700px;
+}
+.card * { box-sizing: border-box; }
+.row { display: flex; gap: 12px; align-items: center; }
+.col { display: flex; flex-direction: column; gap: 10px; }
+.swatch {
+  display: flex; flex-direction: column; gap: 6px;
+  flex: 1;
+}
+.swatch .chip {
+  height: 72px;
+  border: 1px solid var(--rule);
+}
+.swatch .lbl {
+  font-family: var(--f-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.swatch .val {
+  font-family: var(--f-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+.eyebrow {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.rule { height: 1px; background: var(--rule); width: 100%; }

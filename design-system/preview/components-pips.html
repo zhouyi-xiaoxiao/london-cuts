@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css"><style>
+.pip{width:8px;height:8px;border-radius:50%;border:1px solid var(--ink);background:transparent;display:inline-block}
+.pip[data-done="true"]{background:var(--ink);border-color:var(--ink)}
+.pip[data-running="true"]{background:oklch(0.72 0.17 90);border-color:oklch(0.72 0.17 90)}
+.pip-group{display:inline-flex;gap:3px;align-items:center}
+</style></head>
+<body><div class="card">
+<div class="col" style="gap:10px">
+<div class="row" style="gap:12px"><span class="pip-group"><span class="pip" data-done="true"></span><span class="pip" data-done="true"></span><span class="pip" data-done="true"></span><span class="pip" data-done="true"></span></span><span class="eyebrow" style="opacity:.7">ALL DONE · UPLOAD / HERO / BODY / MEDIA</span></div>
+<div class="row" style="gap:12px"><span class="pip-group"><span class="pip" data-done="true"></span><span class="pip" data-done="true"></span><span class="pip"></span><span class="pip" data-running="true"></span></span><span class="eyebrow" style="opacity:.7">IN PROGRESS · BODY MISSING · MEDIA RUNNING</span></div>
+<div class="row" style="gap:12px"><span class="pip-group"><span class="pip" data-done="true"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></span><span class="eyebrow" style="opacity:.7">JUST UPLOADED</span></div>
+<div class="row" style="gap:12px"><span class="pip-group"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></span><span class="eyebrow" style="opacity:.7">EMPTY STOP</span></div>
+</div>
+</div></body></html>

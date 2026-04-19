@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>London Cuts — V2 Handoff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Black&family=Instrument+Serif:ital@0;1&family=Bodoni+Moda:ital,wght@0,400;0,500;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@400;700&display=swap" />
+<link rel="stylesheet" href="styles/base.css" />
+<link rel="stylesheet" href="styles/v2.css" />
+<style>
+  /* doc chrome specific to the handoff page */
+  .doc-top {
+    position: sticky; top: 0; z-index: 90;
+    background: var(--paper); border-bottom: 1px solid var(--rule);
+  }
+  .doc-top .row { max-width: 1680px; margin: 0 auto; padding: 14px 40px; }
+  .doc-tabs { display: inline-flex; border: 1px solid var(--ink); }
+  .doc-tabs button {
+    padding: 8px 14px; font-family: var(--f-mono); font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase; min-width: 92px;
+  }
+  .doc-tabs button[data-active="true"] { background: var(--ink); color: var(--paper); }
+  .demo-embed {
+    border: 1px solid var(--rule);
+    background: var(--paper-2);
+    overflow: hidden;
+    position: relative;
+  }
+  .demo-embed-chrome {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
+    font-family: var(--f-mono); font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    opacity: 0.75;
+  }
+  .demo-embed-chrome .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--paper-3); }
+  .demo-embed-body { height: 780px; overflow: auto; resize: vertical; }
+  .demo-embed-body.tall { height: 920px; }
+  .demo-embed-body.short { height: 640px; }
+
+  .handoff-hero {
+    padding: 120px 40px 100px;
+    border-bottom: 1px solid var(--rule);
+    background:
+      radial-gradient(circle at 15% 110%, oklch(0.92 0.04 60) 0, transparent 55%),
+      var(--paper);
+  }
+  .handoff-hero h1 {
+    font-family: var(--f-fashion);
+    font-style: italic;
+    font-size: clamp(64px, 9vw, 148px);
+    line-height: 0.88; letter-spacing: -0.025em;
+    max-width: 14ch; text-wrap: balance;
+  }
+  .handoff-hero .kicker {
+    font-family: var(--f-mono); font-size: 11px;
+    letter-spacing: 0.24em; text-transform: uppercase; opacity: 0.6;
+    margin-bottom: 24px;
+  }
+  .handoff-hero .summary {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+    margin-top: 56px;
+  }
+  .summary-card {
+    border-top: 1px solid var(--ink);
+    padding-top: 14px;
+  }
+  .summary-card .n {
+    font-family: var(--f-fashion); font-style: italic;
+    font-size: 46px; line-height: 1;
+  }
+  .summary-card .l {
+    font-family: var(--f-mono); font-size: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    margin-top: 8px; opacity: 0.7;
+  }
+  .toc {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    margin-top: 40px;
+  }
+  .toc a {
+    padding: 10px 14px;
+    border: 1px solid var(--rule);
+    font-family: var(--f-mono); font-size: 11px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .toc a:hover { background: var(--ink); color: var(--paper); }
+  .ia-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+
+  .mode-swatch {
+    display: grid; grid-template-columns: 8fr 14fr; gap: 20px;
+    padding: 24px; border: 1px solid var(--rule); background: var(--paper);
+  }
+  .mode-swatch[data-m="punk"]    { background: #f7f4ec; color: #0a0a0a; }
+  .mode-swatch[data-m="fashion"] { background: #faf5eb; color: #2a1810; }
+  .mode-swatch[data-m="cinema"]  { background: #050a18; color: #e8ddb3; }
+  .mode-swatch .swatch-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .mode-swatch .sq { height: 40px; border: 1px solid currentColor; }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<!-- React 18 + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- V2 modules -->
+<script type="text/babel" src="src/data.jsx"></script>
+<script type="text/babel" src="src/shared.jsx"></script>
+<script type="text/babel" src="src/workspace.jsx"></script>
+<script type="text/babel" src="src/publish.jsx"></script>
+<script type="text/babel" src="src/postcard-editor.jsx"></script>
+<script type="text/babel" src="src/public-project.jsx"></script>
+<script type="text/babel" src="src/projects-list.jsx"></script>
+<script type="text/babel" src="src/handoff-doc.jsx"></script>
+
+</body>
+</html>
