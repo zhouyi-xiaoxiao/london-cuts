@@ -2,17 +2,13 @@
 
 ## 2026-04-19 — exposed OpenAI API key
 
-An OpenAI API key was previously hardcoded in `app/index.html` (was `london-cuts-v3/index.html` before reorg):
+An OpenAI API key was previously hardcoded in `app/index.html` (was `london-cuts-v3/index.html` before reorg).
 
-```
-window.__LC_OPENAI_KEY_DEFAULT = 'sk-proj-lIT65sbYupun1Htg…RdVQA';
-```
-
-That key was removed during the 2026-04-19 reorg and replaced with a loader that pulls from a gitignored `app/local-config.js`. The key string above is preserved in this file for reference only — **it should be considered compromised**.
+That key was removed during the 2026-04-19 reorg and replaced with a loader that pulls from a gitignored `app/local-config.js`. The previously exposed key has been redacted from the repo and should be treated as compromised.
 
 ### Action required
 
-Go to https://platform.openai.com/api-keys and **revoke the key** starting with `sk-proj-lIT65s…`. Create a new key and put it in `app/local-config.js` (copy from `app/local-config.example.js`).
+Go to https://platform.openai.com/api-keys and **revoke the previously exposed key**. Create a new key and put it in `app/local-config.js` (copy from `app/local-config.example.js`).
 
 ### Prevention
 

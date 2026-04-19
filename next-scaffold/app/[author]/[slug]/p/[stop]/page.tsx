@@ -1,4 +1,11 @@
 import { PostcardPage } from "@/components/public-pages";
+import { getPublicStopParams } from "@/lib/static-params";
+
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return getPublicStopParams();
+}
 
 export default async function Page({
   params,
