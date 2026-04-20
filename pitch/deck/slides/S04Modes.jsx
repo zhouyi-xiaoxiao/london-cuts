@@ -17,8 +17,8 @@ function S04Modes() {
           <span className="roundel" />
           <span className="mono" style={{ fontSize: 15 }}>04 · THREE MODES</span>
         </div>
-        <div className="fashion" style={{ fontSize: 36, fontStyle: 'italic' }}>Same walk. Three grammars.</div>
-        <div className="mono" style={{ fontSize: 14, opacity: 0.55 }}>04 / 07</div>
+        <div className="fashion" style={{ fontSize: 36, fontStyle: 'italic' }}>Same trip. Three Londons.</div>
+        <div className="mono" style={{ fontSize: 14, opacity: 0.55 }}>04 / 06</div>
       </div>
 
       <div style={{ position: 'absolute', top: 100, left: 0, right: 0, bottom: 0, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr' }}>

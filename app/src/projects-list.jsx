@@ -50,7 +50,7 @@ function ProjectsList({ onSelectProject }) {
           <span className="mono-sm" style={{ opacity: 0.5 }}>{project.author}</span>
         </div>
         <div className="row items-center gap-16">
-          <button className="btn btn-sm btn-solid" title="Load the 13 London Memories photos + auto-populate all 12 stops"
+          <button className="btn btn-sm btn-solid" title="Load the 13 London Memories photos + auto-populate all 13 stops"
                   onClick={() => { if (window.loadLondonMemoryDemo) { window.loadLondonMemoryDemo(); setTimeout(() => location.hash = '#workspace', 100); } }}>
             📷 Load London Memories demo
           </button>

@@ -6,7 +6,7 @@
 // up version of it. Each prompt pushes toward a distinct visual language so the
 // user can pick a postcard that reads as illustration / poster / print rather
 // than "same photo with a filter". Curated to 6 so pre-generation per project
-// is ~12 stops × 6 styles × $0.02 = ~$1.44 (palatable).
+// is ~13 stops × 6 styles × $0.02 = ~$1.56 (palatable).
 const POSTCARD_STYLES = [
   { id: 'illustration', label: 'Watercolour illustration', emoji: '🎨', prompt: 'Reimagine this scene as a hand-painted watercolour illustration for a travel postcard. Use loose brush strokes, wet-on-wet washes, visible paper grain, muted sky tones, soft pigment bleeds. Simplify detail — this should feel like an illustration INSPIRED by the photo, not a filter on it. Keep the overall composition and landmarks but rework textures and forms as painted marks.' },
   { id: 'poster',       label: 'Vintage travel poster',    emoji: '🗺️', prompt: 'Reinterpret this scene as a mid-century vintage travel poster (think 1950s Shell / airline posters). Flat gouache-style colour blocks, bold geometric shapes, 3-5 colour limited palette, visible screenprint grain, stylised skies. Simplify faces and crowds into silhouettes. Keep the landmark shape recognisable but heavily stylise everything else.' },
@@ -26,6 +26,7 @@ function PostcardEditor({ stopId = '05' }) {
   const [editing, setEditing] = React.useState(null);
   const [artGenerating, setArtGenerating] = React.useState(null); // style id being generated
   const [artError, setArtError] = React.useState(null);
+  const [showKeyModal, setShowKeyModal] = React.useState(false);
 
   if (!stop) {
     return (
@@ -43,7 +44,11 @@ function PostcardEditor({ stopId = '05' }) {
   const artAssetId = postcard.artAssetId;
   const artUrl = artAssetId ? (assets.find(a => a.id === artAssetId)?.imageUrl || null) : null;
   const frontUrl = artUrl || heroUrl;
-  const orientation = useImageOrientation(frontUrl);
+  // Auto-detect from the image, but let the user force an orientation via the
+  // toolbar. Override lives on stop.postcard.orientationOverride (null = auto).
+  const autoOrientation = useImageOrientation(frontUrl);
+  const orientationOverride = postcard.orientationOverride || null;
+  const orientation = orientationOverride || autoOrientation;
   const isPortrait = orientation === 'portrait';
   const cardAspect = isPortrait ? '5/7' : '7/5';
   const cardMaxWidth = isPortrait ? 480 : 720;
@@ -115,7 +120,16 @@ function PostcardEditor({ stopId = '05' }) {
       })();
       if (resolved) storeActions.setPostcardArt(stopId, resolved);
     } catch (err) {
-      setArtError(err?.message || 'Generation failed');
+      const msg = err?.message || 'Generation failed';
+      // NO_KEY in the deployed showcase → drop the demo-mode modal instead of a
+      // cryptic error banner. In local dev with an embedded key this path is
+      // unreachable; the modal copy still adapts (see KeyPasteModal).
+      if (msg === 'NO_KEY' || msg.includes('NO_KEY')) {
+        setShowKeyModal(true);
+        setArtError(null);
+      } else {
+        setArtError(msg);
+      }
     } finally {
       setArtGenerating(null);
     }
@@ -132,6 +146,19 @@ function PostcardEditor({ stopId = '05' }) {
         </div>
         <div className="row items-center gap-16">
           <ModePill mode={mode} onMode={onMode} />
+          <button
+            className="btn"
+            title={orientationOverride
+              ? `Postcard set to ${orientation}. Click to switch.`
+              : `Auto-detected ${orientation}. Click to force the opposite.`}
+            onClick={() => {
+              const target = isPortrait ? 'landscape' : 'portrait';
+              // Clear the override when it would just mirror auto-detect.
+              storeActions.setPostcardOrientation(stopId, target === autoOrientation ? null : target);
+            }}
+          >
+            {isPortrait ? '▯ → ▭ Landscape' : '▭ → ▯ Portrait'}
+          </button>
           <button className="btn" onClick={() => setFlipped(f => !f)}>Flip ↻</button>
           <button className="btn btn-solid" onClick={onClose}>Done →</button>
         </div>
@@ -251,6 +278,9 @@ function PostcardEditor({ stopId = '05' }) {
           </div>
         </div>
       </div>
+      {showKeyModal && window.KeyPasteModal && (
+        <KeyPasteModal onClose={() => setShowKeyModal(false)} onUseDefault={() => setShowKeyModal(false)} />
+      )}
     </div>
   );
 }

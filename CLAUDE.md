@@ -1,60 +1,94 @@
-# CLAUDE.md — agent instructions for this repo
+# CLAUDE.md — agent instructions
 
-You're working in the London Cuts repo. Before doing anything substantial, read `README.md` and `INDEX.md`.
+You're working in the London Cuts repo. Before any substantial change, read:
 
-## Mission (short)
+1. `docs/requirements.md` — what we're building (frozen for M0–M6)
+2. `docs/architecture.md` — how it's structured
+3. `docs/data-model.md` — DB schema
+4. `docs/implementation-plan.md` — milestone roadmap
+5. `tasks/AGENTS.md` — the execution protocol (how to claim and finish tasks)
+6. `tasks/STATE.md` — current status of every task
 
-Build the product shell for London Cuts: a public story website, story atlas, creator studio, upload/organize/edit flow, mode switching (Punk / Fashion / Cinema), postcard generation, and a media-provider adapter with a mock implementation. **Do not implement real image-to-image or image-to-video generation** — that's owned by a teammate; keep it behind the provider adapter.
+## Mission
 
-Longer version in `docs/brief-mission.md`.
+Ship a public-beta invite-only web app where users document a single-location trip (anywhere in the world) with photos, written stories, and AI-generated postcards, and publish the result as a shareable page. See `docs/requirements.md` for the full scope.
 
-## Two engineering tracks — pick one per change
+Working name: "London Cuts" (placeholder; product will be renamed before public launch).
 
-- `app/` — HTML + React-UMD + Babel-standalone prototype. Fast to iterate, runs from a static server, used for live demos. This is what `london-cuts-v3.html` was built from.
-- `next-scaffold/` — Next.js 14 app-router + TypeScript + pnpm. Production-shape, not yet at feature parity with `app/`.
+## Single codebase
 
-When in doubt, ask the user which track they want a change in. Don't mirror features across both without explicit direction.
+All product code lives in `web/` (after M0-T001 completes — until then it's still `next-scaffold/`). Next.js 14 + TypeScript + pnpm, Node 22+.
+
+The HTML-era prototype in `archive/app-html-prototype-2026-04-20/` (also after M0-T002 completes) is **frozen**. Read for reference only; do not edit.
+
+## Task workflow
+
+1. Read `tasks/STATE.md` to see what's TODO / IN_PROGRESS / BLOCKED.
+2. Pick a task whose `blocked_by` is all DONE.
+3. Follow `tasks/AGENTS.md` — claim → do → verify → log.
+4. Parallel sessions are encouraged on `parallel_safe: true` tasks with non-overlapping `touches`.
+
+## Seam discipline
+
+Business code imports only from `web/lib/`:
+- `web/lib/storage.ts` (all DB reads/writes)
+- `web/lib/auth.ts` (current user)
+- `web/lib/ai-provider.ts` (OpenAI)
+- `web/lib/email.ts` (Resend)
+- `web/lib/analytics.ts` (PostHog)
+- `web/lib/env.ts` (env vars)
+- `web/lib/errors.ts` (typed errors)
+
+Never `import { createClient } from '@supabase/supabase-js'` outside `web/lib/`. Never `import OpenAI` outside `web/lib/ai-provider.ts`. Swapping providers should touch exactly one file.
 
 ## Design system is canonical
 
-`design-system/` holds the authoritative tokens, component specs, and seed imagery.
+`design-system/` holds authoritative tokens, component specs, seed imagery. Pull colors, spacing, type from:
+- `design-system/colors_and_type.css`
+- `design-system/ui_kits/studio/tokens.css`
+- `design-system/preview/*.html` (visual reference)
 
-- `design-system/colors_and_type.css` — root color + typography tokens
-- `design-system/ui_kits/studio/tokens.css` — Studio-specific tokens
-- `design-system/preview/*.html` — visual reference for each token/component
-
-If you need a color, spacing, or font scale, pull it from here. Do not invent new values.
+Don't invent new design values. Reuse or propose an update to `design-system/`.
 
 ## Archive is frozen
 
-`archive/` contains prior design rounds and earlier prototypes. **Do not edit anything under `archive/`.** If you need a pattern from there, read it and re-implement forward in `app/` or `next-scaffold/`.
+`archive/` holds prior work for reference. **Never edit.** If you need a pattern, read it and re-implement forward in `web/`.
 
 ## Secrets
 
 - No real API keys in tracked files.
-- `app/local-config.js` is gitignored — it's where the OpenAI key for the vision pipeline lives. Template: `app/local-config.example.js`.
-- If you spot a real key in any tracked file, stop and flag it to the user.
+- Env template: `web/.env.example`.
+- All secrets via environment variables (Vercel env UI in production).
+- If you spot a real key in any tracked file, stop and flag to the human.
 
-## Conventions
+## Forbidden without explicit approval
 
-- Paths are all lowercase, hyphenated, no spaces (exception: `START-LIVE-DEMO.command` is a historical macOS launcher).
-- When you add a top-level folder, update both `README.md` and `INDEX.md` in the same change.
-- Each major subdirectory should have its own `README.md` describing what's inside and how to use it.
-- Commit messages: one-line subject, imperative mood. Example: `app: add punk mode toggle`.
+- Committing to `main` (use PRs)
+- `git push --force`, `git reset --hard`, `rm -rf`
+- Editing anything under `archive/`
+- Adding new top-level directories not in `docs/architecture.md`
+- Adding new npm dependencies (ask first)
+- Running migrations against production Supabase
+- Sending real emails outside test mode
 
-## Running things locally
+## Commit messages
+
+`<area>: <imperative> (<task-id>)`
+
+Examples:
+- `web: rename next-scaffold to web (M0-T001)`
+- `lib/storage: add listProjects (M1-T005)`
+- `docs: clarify seam rule (M0-P004)`
+
+## Running locally
 
 ```bash
-# HTML prototype
-cd app && python3 -m http.server 8000
-
-# Next.js track
-cd next-scaffold && pnpm install && pnpm dev
-
-# Preview a design-system page
-open design-system/preview/brand-roundel.html
+cd web && pnpm install && pnpm dev   # Next.js dev server (after M0)
+cd web && pnpm typecheck             # TS check
+cd web && pnpm test                  # Vitest (after tests exist)
+cd web && pnpm build                 # production build
 ```
 
-## When in doubt
+## When unsure
 
-Ask the user. The project has a clear owner who wants direction-level input before you make structural changes.
+Ask the human. A 30-second clarification is cheaper than 30 minutes of wrong work.

@@ -114,9 +114,11 @@ window.__lcImgStats = () => ({ inFlight: __lcImgInFlight, waiting: __lcImgWaiter
 
 function KeyPasteModal({ onClose, onUseDefault }) {
   const [key, setKey] = React.useState('');
-  const defaultBtnRef = React.useRef(null);
-  // Pre-focus "Use embedded default" on mount — Enter dismisses without pasting.
-  React.useEffect(() => { defaultBtnRef.current?.focus(); }, []);
+  const hasEmbedded = !!window.__LC_OPENAI_KEY_DEFAULT;
+  const primaryBtnRef = React.useRef(null);
+  // Focus the safe-exit action. If there's an embedded key, that's the
+  // one-click "use it" button; in demo mode, it's the dismiss button.
+  React.useEffect(() => { primaryBtnRef.current?.focus(); }, []);
   const handleSave = () => {
     if (key.trim()) sessionStorage.setItem('lc_openai_key', key.trim());
     onClose();
@@ -130,10 +132,13 @@ function KeyPasteModal({ onClose, onUseDefault }) {
       <div className="lc-key-modal-backdrop" onClick={onClose} />
       <div className="lc-key-modal">
         <div style={{ marginBottom: 16 }}>
-          <h2 style={{ margin: '0 0 8px 0', fontSize: 16, fontWeight: 500 }}>OpenAI API Key</h2>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: 16, fontWeight: 500 }}>
+            {hasEmbedded ? 'OpenAI API Key' : 'Demo mode — live generation disabled'}
+          </h2>
           <p style={{ margin: '0 0 12px 0', fontSize: 13, opacity: 0.7, lineHeight: 1.5 }}>
-            A default key is already embedded. Press Enter (or click below) to use it.
-            Or paste your own — it stays in sessionStorage only.
+            {hasEmbedded
+              ? 'A default key is already embedded. Press Enter (or click below) to use it. Or paste your own — it stays in sessionStorage only.'
+              : 'This is the public showcase. AI generation is disabled to keep the demo free to browse. Every postcard style you can see was pre-generated and ships with the site. Want to try live generation? Paste your own OpenAI key — it stays only in this browser tab (sessionStorage) and is sent only to api.openai.com.'}
           </p>
         </div>
         <input
@@ -151,8 +156,12 @@ function KeyPasteModal({ onClose, onUseDefault }) {
         />
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn" onClick={handleSave} style={{ flex: 1 }}>Save &amp; use</button>
-          <button ref={defaultBtnRef} className="btn" onClick={handleDontAsk} style={{ flex: 1 }}>Use embedded (don't ask again)</button>
-          <button className="btn" onClick={onClose} style={{ flex: 1 }}>Cancel</button>
+          {hasEmbedded && (
+            <button className="btn" onClick={handleDontAsk} style={{ flex: 1 }}>Use embedded (don't ask again)</button>
+          )}
+          <button ref={primaryBtnRef} className="btn" onClick={onClose} style={{ flex: 1 }}>
+            {hasEmbedded ? 'Cancel' : 'Keep browsing'}
+          </button>
         </div>
       </div>
     </>

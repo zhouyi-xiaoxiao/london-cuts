@@ -34,7 +34,7 @@ pnpm install
 pnpm dev
 ```
 
-**Safe public deploy track (GitHub Pages + custom domain):**
+**Safe public deploy track (GitHub Pages):**
 
 ```bash
 cd next-scaffold
@@ -43,7 +43,7 @@ pnpm build
 # static export lands in next-scaffold/out
 ```
 
-`next-scaffold/public/CNAME` is set to `zhouyixiaoxiao.org`, and `.github/workflows/deploy-pages.yml` publishes the static export through GitHub Pages on pushes to `main`.
+`.github/workflows/deploy-pages.yml` publishes the static export through GitHub Pages on pushes to `main`.
 
 ---
 

@@ -131,6 +131,10 @@ function Workspace({ mode, onMode, onOpenPublish, onExitToProjects }) {
   React.useEffect(() => {
     if (!project?.slug) return;
     try {
+      // Demo mode: no key → no live generation. The snapshot already filled
+      // every variant we need; auto-pregen would just fail on every job.
+      const hasKey = !!(sessionStorage.getItem('lc_openai_key') || window.__LC_OPENAI_KEY_DEFAULT);
+      if (!hasKey) return;
       const seenKey = 'lc_auto_pregen_' + project.slug;
       if (sessionStorage.getItem(seenKey) === '1') return;
       const heroCount = stops.filter(s => s.heroAssetId).length;
@@ -256,27 +260,51 @@ function Workspace({ mode, onMode, onOpenPublish, onExitToProjects }) {
 function ShareButton({ project }) {
   const [open, setOpen] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
+  // Fixed-position coordinates computed from the button's bounding rect on
+  // open. Using position:fixed + Portal (below) escapes .ws-topbar's
+  // overflow-y:hidden, which otherwise clips the popover to a thin edge at
+  // narrow widths.
+  const [pos, setPos] = React.useState({ top: 0, right: 0 });
   const inputRef = React.useRef(null);
+  const btnRef = React.useRef(null);
   const popRef = React.useRef(null);
 
   const publicUrl = `${location.origin}${location.pathname}#public`;
   const isPublished = project?.visibility === 'public' && project?.published;
 
+  const positionPopover = React.useCallback(() => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.bottom + 8, right: Math.max(8, window.innerWidth - r.right) });
+  }, []);
+
+  const togglePopover = () => {
+    if (open) { setOpen(false); return; }
+    positionPopover();
+    setOpen(true);
+  };
+
   React.useEffect(() => {
-    if (open && inputRef.current) {
-      inputRef.current.select();
-    }
+    if (open && inputRef.current) inputRef.current.select();
   }, [open]);
 
-  // Close on outside click.
+  // Outside click + scroll/resize re-position.
   React.useEffect(() => {
     if (!open) return;
     const onDoc = (e) => {
-      if (popRef.current && !popRef.current.contains(e.target)) setOpen(false);
+      if (popRef.current?.contains(e.target)) return;
+      if (btnRef.current?.contains(e.target)) return;  // button handles toggle itself
+      setOpen(false);
     };
+    const onScrollOrResize = () => positionPopover();
     document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
-  }, [open]);
+    window.addEventListener('scroll', onScrollOrResize, true);
+    window.addEventListener('resize', onScrollOrResize);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      window.removeEventListener('scroll', onScrollOrResize, true);
+      window.removeEventListener('resize', onScrollOrResize);
+    };
+  }, [open, positionPopover]);
 
   const handleCopy = async () => {
     try { await navigator.clipboard.writeText(publicUrl); } catch {}
@@ -284,53 +312,57 @@ function ShareButton({ project }) {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  return (
-    <div style={{ position: 'relative' }} ref={popRef}>
-      <button
-        className="btn btn-sm"
-        title="Share the public link for this project"
-        onClick={() => setOpen(o => !o)}
-      >🔗 Share</button>
-      {open && (
-        <div style={{
-          position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 120,
-          width: 360, background: 'var(--mode-bg, white)', color: 'var(--mode-ink, #1a1a1a)',
-          border: '1px solid currentColor',
-          padding: 14, boxShadow: '0 12px 36px rgba(0,0,0,0.25)',
-        }}>
-          <div className="eyebrow" style={{ marginBottom: 6 }}>Public link</div>
-          <input
-            ref={inputRef}
-            readOnly
-            value={publicUrl}
-            onFocus={(e) => e.target.select()}
-            style={{
-              width: '100%', padding: '6px 8px',
-              fontFamily: 'var(--f-mono)', fontSize: 11,
-              border: '1px solid oklch(from currentColor l c h / 0.25)',
-              background: 'oklch(from currentColor l c h / 0.04)',
-              marginBottom: 8,
-            }}
-          />
-          {!isPublished && (
-            <div className="mono-sm" style={{ opacity: 0.7, marginBottom: 8, lineHeight: 1.5 }}>
-              ⚠️ This project is still a draft. Friends will only see content if you publish from the Publish → panel.
-            </div>
-          )}
-          <div className="row gap-8">
-            <button className="btn btn-sm btn-solid" style={{ flex: 1 }} onClick={handleCopy}>
-              {copied ? 'Copied ✓' : 'Copy'}
-            </button>
-            <button className="btn btn-sm" style={{ flex: 1 }} onClick={() => window.open(publicUrl, '_blank')}>
-              Open in tab ↗
-            </button>
-          </div>
-          <div className="mono-sm" style={{ opacity: 0.55, marginTop: 10, lineHeight: 1.5 }}>
-            Tip: for friends on other networks, use the cloudflared tunnel URL you were given in the terminal.
-          </div>
+  const popover = (
+    <div ref={popRef} style={{
+      position: 'fixed', top: pos.top, right: pos.right, zIndex: 9997,
+      width: 360, maxWidth: 'calc(100vw - 16px)',
+      background: 'var(--mode-bg, white)', color: 'var(--mode-ink, #1a1a1a)',
+      border: '1px solid currentColor',
+      padding: 14, boxShadow: '0 12px 36px rgba(0,0,0,0.25)',
+    }}>
+      <div className="eyebrow" style={{ marginBottom: 6 }}>Public link</div>
+      <input
+        ref={inputRef}
+        readOnly
+        value={publicUrl}
+        onFocus={(e) => e.target.select()}
+        style={{
+          width: '100%', padding: '6px 8px',
+          fontFamily: 'var(--f-mono)', fontSize: 11,
+          border: '1px solid oklch(from currentColor l c h / 0.25)',
+          background: 'oklch(from currentColor l c h / 0.04)',
+          marginBottom: 8,
+        }}
+      />
+      {!isPublished && (
+        <div className="mono-sm" style={{ opacity: 0.7, marginBottom: 8, lineHeight: 1.5 }}>
+          ⚠️ This project is still a draft. Friends will only see content if you publish from the Publish → panel.
         </div>
       )}
+      <div className="row gap-8">
+        <button className="btn btn-sm btn-solid" style={{ flex: 1 }} onClick={handleCopy}>
+          {copied ? 'Copied ✓' : 'Copy'}
+        </button>
+        <button className="btn btn-sm" style={{ flex: 1 }} onClick={() => window.open(publicUrl, '_blank')}>
+          Open in tab ↗
+        </button>
+      </div>
+      <div className="mono-sm" style={{ opacity: 0.55, marginTop: 10, lineHeight: 1.5 }}>
+        Tip: for friends on other networks, use the cloudflared tunnel URL you were given in the terminal.
+      </div>
     </div>
+  );
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        className="btn btn-sm"
+        title="Share the public link for this project"
+        onClick={togglePopover}
+      >🔗 Share</button>
+      {open && ReactDOM.createPortal(popover, document.body)}
+    </>
   );
 }
 

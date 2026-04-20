@@ -37,15 +37,15 @@ function S01Cover() {
         </h1>
         <div style={{ marginTop: 36, display: 'flex', alignItems: 'baseline', gap: 24 }}>
           <div className="rule-accent" style={{ background: '#fff', width: 72, height: 2 }} />
-          <div className="body" style={{ fontSize: 28, fontFamily: 'var(--f-fashion)', fontStyle: 'italic', opacity: 0.92, maxWidth: 760 }}>
-            A studio for small editorial walks — one piece of writing, three ways to be read.
+          <div className="body" style={{ fontSize: 28, fontFamily: 'var(--f-fashion)', fontStyle: 'italic', opacity: 0.92, maxWidth: 820 }}>
+            A studio for travel stories — one trip, three Londons, written once.
           </div>
         </div>
       </div>
 
       {/* Bottom-right page number */}
-      <div style={{ position: 'absolute', right: 80, bottom: 48, color: '#fff', opacity: 0.7 }} className="mono">
-        01 / 07
+      <div style={{ position: 'absolute', right: 80, bottom: 48, color: '#fff', opacity: 0.7 }} className="mono pageno">
+        01 / 06
       </div>
     </section>
   );

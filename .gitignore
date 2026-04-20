@@ -28,6 +28,7 @@ app/local-config.js
 .idea/
 *.swp
 *.bak
+*.bak-*
 
 # Build artifacts
 dist/

@@ -20,16 +20,16 @@
   <div id="s4"></div>
   <div id="s5"></div>
   <div id="s6"></div>
-  <div id="s7"></div>
 </deck-stage>
 
+<!-- 6-slide pitch cut: Atlas (S05) and How (S06) are shown live in the demo,
+     not as slides. Files kept in this folder for Q&A / appendix. -->
 <script type="text/babel" src="S01Cover.jsx"></script>
 <script type="text/babel" src="S02Problem.jsx"></script>
 <script type="text/babel" src="S03Solution.jsx"></script>
 <script type="text/babel" src="S04Modes.jsx"></script>
-<script type="text/babel" src="S05Atlas.jsx"></script>
-<script type="text/babel" src="S06How.jsx"></script>
-<script type="text/babel" src="S07Ask.jsx"></script>
+<script type="text/babel" src="S07Team.jsx"></script>
+<script type="text/babel" src="S08Ask.jsx"></script>
 
 <script type="text/babel">
   // Mount each slide into its host div (kept as a direct child of deck-stage)
@@ -38,9 +38,8 @@
     ['s2', window.S02Problem],
     ['s3', window.S03Solution],
     ['s4', window.S04Modes],
-    ['s5', window.S05Atlas],
-    ['s6', window.S06How],
-    ['s7', window.S07Ask],
+    ['s5', window.S07Team],
+    ['s6', window.S08Ask],
   ];
   requestAnimationFrame(() => {
     mounts.forEach(([id, C]) => {

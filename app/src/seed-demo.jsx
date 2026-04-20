@@ -232,28 +232,38 @@ const SEED_LONDON_MEMORY = [
       recipient: { name: 'M.', line1: '', line2: '', country: '' },
     },
   },
+  {
+    n: '13', code: 'W1B', title: "Angels on Regent Street, New Year's Eve", time: '23:57',
+    mood: 'Festive', tone: 'punk',
+    lat: 51.5133, lng: -0.1408,
+    label: 'REGENT ST · NEW YEAR',
+    date: '31 Dec 2025',
+    asset: 'IMG_0294',
+    status: { upload: true, hero: true, body: true, media: null },
+    body: [
+      { type: 'metaRow', content: ['23:57', '31 DEC 2025', 'Festive', 'REGENT ST · NEW YEAR'] },
+      { type: 'heroImage', assetId: 'seed-13', caption: 'White angels strung above the street, three minutes before midnight.' },
+      { type: 'paragraph', content: "Walked down Regent Street with the last of the year. The angels have been up since November but only now, this close to midnight, does everyone slow down to look at them." },
+      { type: 'pullQuote', content: 'The last light of the old year is held up by wires.' },
+      { type: 'paragraph', content: "Someone next to me was holding a bottle wrapped in paper. Someone else was on the phone with a voice tinned-out on the other end. I took the photo and kept walking." },
+    ],
+    postcard: {
+      message: "Regent St before midnight. The angels look like they always have.\n— A.",
+      recipient: { name: 'J.', line1: '', line2: '', country: '' },
+    },
+  },
 ];
 
-// Bonus 13th photo — New Year angels. Loose (not assigned) so it shows in the pool.
-const BONUS_ASSET = {
-  id: 'seed-bonus', stop: null, tone: 'punk',
-  imageUrl: 'seed-images/IMG_0294.jpg',
-  label: 'REGENT ST · NEW YEAR',
-};
-
-const SEED_ASSETS = [
-  ...SEED_LONDON_MEMORY.map(s => ({
-    id: `seed-${s.n}`,
-    stop: s.n,
-    tone: s.tone,
-    imageUrl: `seed-images/${s.asset}.jpg`,
-    // Stable identity for the variant cache so reloading the demo doesn't
-    // regenerate images already in IDB. Keyed by EXIF filename, not by the
-    // URL (which would include the path prefix).
-    sourceName: `${s.asset}.jpg`,
-  })),
-  BONUS_ASSET,
-];
+const SEED_ASSETS = SEED_LONDON_MEMORY.map(s => ({
+  id: `seed-${s.n}`,
+  stop: s.n,
+  tone: s.tone,
+  imageUrl: `seed-images/${s.asset}.jpg`,
+  // Stable identity for the variant cache so reloading the demo doesn't
+  // regenerate images already in IDB. Keyed by EXIF filename, not by the
+  // URL (which would include the path prefix).
+  sourceName: `${s.asset}.jpg`,
+}));
 
 // Attach heroAssetId + assetIds to each stop
 SEED_LONDON_MEMORY.forEach(s => {
@@ -287,7 +297,7 @@ function loadLondonMemoryDemo() {
       ...s.project,
       title: 'London, Remembered',
       author: 'You',
-      subtitle: 'Thirteen photos, twelve places. From Heathrow arrival to the New Year angels on Regent Street.',
+      subtitle: 'Thirteen photos, thirteen places. From Heathrow arrival to the New Year angels on Regent Street.',
       slug: 'london-remembered',
       defaultMode: 'fashion',
       visibility: 'draft',
@@ -296,7 +306,7 @@ function loadLondonMemoryDemo() {
       published: null,
       reads: 0,
       saves: 0,
-      duration: '12 min read',
+      duration: '13 min read',
     },
     stops: SEED_STOPS_CLEAN.map(st => ({ ...st })),
     assetsPool: SEED_ASSETS.map(a => ({ ...a })),
@@ -311,7 +321,7 @@ function loadLondonMemoryDemo() {
     },
   }));
 
-  console.log('[seed-demo] London, Remembered loaded · 12 stops · 13 assets · real GPS from EXIF');
+  console.log('[seed-demo] London, Remembered loaded · 13 stops · 13 assets · real GPS from EXIF');
 
   // Restore any previously-cached variants immediately (cache hits are free).
   // Then auto-kick pre-generation to fill in the missing styles.
@@ -328,7 +338,15 @@ function loadLondonMemoryDemo() {
     }, 800);
     // 2. Fill gaps with pre-gen. Prestyle's `hasVariantForStyle` dedup plus
     //    the fresh cache-restore above means we only pay for truly new ones.
+    //    Skip entirely in demo mode (no key available) — the snapshot in
+    //    app/generated-images/ already populated every variant we need for
+    //    the public showcase, so there's nothing to generate.
     setTimeout(() => {
+      const hasKey = !!(sessionStorage.getItem('lc_openai_key') || window.__LC_OPENAI_KEY_DEFAULT);
+      if (!hasKey) {
+        console.log('[seed-demo] demo mode (no key) — skipping auto pre-gen; variants come from app/generated-images/');
+        return;
+      }
       if (typeof window.pregenerateAllStyles === 'function' && !window.__lcPrestyleRunning) {
         try { window.pregenerateAllStyles({ auto: true }); }
         catch (e) { console.warn('[seed-demo] auto pre-gen failed', e); }

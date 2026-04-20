@@ -10,7 +10,7 @@ function S06How() {
           <span className="roundel" />
           <span>06 · HOW IT WORKS</span>
         </div>
-        <span className="pageno">06 / 07</span>
+        <span className="pageno">06 / 08</span>
       </div>
 
       <div style={{ marginTop: 80 }}>

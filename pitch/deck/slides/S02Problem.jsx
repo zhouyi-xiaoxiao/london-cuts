@@ -11,7 +11,7 @@ function S02Problem() {
           <span className="roundel" />
           <span>02 · PROBLEM</span>
         </div>
-        <span className="pageno">02 / 07</span>
+        <span className="pageno">02 / 06</span>
       </div>
 
       <div style={{ marginTop: 64 }}>

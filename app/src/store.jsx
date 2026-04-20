@@ -544,6 +544,17 @@ const storeActions = {
         : st),
     }));
   },
+  // Orientation override for the postcard. 'landscape' | 'portrait' | null.
+  // Null / absent = auto-detect from the image. Persists per stop.
+  setPostcardOrientation(stopId, orientation) {
+    const v = (orientation === 'landscape' || orientation === 'portrait') ? orientation : null;
+    lcSetState(s => ({
+      ...s,
+      stops: s.stops.map(st => st.n === stopId
+        ? { ...st, postcard: { ...(st.postcard || {}), orientationOverride: v } }
+        : st),
+    }));
+  },
   setRecipient(stopId, recipient) {
     lcSetState(s => ({
       ...s,

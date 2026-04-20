@@ -52,10 +52,24 @@
 <body>
   <div id="root"></div>
 
-  <!-- OpenAI API Key: loaded from gitignored local-config.js (see local-config.example.js) -->
-  <script src="local-config.js"></script>
+  <!--
+    OpenAI API Key bootstrap.
+
+    Local dev: copy local-config.example.js → local-config.js and paste your key.
+               local-config.js is gitignored and MUST NOT ship in any public build.
+
+    Deployed showcase (Phase A): local-config.js is absent → __LC_OPENAI_KEY_DEFAULT
+    stays empty → the app runs in demo mode. Pre-generated postcard variants load
+    from app/generated-images/manifest.json via snapshot.jsx. The KeyPasteModal
+    lets a visitor paste their own key into sessionStorage if they want to try
+    live generation; nothing is ever written to localStorage or sent off-domain.
+
+    Phase B (proxy backend): this block will be removed entirely. Auth switches
+    to an invite code held in sessionStorage; calls go to /api/media/* instead
+    of api.openai.com.
+  -->
+  <script src="local-config.js" onerror="this.remove()"></script>
   <script>
-    // Fallback if local-config.js is absent. Do NOT commit a real key to this file.
     if (!window.__LC_OPENAI_KEY_DEFAULT) { window.__LC_OPENAI_KEY_DEFAULT = ''; }
   </script>
 
@@ -68,6 +82,7 @@
   <script type="text/babel" src="src/shared.jsx"></script>
   <script type="text/babel" src="src/palette.jsx"></script>
   <script type="text/babel" src="src/store.jsx"></script>
+  <script type="text/babel" src="src/snapshot.jsx"></script>
   <script type="text/babel" src="src/workspace.jsx"></script>
   <script type="text/babel" src="src/publish.jsx"></script>
   <script type="text/babel" src="src/postcard-editor.jsx"></script>

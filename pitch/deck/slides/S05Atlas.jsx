@@ -84,7 +84,7 @@ function S05Atlas() {
           <span className="roundel" />
           <span>05 · ATLAS</span>
         </div>
-        <span className="pageno">05 / 07</span>
+        <span className="pageno">05 / 08</span>
       </div>
 
       <div style={{ marginTop: 64 }}>

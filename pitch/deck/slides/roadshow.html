@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>London Cuts · Roadshow · 14 Slides</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="deck.css" />
+
+<!-- Reused pitch slides carry their original pageno chrome (e.g. "01 / 06").
+     Hide every .pageno in this deck; deck-stage's overlay already reports
+     the correct slide count. New roadshow slides author around this rule
+     by either skipping .pageno or accepting it stays hidden. -->
+<style>
+  .pageno { display: none !important; }
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="deck-stage.js"></script>
+</head>
+<body>
+
+<deck-stage width="1920" height="1080">
+  <div id="r1"></div>
+  <div id="r2"></div>
+  <div id="r3"></div>
+  <div id="r4"></div>
+  <div id="r5"></div>
+  <div id="r6"></div>
+  <div id="r7"></div>
+  <div id="r8"></div>
+  <div id="r9"></div>
+  <div id="r10"></div>
+  <div id="r11"></div>
+  <div id="r12"></div>
+  <div id="r13"></div>
+  <div id="r14"></div>
+</deck-stage>
+
+<!-- Shared (reused from pitch) -->
+<script type="text/babel" src="S01Cover.jsx"></script>
+<script type="text/babel" src="S02Problem.jsx"></script>
+<script type="text/babel" src="S03Solution.jsx"></script>
+<script type="text/babel" src="S04Modes.jsx"></script>
+<script type="text/babel" src="S05Atlas.jsx"></script>
+<script type="text/babel" src="S06How.jsx"></script>
+<script type="text/babel" src="S07Team.jsx"></script>
+<script type="text/babel" src="S08Ask.jsx"></script>
+
+<!-- Roadshow-only -->
+<script type="text/babel" src="R02_Insight.jsx"></script>
+<script type="text/babel" src="R04_WhyNow.jsx"></script>
+<script type="text/babel" src="R07_Studio.jsx"></script>
+<script type="text/babel" src="R10_Tech.jsx"></script>
+<script type="text/babel" src="R11_Beyond.jsx"></script>
+<script type="text/babel" src="R12_Roadmap.jsx"></script>
+
+<script type="text/babel">
+  //  Roadshow mount order (14 slides · ~10-12 min)
+  //   01  Cover                       [reused]
+  //   02  The Insight — Three Londons [new]
+  //   03  Problem                     [reused]
+  //   04  Why Now                     [new]
+  //   05  Solution                    [reused]
+  //   06  Three Modes ⭐              [reused]
+  //   07  Studio deep-dive            [new]
+  //   08  Atlas (map)                 [reused]
+  //   09  How it works                [reused]
+  //   10  AI × Architecture           [new]
+  //   11  Beyond London               [new]
+  //   12  Roadmap · 30/60/90          [new]
+  //   13  Masthead                    [reused]
+  //   14  The Ask                     [reused]
+  const mounts = [
+    ['r1',  window.S01Cover],
+    ['r2',  window.R02Insight],
+    ['r3',  window.S02Problem],
+    ['r4',  window.R04WhyNow],
+    ['r5',  window.S03Solution],
+    ['r6',  window.S04Modes],
+    ['r7',  window.R07Studio],
+    ['r8',  window.S05Atlas],
+    ['r9',  window.S06How],
+    ['r10', window.R10Tech],
+    ['r11', window.R11Beyond],
+    ['r12', window.R12Roadmap],
+    ['r13', window.S07Team],
+    ['r14', window.S08Ask],
+  ];
+  requestAnimationFrame(() => {
+    mounts.forEach(([id, C]) => {
+      const host = document.getElementById(id);
+      if (host && C) ReactDOM.createRoot(host).render(<C />);
+    });
+  });
+</script>
+
+</body>
+</html>
