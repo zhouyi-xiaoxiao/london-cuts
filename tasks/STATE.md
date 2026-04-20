@@ -1,19 +1,26 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-20T01:15Z
+**Last updated:** 2026-04-20T01:30Z
+
+## Plan version
+
+**Plan v2.0** (see `docs/implementation-plan.md`): re-ordered to features-first. M1 / M2 / M3 / M4 / M6 are now **postponed** until M-fast + M-preview complete and owner approves moving on. M3 is superseded by M-fast.
 
 ## Summary
 
-| Milestone | TODO | IN_PROGRESS | DONE | BLOCKED | Total |
-|-----------|------|-------------|------|---------|-------|
-| M0 Consolidation        | 6  | 0 | 3 | 0 | 9  |
-| M1 Supabase & data      | 8  | 0 | 0 | 0 | 8  |
-| M2 Auth & invites       | 10 | 0 | 0 | 0 | 10 |
-| M3 Feature parity       | 13 | 0 | 0 | 0 | 13 |
-| M4 Public pages & polish| 10 | 0 | 0 | 0 | 10 |
-| M5 Observability & tests| 6  | 0 | 0 | 0 | 6  |
-| M6 Launch               | 9  | 0 | 0 | 0 | 9  |
-| **Total**               | **62** | **0** | **3** | **0** | **65** |
+| Milestone | TODO | IN_PROGRESS | DONE | BLOCKED | Total | Status |
+|-----------|------|-------------|------|---------|-------|--------|
+| M0 Consolidation        | 6  | 0 | 3 | 0 | 9  | in progress |
+| **M-fast Feature port** | 14 | 0 | 0 | 0 | 14 | **next** ⭐ |
+| M-preview Soft launch   | —  | — | — | — | —  | after M-fast |
+| M1 Supabase & data      | 8  | 0 | 0 | 0 | 8  | ⏸ postponed |
+| M2 Auth & invites       | 10 | 0 | 0 | 0 | 10 | ⏸ postponed |
+| M3 Feature parity       | 13 | 0 | 0 | 0 | 13 | 🗄 superseded by M-fast |
+| M4 Public pages         | 10 | 0 | 0 | 0 | 10 | ⏸ postponed |
+| M5 Observability        | 6  | 0 | 0 | 0 | 6  | ⏸ postponed |
+| M6 Launch               | 9  | 0 | 0 | 0 | 9  | ⏸ postponed |
+
+## Active pipeline: M0 → M-fast → M-preview
 
 ## Eligible next tasks (TODO with no unmet blockers)
 
@@ -21,8 +28,8 @@
 - **M0-P002** — Create `web/.env.example` (parallel)
 - **M0-P004** — Finish CLAUDE.md updates (parallel)
 - **M0-P005** — Rewrite README.md + INDEX.md properly (parallel)
-- **M0-P006** — Create `web/supabase/migrations/` (parallel)
-- **M0-P007** — Expand M1 task files (parallel)
+- **M0-P006** — Create `web/supabase/migrations/` (parallel; minimal scope since M1 is deferred)
+- **M0-P007** — Expand M-fast task files (parallel; was "expand M1", redirected)
 
 ## In progress
 

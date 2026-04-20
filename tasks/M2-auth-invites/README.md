@@ -1,5 +1,9 @@
 # M2 — Auth & invites
 
+**⏸ Status:** POSTPONED (per plan v2.0, 2026-04-20). M-fast + M-preview + M1 run first.
+
+This milestone swaps `lib/auth.ts` from its M-fast mock/no-auth impl to Supabase Auth + magic links, and moves OpenAI key from client sessionStorage to a server-side API route. Don't start until user approves.
+
 **Goal:** Invite-code + magic-link sign-up/sign-in works end-to-end. Routes protected by auth middleware.
 **Duration estimate:** 2 days.
 **Exit criteria:**

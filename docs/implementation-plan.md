@@ -1,42 +1,69 @@
-# Implementation Plan — Beta Launch (Path B)
+# Implementation Plan — Beta Launch
 
-**Version:** 1.0 (2026-04-20)
-**Target:** Public beta invite-only launch in 2–3 weeks.
+**Version:** 2.0 (2026-04-20, re-ordered)
+**Target:** Working web/ prototype first, then add infra + invite-only public beta.
 **Method:** Multi-agent AI coding (Claude Code) executing tasks from `tasks/`.
 
 This is the high-level roadmap. Individual executable tasks live in `tasks/M{n}-*/`.
 
+## Why v2.0 (change log from v1.0)
+
+**v1.0 ordered:** M0 → M1 (DB) → M2 (auth) → M3 (features) → M4 → M5 → M6.
+Problem: 7 days of "nothing visible to users" before features landed.
+
+**v2.0 reorders to features-first:** M0 → **M-fast (features)** → **M-preview (soft launch)** → iterate → M1/M2 (infra) → M5 → M6.
+Rationale: the `web/` scaffold currently has no real features — they only exist in the archived legacy `app/`. Porting them first gives us a working thing to test, demo, and iterate on *before* we invest in DB + auth infrastructure. The seam layer (`web/lib/*.ts`) was designed for exactly this: initial impls use localStorage / sessionStorage; later impls swap to Supabase / magic-link — with zero changes to business code.
+
 ---
 
-## Milestones
+## Milestones (v2.0)
 
-### M0 — Consolidation (days 1–3)
+### M0 — Consolidation ✅ in progress (days 1)
 Freeze legacy `app/`, promote `next-scaffold/` → `web/`, establish seam layers, lock docs.
 **Exit criteria:** `web/` builds and runs; seam files exist (can be stubs); `app/` archived.
 
-### M1 — Supabase & data model (days 3–5)
-Provision Supabase project, write migrations for all tables + RLS, wire storage seam to real DB.
-**Exit criteria:** `createProject` → `listProjects` round-trips via `lib/storage.ts` backed by Supabase.
+### M-fast — Feature port from archived app/ (days 2–6) ⭐ NEW
+Port all working features from `archive/app-html-prototype-2026-04-20/` into `web/`, converting JSX → TSX and splitting the monolithic `store.jsx` into domain stores. Data still lives in browser (localStorage + IndexedDB — same as old app). AI key still pasted by user into sessionStorage (same as old app). No Supabase yet. No auth yet.
+**Exit criteria:**
+- Projects dashboard works (list / new / archive / switch)
+- Stop editor works (metadata, body, reorder, upload photo)
+- Postcard editor works (6 styles, flip card, orientation, AI generate)
+- Vision pipeline works (folder upload → GPT-4o → auto-stops)
+- PDF + PNG export work
+- MapLibre atlas works with mode-aware tiles
+- Fashion / Punk / Cinema mode switcher works everywhere
+- Publish flow works (visibility = public / unlisted / private, public URL renders the project)
 
-### M2 — Auth & invites (days 5–7)
-Invite code table populated, magic link wired, sign-up / sign-in pages, auth middleware on `/studio`.
-**Exit criteria:** An invited email can sign up, log in, and see a protected page.
+### M-preview — Soft-launch preview (day 7) ⭐ NEW
+Deploy `web/` to Vercel as preview. Simple password gate (single shared password in env var) — not real auth, just a "don't scrape this" door. Send URL + password to a handful of trusted friends for feedback.
+**Exit criteria:** A friend can visit `<something>.vercel.app`, enter the shared password, and use the app. They give feedback.
 
-### M3 — Feature parity migration (days 7–12)
-Port from legacy `app/`: postcard editor (6 styles), vision pipeline, PDF export, PNG export, MapLibre atlas, mode switcher. Wire `lib/ai-provider.ts` to real OpenAI server-side.
-**Exit criteria:** A user can create a project, generate postcards, publish, and see the public URL work.
+### M-iter — Iterate on feedback (days 8+, open-ended)
+Fix bugs. Polish UX. Add/remove features based on what real users hit. This loop can last as long as needed before committing to public launch.
+**Exit criteria:** You personally feel the product is "good enough" to open up wider.
 
-### M4 — Public pages & polish (days 12–14)
-Public project view, atlas page, landing page, footer, ToS + Privacy stubs, error states, feedback form.
-**Exit criteria:** Guest (no auth) can load a published project and see it render in all three modes.
+### M1 — Supabase & data model (2 days — deferred) ⏸
+Provision Supabase; write migrations; swap `lib/storage.ts` impl from localStorage → Supabase. Because all DB access went through `lib/storage.ts` since M-fast, business code doesn't change.
+**Exit criteria:** User can create / read / update projects and they persist across devices.
 
-### M5 — Observability & tests (days 14–16)
-Sentry, PostHog, Vitest unit tests for auth/invite/quota, GitHub Actions runs tests before deploy.
-**Exit criteria:** Errors show up in Sentry dashboard; key events show in PostHog.
+### M2 — Auth & invites (2 days — deferred) ⏸
+Magic link + invite codes. Swap `lib/auth.ts` impl from mock-user → Supabase Auth. Move OpenAI key from sessionStorage → server-side API route.
+**Exit criteria:** Invited email can sign up, log in, and use AI generation without ever seeing a key field.
 
-### M6 — Launch (day 16+)
-IONOS DNS → Vercel, domain wired, 30 beta invite codes issued, first cohort invited.
+### M4 — Public pages polish (1 day — deferred) ⏸
+Landing page polish, atlas polish, 404 / empty states, ToS + Privacy, feedback form, OG images.
+**Exit criteria:** Guest visits, sees a polished public project.
+
+### M5 — Observability & tests (1–2 days — deferred) ⏸
+Sentry, PostHog, Vitest unit tests, GitHub Actions.
+**Exit criteria:** Errors show in Sentry; key events show in PostHog; CI gates PRs.
+
+### M6 — Launch (1 day — deferred) ⏸
+IONOS DNS → Vercel, apex domain wired, 30 invite codes issued, first cohort invited.
 **Exit criteria:** `zhouyixiaoxiao.org` serves the app; ≥ 3 non-admin users logged in.
+
+### M3 — [superseded by M-fast] ~~Feature parity migration~~
+The original M3 is now M-fast, done earlier and without Supabase dependency.
 
 ---
 

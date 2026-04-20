@@ -1,5 +1,9 @@
 # M1 — Supabase & data model
 
+**⏸ Status:** POSTPONED (per plan v2.0, 2026-04-20). M-fast runs first.
+
+This milestone will swap `lib/storage.ts` from its M-fast localStorage+IndexedDB impl to Supabase-backed persistence. The data model in `docs/data-model.md` is still the target. Do not start this milestone until the user explicitly approves coming back to it.
+
 **Goal:** Supabase project provisioned, schema + RLS applied, `lib/storage.ts` fully implemented. Typed, RLS-protected data access across the app.
 **Duration estimate:** 2–3 days.
 **Exit criteria:**
