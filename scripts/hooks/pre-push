@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+# pre-push — scan the commit range being pushed for common secret patterns.
+# Blocks the push if any are found. Mirrors the checks GitHub's secret
+# scanner does server-side, but runs locally so you don't get the ugly
+# "remote rejected" round-trip.
+#
+# Install (in a fresh clone):
+#   git config core.hooksPath scripts/hooks
+#
+# Skip in emergency (not recommended):
+#   git push --no-verify
+
+set -euo pipefail
+
+# Read the push range from stdin (git's protocol).
+# Lines look like: <local-ref> <local-sha> <remote-ref> <remote-sha>
+remote="${1:-origin}"
+url="${2:-}"
+
+# Collect every commit being pushed into a single rev-list.
+# For brand-new branches, remote-sha is all zeros → compare against empty tree.
+commits=""
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -z "$local_sha" ] && continue
+  # 0{40} means delete — nothing to scan.
+  [[ "$local_sha" =~ ^0+$ ]] && continue
+  if [[ "$remote_sha" =~ ^0+$ ]]; then
+    # New branch — scan every commit reachable from local_sha that's not on any remote ref.
+    range="$local_sha --not --remotes"
+  else
+    range="$remote_sha..$local_sha"
+  fi
+  commits="$commits $range"
+done
+
+if [ -z "$commits" ]; then
+  exit 0
+fi
+
+# Patterns to catch. Tight enough to avoid false-positives in lorem-ipsum.
+# Each pattern includes a length floor so random words don't match.
+patterns=(
+  'sk-[a-zA-Z0-9_-]{32,}'              # OpenAI + various SaaS
+  'sk_live_[a-zA-Z0-9]{24,}'            # Stripe live
+  'sk_test_[a-zA-Z0-9]{24,}'            # Stripe test
+  'rk_live_[a-zA-Z0-9]{24,}'            # Stripe restricted
+  'ghp_[a-zA-Z0-9]{36,}'                # GitHub personal access token
+  'github_pat_[a-zA-Z0-9_]{80,}'        # GitHub fine-grained
+  'xoxb-[0-9]+-[0-9]+-[a-zA-Z0-9]{20,}' # Slack bot
+  'xoxp-[0-9]+-[0-9]+-[0-9]+-[a-z0-9]{20,}' # Slack user
+  'AKIA[A-Z0-9]{16}'                    # AWS access key
+  'ASIA[A-Z0-9]{16}'                    # AWS temp access key
+  'AIza[0-9A-Za-z_-]{35}'               # Google API
+  're_[A-Za-z0-9]{20,}'                 # Resend
+  'phc_[A-Za-z0-9]{40,}'                # PostHog
+  'eyJ[A-Za-z0-9_-]{40,}\.[A-Za-z0-9_-]{40,}\.[A-Za-z0-9_-]{20,}' # JWT-ish
+)
+
+joined=""
+for p in "${patterns[@]}"; do
+  if [ -z "$joined" ]; then joined="$p"; else joined="$joined|$p"; fi
+done
+
+# git log -p prints the diff for every commit in the range.
+# We grep for secret patterns on lines that start with `+` (added content)
+# but also scan full commit contents (we're paranoid), using git grep
+# on each commit's tree if the log approach misses anything.
+
+# shellcheck disable=SC2086
+hits=$(git log -p $commits 2>/dev/null | grep -E "^\+.*($joined)" || true)
+
+# Also scan every tree state, not just diffs — catches secrets that were
+# already in a file and stayed when the commit edited around them.
+# shellcheck disable=SC2086
+tree_hits=""
+for sha in $(git rev-list $commits 2>/dev/null); do
+  # shellcheck disable=SC2086
+  matches=$(git grep -E "($joined)" "$sha" -- 2>/dev/null || true)
+  if [ -n "$matches" ]; then
+    tree_hits="$tree_hits
+--- $sha ---
+$matches"
+  fi
+done
+
+if [ -n "$hits" ] || [ -n "$tree_hits" ]; then
+  echo "========================================================================" >&2
+  echo "🛑  pre-push aborted: secret-like string detected in commit history." >&2
+  echo "========================================================================" >&2
+  echo >&2
+  if [ -n "$hits" ]; then
+    echo "In diffs being pushed:" >&2
+    echo "$hits" | head -20 >&2
+    echo >&2
+  fi
+  if [ -n "$tree_hits" ]; then
+    echo "In tree state:" >&2
+    echo "$tree_hits" | head -30 >&2
+    echo >&2
+  fi
+  echo "What to do:" >&2
+  echo "  1) If this secret is REVOKED / dead, you can bypass once with:" >&2
+  echo "       git push --no-verify" >&2
+  echo "     and use GitHub's unblock URL (if server also flags it)." >&2
+  echo "  2) If it's LIVE, revoke it first, then see option 1." >&2
+  echo "  3) If you want to purge it from history, run git-filter-repo:" >&2
+  echo "       git filter-repo --replace-text <(echo 'PATTERN==>REDACTED')" >&2
+  echo "========================================================================" >&2
+  exit 1
+fi
+
+exit 0

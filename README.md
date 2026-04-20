@@ -14,6 +14,11 @@ cd web
 pnpm install
 cp .env.example .env.local   # fill in values as they're needed per milestone
 pnpm dev                     # http://localhost:3000
+
+# one-time: install the pre-push secret scanner (scans git history
+# for OpenAI / Stripe / AWS / GitHub / Slack / Resend / PostHog / JWT
+# patterns before you push — prevents the GitHub secret-scan round-trip)
+cd .. && git config core.hooksPath scripts/hooks
 ```
 
 **Browse the design system:**
