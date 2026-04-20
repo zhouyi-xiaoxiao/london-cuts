@@ -3,13 +3,16 @@
 // M2: move to server-side API route at /api/ai/generate with owner key.
 import { NotImplementedError } from "./errors";
 
+// Postcard style IDs match the legacy prototype verbatim so cache keys,
+// stored data, and OpenAI call shapes stay compatible when we port.
+// See web/lib/palette.ts for labels, emoji, and prompt templates.
 export type PostcardStyle =
-  | "watercolour"
-  | "vintage_poster"
-  | "risograph"
-  | "ink_watercolour"
+  | "illustration"
+  | "poster"
+  | "riso"
+  | "inkwash"
   | "anime"
-  | "art_nouveau";
+  | "artnouveau";
 
 export interface GeneratePostcardInput {
   userId: string;

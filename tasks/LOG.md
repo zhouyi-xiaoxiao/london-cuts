@@ -23,3 +23,5 @@ Keep lines short. Put details in the task's `Trace` section, not here.
 2026-04-20T02:00Z | opus-4.7-session-20260420 | DONE | M0-P006 | web/supabase/{migrations,README.md,seed.sql} scaffold
 2026-04-20T02:40Z | opus-4.7-session-20260420 | DONE | M0-P007 | 14 M-fast task files (F-T000..F-T009 + F-P001..F-P005) written
 2026-04-20T02:40Z | opus-4.7-session-20260420 | NOTE | M0 | M0 complete (9/9). Next eligible: F-T000 POC.
+2026-04-20T02:50Z | opus-4.7-session-20260420 | CLAIM | F-T000 | Start POC: port style picker from legacy palette.jsx
+2026-04-20T03:10Z | opus-4.7-session-20260420 | DONE | F-T000 | POC StylePicker ported; /poc serves 6 styles at HTTP 200; pipeline proven (JSX→TSX clean, type system caught style-ID mismatch, no Babel/HEIC/EXIF surprises)

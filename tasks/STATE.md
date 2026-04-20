@@ -1,17 +1,17 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-20T02:40Z
+**Last updated:** 2026-04-20T03:10Z
 
 ## Plan version
 
-**Plan v2.0** (see `docs/implementation-plan.md`): features-first. M0 complete → M-fast next. M1–M6 postponed until owner approves moving on. M3 superseded by M-fast.
+**Plan v2.0** (see `docs/implementation-plan.md`): features-first. M0 complete → M-fast in progress. M1–M6 postponed. M3 superseded by M-fast.
 
 ## Summary
 
 | Milestone | TODO | IN_PROGRESS | DONE | BLOCKED | Total | Status |
 |-----------|------|-------------|------|---------|-------|--------|
 | M0 Consolidation        | 0  | 0 | 9 | 0 | 9  | ✅ **complete** |
-| **M-fast Feature port** | 14 | 0 | 0 | 0 | 14 | **active** ⭐ |
+| **M-fast Feature port** | 13 | 0 | 1 | 0 | 14 | **active** ⭐ |
 | M-preview Soft launch   | —  | — | — | — | —  | after M-fast |
 | M1 Supabase & data      | 8  | 0 | 0 | 0 | 8  | ⏸ postponed |
 | M2 Auth & invites       | 10 | 0 | 0 | 0 | 10 | ⏸ postponed |
@@ -22,15 +22,12 @@
 
 ## Eligible next tasks (TODO with no unmet blockers)
 
-Now entering M-fast. First task:
-
-- **F-T000** — POC: port one trivial component end-to-end (20 min, critical, sequential)
-
-Then F-T001 once F-T000 passes owner checkpoint.
+- **F-T001** — Port shared utilities (EXIF, resize, palette, seed) — critical, blocks F-T002
+- **F-P005** — Merge legacy CSS into globals.css — parallel, no blocker
 
 ## In progress
 
-_none (awaiting owner go-ahead for F-T000)_
+_none (awaiting owner checkpoint on F-T000)_
 
 ## Blocked
 
@@ -38,6 +35,7 @@ _none_
 
 ## Recently completed
 
+- **F-T000** (2026-04-20T03:10Z) — POC: StylePicker ported, `/poc` page live, pipeline proven; curl returns 200 with all 6 styles
 - **M0-P007** (2026-04-20T02:40Z) — Expanded M-fast: 14 task files written (F-T000 through F-T009 + F-P001 through F-P005)
 - **M0-P005** (2026-04-20T02:05Z) — Rewrote README.md + INDEX.md for plan v2.0
 - **M0-P004** (2026-04-20T02:05Z) — CLAUDE.md (root) updated to v2 content; web/CLAUDE.md replaced with pointer to root

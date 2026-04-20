@@ -3,16 +3,18 @@ id: F-T000
 title: POC — port one trivial component end-to-end
 milestone: M-fast
 kind: critical
-status: TODO
+status: DONE
 blocked_by: []
 blocks: [F-T001, F-T002]
 parallel_safe: false
 touches:
   - web/components/postcard/style-picker.tsx
-  - web/app/_poc/page.tsx
-owner: null
-started_at: null
-completed_at: null
+  - web/app/poc/page.tsx
+  - web/lib/palette.ts
+  - web/lib/ai-provider.ts
+owner: opus-4.7-session-20260420
+started_at: 2026-04-20T02:50Z
+completed_at: 2026-04-20T03:10Z
 ---
 
 # F-T000 — POC: port one trivial component end-to-end
@@ -69,3 +71,25 @@ Read:
 _none_
 
 ## Trace
+
+**2026-04-20T03:10Z — opus-4.7-session-20260420 — DONE**
+
+Executed:
+- Read `archive/app-html-prototype-2026-04-20/src/palette.jsx` (turned out to be about image-palette extraction, not styles). The 6 styles live in `src/postcard-editor.jsx` lines 10-17.
+- Updated `web/lib/ai-provider.ts` — changed `PostcardStyle` union to match legacy IDs verbatim (`illustration | poster | riso | inkwash | anime | artnouveau`). Original M0 stub had semantic names (watercolour / vintage_poster / ...) that would have broken cache compatibility.
+- Created `web/lib/palette.ts` — typed `POSTCARD_STYLES` const + `StyleMeta` type + `getStyleMeta(id)` helper. Prompt strings copied verbatim from legacy.
+- Created `web/components/postcard/style-picker.tsx` — client component, 6 pill buttons with emoji + label, active state via `aria-pressed` and background inversion.
+- Created `web/app/poc/page.tsx` (not `_poc/` — underscore prefix makes a folder private in Next.js app-router and it does not route).
+
+Issues found + fixed:
+- **Underscore prefix** on `_poc` made the route private → renamed to `poc`. Task acceptance criteria updated.
+- **Legacy style IDs** don't match my M0 stub's semantic names → updated the seam type. Future F-T006 will use these IDs for cache keys.
+
+Verification:
+- `pnpm typecheck` — green
+- `pnpm build` — green, `/poc` visible in route list as `○ Static`
+- `curl http://localhost:3000/poc` — HTTP 200, 17.8 KB, full content rendered (all 6 styles, with emoji and label visible in plain-text extract)
+
+Confidence in porting pipeline: **high**. The legacy JSX → TS pattern worked cleanly. Type system surfaced a real mismatch (style IDs) we would have had to fix anyway. No HEIC / EXIF / Babel-runtime surprises because this component has no browser APIs.
+
+Next: F-T001 (shared utilities — EXIF, image resize, palette extraction).
