@@ -1,28 +1,26 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-20T00:50Z
+**Last updated:** 2026-04-20T01:15Z
 
 ## Summary
 
 | Milestone | TODO | IN_PROGRESS | DONE | BLOCKED | Total |
 |-----------|------|-------------|------|---------|-------|
-| M0 Consolidation        | 7  | 0 | 2 | 0 | 9  |
+| M0 Consolidation        | 6  | 0 | 3 | 0 | 9  |
 | M1 Supabase & data      | 8  | 0 | 0 | 0 | 8  |
 | M2 Auth & invites       | 10 | 0 | 0 | 0 | 10 |
 | M3 Feature parity       | 13 | 0 | 0 | 0 | 13 |
 | M4 Public pages & polish| 10 | 0 | 0 | 0 | 10 |
 | M5 Observability & tests| 6  | 0 | 0 | 0 | 6  |
 | M6 Launch               | 9  | 0 | 0 | 0 | 9  |
-| **Total**               | **63** | **0** | **2** | **0** | **65** |
+| **Total**               | **62** | **0** | **3** | **0** | **65** |
 
 ## Eligible next tasks (TODO with no unmet blockers)
 
-All M0 parallel tasks are now unblocked:
 - **M0-P001** — Create seam file stubs (parallel)
 - **M0-P002** — Create `web/.env.example` (parallel)
-- **M0-P003** — Update `web/next.config.ts` (parallel)
 - **M0-P004** — Finish CLAUDE.md updates (parallel)
-- **M0-P005** — Rewrite README.md + INDEX.md properly (parallel; T001+T002 already did minimal surgical cleanup)
+- **M0-P005** — Rewrite README.md + INDEX.md properly (parallel)
 - **M0-P006** — Create `web/supabase/migrations/` (parallel)
 - **M0-P007** — Expand M1 task files (parallel)
 
@@ -36,6 +34,7 @@ _none_
 
 ## Recently completed
 
+- **M0-P003** (2026-04-20T01:15Z) — Rewrote next.config.ts (removed GitHub Pages static export), deleted deploy-pages.yml, dev server now serves `/` cleanly
 - **M0-T002** (2026-04-20T00:50Z) — app/ → archive/app-html-prototype-2026-04-20; legacy scripts moved; WHY-ARCHIVED written; build green
 - **M0-T001** (2026-04-20T00:25Z) — Rename next-scaffold → web; build/typecheck green
 

@@ -3,16 +3,17 @@ id: M0-P003
 title: Update web/next.config.ts for production
 milestone: M0
 kind: parallel
-status: TODO
+status: DONE
 blocked_by: [M0-T001]
 blocks: []
 parallel_safe: true
 touches:
   - web/next.config.ts
   - .github/workflows/deploy-pages.yml
-owner: null
-started_at: null
-completed_at: null
+  - web/public/.nojekyll
+owner: opus-4.7-session-20260420
+started_at: 2026-04-20T01:00Z
+completed_at: 2026-04-20T01:15Z
 ---
 
 # M0-P003 — Update `web/next.config.ts` for production
@@ -110,3 +111,23 @@ cd web && pnpm build
 - If you need to preview builds locally before Vercel is set up: `cd web && pnpm build && pnpm start`.
 
 ## Trace
+
+**2026-04-20T01:15Z — opus-4.7-session-20260420 — DONE (pulled in early)**
+
+Executed ahead of schedule because it blocked dev-server verification after M0-T002. Dev server showed 404 on `/` because `web/next.config.ts` still had `output: 'export'` + `basePath: '/london-cuts'` + `trailingSlash: true` from the GitHub Pages era.
+
+Changes:
+- `web/next.config.ts`: removed `output`, `basePath`, `trailingSlash`; removed `images.unoptimized`; added `remotePatterns` for Supabase Storage and `basemaps.cartocdn.com`; kept `turbopack.root` (switched to `__dirname`) to silence multi-lockfile warning (stray `package-lock.json` in user's home dir)
+- Deleted `.github/workflows/deploy-pages.yml` (Vercel will handle deployment in M6). The `.github/` directory is now empty and was removed by git.
+- Deleted `web/public/.nojekyll` (GitHub Pages artifact). `web/public/` had nothing else tracked and was removed by git.
+
+Verification:
+- `cd web && pnpm dev` — Turbopack ready in ~300ms, no warnings
+- `curl http://localhost:3000/` — HTTP 200, "London Cuts" landing page renders with full body content
+- Asset paths are `/_next/...` (no `/london-cuts` prefix anymore)
+- `cd web && pnpm build` — 33 pages built, all SSG/Static, success
+
+Notes for downstream:
+- The empty `.github/workflows/` directory is gone; M5-P002/P003 will need to recreate it when adding CI.
+- `web/public/` is gone; create it when we have static assets (favicons, OG images, robots.txt).
+- M6 deploy is now cleanly on Vercel.
