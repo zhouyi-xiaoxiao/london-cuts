@@ -79,7 +79,7 @@ This is the single source of truth for what we are building. If a task, plan, or
 ## 4. Non-functional
 
 ### NFR1 Architecture
-- **Single main codebase:** rename `next-scaffold/` → `web/`
+- **Single main codebase:** `web/` (renamed from `next-scaffold/` in M0-T001)
 - Archive legacy: `app/` → `archive/app-html-prototype-2026-04-20/`
 - Seam layers (business code MUST go through these, not raw SDKs):
   - `web/lib/storage.ts` — all data read/write

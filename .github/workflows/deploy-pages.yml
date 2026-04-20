@@ -32,23 +32,23 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: next-scaffold/pnpm-lock.yaml
+          cache-dependency-path: web/pnpm-lock.yaml
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
       - name: Install dependencies
-        working-directory: next-scaffold
+        working-directory: web
         run: pnpm install --frozen-lockfile
 
       - name: Build static export
-        working-directory: next-scaffold
+        working-directory: web
         run: pnpm build
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: next-scaffold/out
+          path: web/out
 
   deploy:
     environment:

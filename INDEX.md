@@ -7,7 +7,7 @@ Tags are stable; descriptions may drift — when in doubt, read the folder's own
 
 ```
 app/             [active, prototype, react-umd, html]    Current running prototype. Entry: index.html.
-next-scaffold/   [active, scaffold, nextjs-ts, pnpm]     Parallel Next.js + TS track. Entry: app/page.tsx.
+web/   [active, scaffold, nextjs-ts, pnpm]     Parallel Next.js + TS track. Entry: app/page.tsx.
 design-system/   [canonical, tokens, assets, preview]    Design system — single source of truth.
 pitch/           [deliverable, presentation]              Pitch PDF + JSX slide deck.
 docs/            [prose, briefs, handoffs]                All long-form docs in one place.
@@ -26,15 +26,15 @@ app/seed-images/                   — photos used by the prototype (overlaps wi
 app/local-config.example.js        — template for local OpenAI key (gitignored: app/local-config.js)
 ```
 
-## `next-scaffold/`
+## `web/`
 ```
-next-scaffold/app/                 — Next 14 app-router pages
-next-scaffold/components/          — shared UI
-next-scaffold/lib/                 — data + helpers
-next-scaffold/providers/           — media provider adapter (mock)
-next-scaffold/prototype/           — early HTML prototype preserved inside the scaffold
-next-scaffold/package.json         — pnpm, next, react 18
-next-scaffold/CLAUDE.md            — scaffold-specific agent notes (from original handoff)
+web/app/                 — Next 14 app-router pages
+web/components/          — shared UI
+web/lib/                 — data + helpers
+web/providers/           — media provider adapter (mock)
+web/prototype/           — early HTML prototype preserved inside the scaffold
+web/package.json         — pnpm, next, react 18
+web/CLAUDE.md            — scaffold-specific agent notes (from original handoff)
 ```
 
 ## `design-system/`
@@ -96,7 +96,7 @@ scripts/START-LIVE-DEMO.command    — macOS double-click launcher
 ## Conventions for agents
 
 1. **Design truth → `design-system/`**. If a color / type / spacing value is in here, do not invent a new one.
-2. **Two tracks**: changes go into `app/` OR `next-scaffold/`, not both. Confirm with user before cross-porting.
+2. **Two tracks**: changes go into `app/` OR `web/`, not both. Confirm with user before cross-porting.
 3. **Never edit `archive/`**. Copy forward if you need something.
 4. **Secrets**: no real API keys in tracked files. `app/local-config.js` is gitignored.
 5. **New top-level folder**: update this `INDEX.md` and root `README.md` in the same change.

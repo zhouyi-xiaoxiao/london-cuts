@@ -17,9 +17,9 @@ Working name: "London Cuts" (placeholder; product will be renamed before public 
 
 ## Single codebase
 
-All product code lives in `web/` (after M0-T001 completes — until then it's still `next-scaffold/`). Next.js 14 + TypeScript + pnpm, Node 22+.
+All product code lives in `web/`. Next.js 14 + TypeScript + pnpm, Node 22+.
 
-The HTML-era prototype in `archive/app-html-prototype-2026-04-20/` (also after M0-T002 completes) is **frozen**. Read for reference only; do not edit.
+The HTML-era prototype in `archive/app-html-prototype-2026-04-20/` (after M0-T002 completes) is **frozen**. Read for reference only; do not edit.
 
 ## Task workflow
 

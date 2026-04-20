@@ -3,7 +3,7 @@ id: M0-T001
 title: Rename next-scaffold/ to web/
 milestone: M0
 kind: critical
-status: TODO
+status: DONE
 blocked_by: []
 blocks: [M0-P001, M0-P002, M0-P003, M0-P005, M0-P006]
 parallel_safe: false
@@ -14,9 +14,9 @@ touches:
   - INDEX.md
   - .github/workflows/
   - CLAUDE.md
-owner: null
-started_at: null
-completed_at: null
+owner: opus-4.7-session-20260420
+started_at: 2026-04-20T00:10Z
+completed_at: 2026-04-20T00:25Z
 ---
 
 # M0-T001 — Rename `next-scaffold/` → `web/`
@@ -70,4 +70,27 @@ cd web && pnpm build
 _none — this is the first M0 task_
 
 ## Trace
-<!-- Append dated notes here when you work on this task. -->
+
+**2026-04-20T00:25Z — opus-4.7-session-20260420 — DONE**
+
+Executed:
+- `git mv next-scaffold web` (history preserved)
+- `web/package.json` `name` was already `"london-cuts"` — no change needed
+- Deleted `web/README-scaffold.md` (outdated scaffold-specific readme; root README + INDEX now authoritative)
+- Updated active references: `CLAUDE.md`, `README.md`, `INDEX.md`, `.github/workflows/deploy-pages.yml`, `archive/README.md`
+- Updated `docs/requirements.md` line 82 to past-tense
+
+Deviation from strict acceptance:
+- Left `next-scaffold` mentions in 3 places as intentional historical markers:
+  - `docs/architecture.md:58` — `"(was next-scaffold/)"` explicit history
+  - `docs/implementation-plan.md:14,63` — describe M0 milestone/task titles referencing the rename
+  - All task files under `tasks/M0-consolidation/` (they describe this very rename)
+  - `tasks/LOG.md` (event history)
+- This matches the spirit of acceptance "except in archive/ and LOG history" — these are effectively history.
+
+Verification:
+- `cd web && pnpm install` — up to date, no errors
+- `cd web && pnpm typecheck` — passed (no output = success)
+- `cd web && pnpm build` — built 33 pages, success
+
+Next: M0-T002 (archive legacy `app/`).

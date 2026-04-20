@@ -1,24 +1,29 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-20 (initial scaffold)
+**Last updated:** 2026-04-20T00:25Z
 
 ## Summary
 
 | Milestone | TODO | IN_PROGRESS | DONE | BLOCKED | Total |
 |-----------|------|-------------|------|---------|-------|
-| M0 Consolidation        | 9  | 0 | 0 | 0 | 9  |
+| M0 Consolidation        | 8  | 0 | 1 | 0 | 9  |
 | M1 Supabase & data      | 8  | 0 | 0 | 0 | 8  |
 | M2 Auth & invites       | 10 | 0 | 0 | 0 | 10 |
 | M3 Feature parity       | 13 | 0 | 0 | 0 | 13 |
 | M4 Public pages & polish| 10 | 0 | 0 | 0 | 10 |
 | M5 Observability & tests| 6  | 0 | 0 | 0 | 6  |
 | M6 Launch               | 9  | 0 | 0 | 0 | 9  |
-| **Total**               | **65** | **0** | **0** | **0** | **65** |
+| **Total**               | **64** | **0** | **1** | **0** | **65** |
 
 ## Eligible next tasks (TODO with no unmet blockers)
 
-- **M0-T001** — Rename next-scaffold/ to web/ (critical, starts M0)
-- **M0-P004** — Update CLAUDE.md to reflect single-track repo (parallel, doesn't depend on rename yet)
+- **M0-T002** — Archive legacy app/ (critical)
+- **M0-P001** — Create seam file stubs (parallel, unblocked by T001 done)
+- **M0-P002** — Create `web/.env.example` (parallel, unblocked by T001 done)
+- **M0-P003** — Update `web/next.config.ts` (parallel, unblocked by T001 done)
+- **M0-P004** — Update CLAUDE.md (parallel, partially done — M0-T001 already edited 2 lines)
+- **M0-P006** — Create `web/supabase/migrations/` (parallel, unblocked by T001 done)
+- **M0-P007** — Expand M1 task files (parallel, no blockers)
 
 ## In progress
 
@@ -30,7 +35,7 @@ _none_
 
 ## Recently completed
 
-_none yet_
+- **M0-T001** (2026-04-20T00:25Z) — Rename next-scaffold → web; build/typecheck green
 
 ## Active sessions
 

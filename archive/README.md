@@ -1,6 +1,6 @@
 # archive/ — frozen historical versions
 
-**Read-only.** Do not edit anything here. If you need something, copy it forward into `app/` or `next-scaffold/`.
+**Read-only.** Do not edit anything here. If you need something, copy it forward into `web/`.
 
 ## Contents
 

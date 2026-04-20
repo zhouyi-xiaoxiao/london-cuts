@@ -29,7 +29,7 @@ open design-system/preview/colors-accent.html
 **Next.js track (parallel implementation):**
 
 ```bash
-cd next-scaffold
+cd web
 pnpm install
 pnpm dev
 ```
@@ -37,10 +37,10 @@ pnpm dev
 **Safe public deploy track (GitHub Pages):**
 
 ```bash
-cd next-scaffold
+cd web
 pnpm install
 pnpm build
-# static export lands in next-scaffold/out
+# static export lands in web/out
 ```
 
 `.github/workflows/deploy-pages.yml` publishes the static export through GitHub Pages on pushes to `main`.
@@ -52,7 +52,7 @@ pnpm build
 See `INDEX.md` for the machine-readable file map. High level:
 
 - `app/` — active HTML/React-UMD prototype (what `london-cuts-v3.html` was built from)
-- `next-scaffold/` — parallel Next.js + TypeScript implementation, not-yet-merged with app/
+- `web/` — parallel Next.js + TypeScript implementation, not-yet-merged with app/
 - `design-system/` — **canonical** tokens, components, seed imagery, preview pages
 - `pitch/` — pitch deck assets (PDF + JSX slides)
 - `docs/` — briefs, handoffs, deploy guides, mission
@@ -75,6 +75,6 @@ Do **not** implement actual image-to-image or image-to-video model calls here �
 ## Contributing / extending
 
 - **Design changes** flow from `design-system/` outward. The tokens in `design-system/colors_and_type.css` and `design-system/ui_kits/studio/tokens.css` are the source of truth.
-- **Two engineering tracks**: `app/` (fast-iteration HTML prototype) and `next-scaffold/` (production-shape Next.js). Decide which to advance before deep work — don't duplicate features across both unnecessarily.
+- **Two engineering tracks**: `app/` (fast-iteration HTML prototype) and `web/` (production-shape Next.js). Decide which to advance before deep work — don't duplicate features across both unnecessarily.
 - **Don't edit `archive/`**. If you need something from there, copy it forward.
 - **Agent-friendly**: `CLAUDE.md` (root) describes the conventions. Each major subdirectory has its own `README.md`.
