@@ -17,7 +17,7 @@ __pycache__/
 venv/
 
 # Local configs / secrets
-app/local-config.js
+archive/app-html-prototype-*/local-config.js
 .env
 .env.*
 !.env.example

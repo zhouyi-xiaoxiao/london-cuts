@@ -6,35 +6,26 @@ Tags are stable; descriptions may drift — when in doubt, read the folder's own
 ## Top level
 
 ```
-app/             [active, prototype, react-umd, html]    Current running prototype. Entry: index.html.
-web/   [active, scaffold, nextjs-ts, pnpm]     Parallel Next.js + TS track. Entry: app/page.tsx.
+web/             [active, product, nextjs-ts, pnpm]      The product. Entry: app/page.tsx.
 design-system/   [canonical, tokens, assets, preview]    Design system — single source of truth.
+docs/            [prose, specs]                           Requirements, architecture, data model, plan.
+tasks/           [execution, agents]                      M0–M6 task system for AI coding agents.
 pitch/           [deliverable, presentation]              Pitch PDF + JSX slide deck.
-docs/            [prose, briefs, handoffs]                All long-form docs in one place.
 assets/          [brand, exports]                         Roundel logo, postcard exports.
 archive/         [frozen, read-only, historical]          Prior rounds. Do not edit.
-scripts/         [tools, utilities]                       Python scripts + demo launchers.
-```
-
-## `app/`
-```
-app/index.html                     — entry, loads src/*.jsx via Babel standalone
-app/src/                           — 10+ JSX components (app, store, workspace, postcard-editor, public-*, atlas, …)
-app/styles/base.css                — base styles
-app/styles/v2.css                  — v2 mode styles
-app/seed-images/                   — photos used by the prototype (overlaps with design-system/assets/)
-app/local-config.example.js        — template for local OpenAI key (gitignored: app/local-config.js)
+scripts/         [tools, utilities]                       Python scripts + utilities.
 ```
 
 ## `web/`
 ```
 web/app/                 — Next 14 app-router pages
 web/components/          — shared UI
-web/lib/                 — data + helpers
-web/providers/           — media provider adapter (mock)
-web/prototype/           — early HTML prototype preserved inside the scaffold
-web/package.json         — pnpm, next, react 18
-web/CLAUDE.md            — scaffold-specific agent notes (from original handoff)
+web/lib/                 — seam layer (storage, auth, ai-provider, email, analytics, env, errors)
+web/providers/           — React context providers (media provider adapter, demo store)
+web/prototype/           — legacy HTML prototype kept for reference inside the scaffold
+web/supabase/migrations/ — DB migrations (scaffold created in M0-P006)
+web/package.json         — pnpm, next 16, react 19
+web/CLAUDE.md            — scaffold-specific agent notes (historical; root CLAUDE.md is authoritative)
 ```
 
 ## `design-system/`
@@ -75,28 +66,30 @@ assets/postcard-exports/           — postcard renders from Downloads (png)
 
 ## `archive/`
 ```
-archive/v1-prototype/prototype-a/  — v1 prototype (was _reference/original-brief/current-prototype)
-archive/v1-prototype/prototype-b/  — v1 prototype alt (was _reference/my-rounds-1-and-2)
-archive/v1-prototype/screenshots/  — reference screenshots
-archive/v2-design/                 — claude.ai/design v2 handoff (React + css)
-archive/earlier-handoff/london-cut/— even earlier HTML handoff
-archive/earlier-design/design.gz   — opaque design archive
-archive/compiled-exports/          — single-file HTML bundles (v2-handoff + v3)
+archive/app-html-prototype-2026-04-20/  — legacy HTML + UMD React prototype (frozen M0-T002)
+archive/v1-prototype/prototype-a/       — v1 prototype
+archive/v1-prototype/prototype-b/       — v1 prototype alt
+archive/v1-prototype/screenshots/       — reference screenshots
+archive/v2-design/                      — claude.ai/design v2 handoff (React + css)
+archive/earlier-handoff/london-cut/     — even earlier HTML handoff
+archive/earlier-design/design.gz        — opaque design archive
+archive/compiled-exports/               — single-file HTML bundles (v2-handoff + v3)
 ```
 
 ## `scripts/`
 ```
 scripts/brace_check.py             — utility
 scripts/render_postcards.py        — postcard renderer
-scripts/START-LIVE-DEMO.command    — macOS double-click launcher
 ```
+Legacy launch/deploy scripts moved into `archive/app-html-prototype-2026-04-20/scripts/`.
 
 ---
 
 ## Conventions for agents
 
 1. **Design truth → `design-system/`**. If a color / type / spacing value is in here, do not invent a new one.
-2. **Two tracks**: changes go into `app/` OR `web/`, not both. Confirm with user before cross-porting.
+2. **Single codebase → `web/`**. The legacy HTML prototype in `archive/app-html-prototype-2026-04-20/` is read-only reference.
 3. **Never edit `archive/`**. Copy forward if you need something.
-4. **Secrets**: no real API keys in tracked files. `app/local-config.js` is gitignored.
+4. **Secrets**: no real API keys in tracked files. See `web/.env.example`.
 5. **New top-level folder**: update this `INDEX.md` and root `README.md` in the same change.
+6. **Task-driven work**: see `tasks/README.md` and `tasks/AGENTS.md`.

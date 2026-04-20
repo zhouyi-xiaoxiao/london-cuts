@@ -8,42 +8,19 @@ This repo is the **single source of truth** for the London Cuts project. It cons
 
 ## Quick start
 
-**See the product running (current prototype):**
-
 ```bash
-cd app
-python3 -m http.server 8000
-# open http://localhost:8000
+cd web
+pnpm install
+pnpm dev
+# open http://localhost:3000
 ```
-
-If you have an OpenAI key and want the vision pipeline to work, copy `app/local-config.example.js` → `app/local-config.js` and paste your key. `local-config.js` is gitignored.
 
 **Browse the design system:**
 
 ```bash
 open design-system/preview/brand-roundel.html
-open design-system/preview/colors-accent.html
 # ...any file in design-system/preview/
 ```
-
-**Next.js track (parallel implementation):**
-
-```bash
-cd web
-pnpm install
-pnpm dev
-```
-
-**Safe public deploy track (GitHub Pages):**
-
-```bash
-cd web
-pnpm install
-pnpm build
-# static export lands in web/out
-```
-
-`.github/workflows/deploy-pages.yml` publishes the static export through GitHub Pages on pushes to `main`.
 
 ---
 
@@ -51,11 +28,11 @@ pnpm build
 
 See `INDEX.md` for the machine-readable file map. High level:
 
-- `app/` — active HTML/React-UMD prototype (what `london-cuts-v3.html` was built from)
-- `web/` — parallel Next.js + TypeScript implementation, not-yet-merged with app/
+- `web/` — the product (Next.js 14 + TypeScript, pnpm, Node 22+)
 - `design-system/` — **canonical** tokens, components, seed imagery, preview pages
+- `docs/` — requirements, architecture, data model, implementation plan
+- `tasks/` — executable task system for AI coding agents (M0–M6)
 - `pitch/` — pitch deck assets (PDF + JSX slides)
-- `docs/` — briefs, handoffs, deploy guides, mission
 - `assets/` — brand marks, postcard exports
 - `archive/` — frozen historical versions, do not edit
 - `scripts/` — utilities
@@ -75,6 +52,6 @@ Do **not** implement actual image-to-image or image-to-video model calls here �
 ## Contributing / extending
 
 - **Design changes** flow from `design-system/` outward. The tokens in `design-system/colors_and_type.css` and `design-system/ui_kits/studio/tokens.css` are the source of truth.
-- **Two engineering tracks**: `app/` (fast-iteration HTML prototype) and `web/` (production-shape Next.js). Decide which to advance before deep work — don't duplicate features across both unnecessarily.
-- **Don't edit `archive/`**. If you need something from there, copy it forward.
-- **Agent-friendly**: `CLAUDE.md` (root) describes the conventions. Each major subdirectory has its own `README.md`.
+- **Single codebase**: all product code lives in `web/`. The legacy HTML prototype is frozen in `archive/app-html-prototype-2026-04-20/` — do not edit it.
+- **Don't edit `archive/`**. If you need something from there, copy it forward into `web/`.
+- **Agent-friendly**: `CLAUDE.md` (root) describes the conventions. Each major subdirectory has its own `README.md`. Task system in `tasks/` is the live execution plan.

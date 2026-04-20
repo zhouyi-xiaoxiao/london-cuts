@@ -3,7 +3,7 @@ id: M0-T002
 title: Archive legacy app/ HTML prototype
 milestone: M0
 kind: critical
-status: TODO
+status: DONE
 blocked_by: []
 blocks: [M0-P005]
 parallel_safe: false
@@ -15,9 +15,9 @@ touches:
   - CLAUDE.md
   - README.md
   - INDEX.md
-owner: null
-started_at: null
-completed_at: null
+owner: opus-4.7-session-20260420
+started_at: 2026-04-20T00:30Z
+completed_at: 2026-04-20T00:50Z
 ---
 
 # M0-T002 — Archive legacy `app/` HTML prototype
@@ -74,3 +74,26 @@ git grep -n "^app/" -- . ':!archive/' ':!web/' ':!tasks/'
 ```
 
 ## Trace
+
+**2026-04-20T00:50Z — opus-4.7-session-20260420 — DONE**
+
+Executed:
+- `git mv app archive/app-html-prototype-2026-04-20` (history preserved)
+- Moved app-tied scripts into archive: `scripts/START-LIVE-DEMO.command` and `scripts/deploy-phase-a.sh` → `archive/app-html-prototype-2026-04-20/scripts/`
+- Wrote `archive/app-html-prototype-2026-04-20/WHY-ARCHIVED.md` with port reference table for M3
+- Updated `archive/README.md` to list the new archived directory at the top
+- Purged residual active `app/` refs:
+  - `.gitignore`: `app/local-config.js` → `archive/app-html-prototype-*/local-config.js`
+  - `README.md`: removed two-tracks mention, collapsed quick-start to `web/` only
+  - `INDEX.md`: removed obsolete `## app/` section, updated conventions list
+
+Deviation from strict acceptance:
+- Remaining mentions of `app/` in `docs/SECURITY.md` (describes past incident) and inside `archive/app-html-prototype-2026-04-20/` (self-referential) — both intentional.
+- Did not delete `.github/workflows/deploy-pages.yml` (M0-P003 owns that).
+
+Verification:
+- `cd web && pnpm build` — 33 pages built, success
+- `ls app` → not found (confirmed moved)
+- `ls archive/app-html-prototype-2026-04-20` → all legacy files present
+
+Next: M0-P001 through M0-P007 (all parallel-safe now).
