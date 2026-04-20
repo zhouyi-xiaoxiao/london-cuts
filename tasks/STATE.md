@@ -1,17 +1,17 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-20T03:10Z
+**Last updated:** 2026-04-21T00:30Z
 
 ## Plan version
 
-**Plan v2.0** (see `docs/implementation-plan.md`): features-first. M0 complete → M-fast in progress. M1–M6 postponed. M3 superseded by M-fast.
+**Plan v2.1** (see `docs/implementation-plan.md`): features-first, time estimates removed. M0 complete → M-fast in progress. M1–M6 postponed. M3 superseded by M-fast.
 
 ## Summary
 
 | Milestone | TODO | IN_PROGRESS | DONE | BLOCKED | Total | Status |
 |-----------|------|-------------|------|---------|-------|--------|
 | M0 Consolidation        | 0  | 0 | 9 | 0 | 9  | ✅ **complete** |
-| **M-fast Feature port** | 13 | 0 | 1 | 0 | 14 | **active** ⭐ |
+| **M-fast Feature port** | 11 | 0 | 3 | 0 | 14 | **active** ⭐ |
 | M-preview Soft launch   | —  | — | — | — | —  | after M-fast |
 | M1 Supabase & data      | 8  | 0 | 0 | 0 | 8  | ⏸ postponed |
 | M2 Auth & invites       | 10 | 0 | 0 | 0 | 10 | ⏸ postponed |
@@ -22,12 +22,12 @@
 
 ## Eligible next tasks (TODO with no unmet blockers)
 
-- **F-T001** — Port shared utilities (EXIF, resize, palette, seed) — critical, blocks F-T002
-- **F-P005** — Merge legacy CSS into globals.css — parallel, no blocker
+- **F-T002** — Split legacy `store.jsx` into domain stores (critical, unblocks most of the rest of M-fast)
+- No parallel-safe tasks currently unblocked until F-T002 completes — F-P001/P002/P003/P004 all depend on stores or postcard editor
 
 ## In progress
 
-_none (awaiting owner checkpoint on F-T000)_
+_none_
 
 ## Blocked
 
@@ -35,8 +35,10 @@ _none_
 
 ## Recently completed
 
-- **F-T000** (2026-04-20T03:10Z) — POC: StylePicker ported, `/poc` page live, pipeline proven; curl returns 200 with all 6 styles
-- **M0-P007** (2026-04-20T02:40Z) — Expanded M-fast: 14 task files written (F-T000 through F-T009 + F-P001 through F-P005)
+- **F-P005** (2026-04-21T00:30Z) — Legacy CSS merged into web/app/globals.css (444 → 775 lines). Ran in parallel via subagent under PARALLELISM.md protocol. Verified no regressions.
+- **F-T001** (2026-04-21T00:30Z) — Shared utilities ported: web/lib/utils/{exif,image,hash}.ts + web/lib/seed.ts. Added `exifr` dep. Found + fixed cream-on-cream StylePicker bug via Preview MCP.
+- **F-T000** (2026-04-20T03:10Z) — POC: StylePicker ported, `/poc` page live
+- **M0-P007** (2026-04-20T02:40Z) — Expanded M-fast: 14 task files written
 - **M0-P005** (2026-04-20T02:05Z) — Rewrote README.md + INDEX.md for plan v2.0
 - **M0-P004** (2026-04-20T02:05Z) — CLAUDE.md (root) updated to v2 content; web/CLAUDE.md replaced with pointer to root
 - **M0-P006** (2026-04-20T01:58Z) — Created web/supabase/ dir scaffold

@@ -20,7 +20,7 @@ completed_at: 2026-04-20T03:10Z
 # F-T000 — POC: port one trivial component end-to-end
 
 ## Why
-Before committing 5 days to a full port, verify the porting pipeline works with the smallest possible real slice. Produces:
+Before committing real effort to a full port, verify the porting pipeline works with the smallest possible real slice. Produces:
 - Confidence that JSX → TSX works
 - A reference template for later ports
 - An early red flag if anything unexpected breaks

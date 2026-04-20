@@ -1,7 +1,6 @@
 # M0 — Consolidation
 
 **Goal:** One clean codebase in `web/`. Seam files exist. Legacy archived. Docs aligned.
-**Duration estimate:** 2–3 days.
 **Exit criteria:**
 - `web/` directory exists and builds (`cd web && pnpm install && pnpm build` succeeds).
 - `app/` is moved to `archive/app-html-prototype-2026-04-20/` and untouched afterward.

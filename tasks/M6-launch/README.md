@@ -1,7 +1,6 @@
 # M6 — Launch
 
 **Goal:** `zhouyixiaoxiao.org` serves the app publicly. 30 beta invites sent. First 3 real users logged in.
-**Duration estimate:** 1 day (plus soak time).
 **Exit criteria:**
 - Vercel production deploy green
 - Domain resolves to the app, HTTPS valid

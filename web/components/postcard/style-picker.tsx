@@ -38,10 +38,17 @@ export function StylePicker({ value, onChange, disabled = false }: StylePickerPr
               letterSpacing: "0.06em",
               textTransform: "uppercase",
               padding: "6px 10px",
-              border: "1px solid currentColor",
+              // Use explicit tokens rather than `currentColor` — React inline
+              // styles don't preserve cascade order, so `background: currentColor`
+              // + `color: var(--mode-bg)` resolved to bg-on-bg in both slots.
+              border: `1px solid var(--mode-ink, var(--ink))`,
               borderRadius: 999,
-              background: active ? "currentColor" : "transparent",
-              color: active ? "var(--mode-bg)" : "inherit",
+              background: active
+                ? "var(--mode-ink, var(--ink))"
+                : "transparent",
+              color: active
+                ? "var(--mode-bg, var(--paper))"
+                : "var(--mode-ink, var(--ink))",
               cursor: disabled ? "not-allowed" : "pointer",
               opacity: disabled ? 0.45 : 1,
               transition: "background 120ms ease, color 120ms ease",

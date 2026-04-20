@@ -1,7 +1,6 @@
 # M4 — Public pages & polish
 
 **Goal:** Guests (no auth) can enjoy the site. Landing, atlas, 404s, ToS/Privacy stubs, feedback form. Empty/loading states polished.
-**Duration estimate:** 2 days.
 **Exit criteria:**
 - Non-authenticated visitor can: land on home, browse atlas, open any public project, switch modes, download postcard PNG
 - Footer links to ToS, Privacy, feedback on every page

@@ -3,17 +3,16 @@ id: F-T001
 title: Port shared utilities (EXIF, image resize, palette, seed)
 milestone: M-fast
 kind: critical
-status: TODO
+status: DONE
 blocked_by: [F-T000]
 blocks: [F-T002, F-T006, F-T007]
 parallel_safe: false
 touches:
   - web/lib/utils/
   - web/lib/seed.ts
-  - web/lib/palette.ts
-owner: null
-started_at: null
-completed_at: null
+owner: opus-4.7-session-20260421
+started_at: 2026-04-21T00:08Z
+completed_at: 2026-04-21T00:30Z
 ---
 
 # F-T001 — Port shared utilities
@@ -61,3 +60,29 @@ Low-level utility functions are used by many later tasks (image upload, postcard
 - Run unit test (write one if convenient): resize a fixture image, confirm output is under 1600px on the long edge.
 
 ## Trace
+
+**2026-04-21T00:30Z — opus-4.7-session-20260421 — DONE**
+
+Scope note: this task as originally written assumed `shared.jsx` was the source of EXIF/resize code. It wasn't — it's UI primitives (Img, Roundel, ModePill, Pips). The actual EXIF + resize functions live in `src/vision-pipeline.jsx` (`vpReadExif`, `vpLoadToJpegDataUrl`). Adjusted the port accordingly.
+
+Added dependency: `exifr@7.1.3` (for GPS/date/orientation extraction).
+
+Created:
+- `web/lib/utils/exif.ts` — `readExif(blob)` → `{orientation, lat, lng, dateOriginal}`. Wraps exifr with a safe-default fallback (never throws). Also exports `orientationSwapsAxes(o)`.
+- `web/lib/utils/image.ts` — `resizeToDataUrl(file, orientation?, maxEdge=1600, quality=0.88)` → JPEG data URL with EXIF rotation applied. Same two-tier createImageBitmap + HTMLImageElement fallback as legacy. Plus convenience `prepareImage(file)` that reads EXIF and resizes in one call.
+- `web/lib/utils/hash.ts` — `stableFileKey` (cheap identity), `sha256Hex` (real SHA-256), `variantCacheKey`.
+- `web/lib/seed.ts` — typed port of `data.jsx`: `SEED_PROJECT`, `SEED_STOPS`, `SEED_BODY_05`, `SEED_POSTCARD_05`, `SEED_ASSETS`, `SEED_TASKS`, `PROJECTS_FEED`, `projectSummary()`. All `readonly`.
+
+Deferred (not in F-T001 acceptance):
+- Palette-extraction K-means (the `palette.jsx` image-palette one) — only used by `usePalette` hook. Will port with the workspace in F-T004.
+- UI primitives from `shared.jsx` (`Img`, `Roundel`, `ModePill`, `Pips`) — each finds its natural home in a feature file: `Roundel` → design-system primitives (already in globals.css via F-P005), `ModePill` → F-P001, `Pips` → F-T004.
+
+POC regression test (via Preview MCP):
+- Navigated to `/poc`, screenshotted before and after.
+- Found and fixed a rendering bug in StylePicker: inline-style `background: currentColor` + `color: var(--mode-bg)` resolved to bg-on-bg (invisible text on active pill). Swapped to explicit `var(--mode-ink)` / `var(--mode-bg)`. Verified via second screenshot that active button now shows "🎨 WATERCOLOUR ILLUSTRATION" in paper-on-ink.
+- Clicked a non-active button to verify interaction — state updates, "Selected" panel changes.
+- Console: 0 errors, 0 warnings.
+
+Verification: `pnpm typecheck` green.
+
+Risks deferred to later tasks: HEIC fallback on Chrome (F-T005 upload path), SSR safety of `'use client'` directive (F-T003 dashboard).

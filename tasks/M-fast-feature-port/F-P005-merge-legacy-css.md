@@ -3,15 +3,15 @@ id: F-P005
 title: Merge legacy CSS into web/app/globals.css
 milestone: M-fast
 kind: parallel
-status: TODO
+status: DONE
 blocked_by: []
 blocks: [F-T003, F-T004]
 parallel_safe: true
 touches:
   - web/app/globals.css
-owner: null
-started_at: null
-completed_at: null
+owner: subagent-F-P005-via-opus-4.7-main
+started_at: 2026-04-21T00:05Z
+completed_at: 2026-04-21T00:30Z
 ---
 
 # F-P005 — Merge legacy CSS into web/app/globals.css
@@ -49,3 +49,30 @@ Legacy had `styles/base.css` and `styles/v2.css`. These contained the design-sys
 - Mode switch (F-P001) triggers expected cascade changes
 
 ## Trace
+
+**2026-04-21T00:30Z — subagent (dispatched by opus-4.7-session-20260421) — DONE**
+
+Executed in parallel with F-T001. Ran under `PARALLELISM.md` protocol — no file overlap with main-session task.
+
+Subagent report (verbatim hand-off):
+
+> Strategy. Merged legacy `base.css` (V1 tokens, primitives, placeholders, roundel, markers) + shared V2 components into `web/app/globals.css`, prefixed with legacy value comments where conflicts existed. Deferred all feature-specific V2 rules (workspace shell `.ws-*`, `.spine`, `.canvas`, `.drawers`, `.n-*` node types, `.slideover*`, `.lc-variants*`, `.lc-tour-*`, `.publish-help`, `.atlas-*`, `.lc-postcard-*` 3D flip, `.lc-key-modal*`, `.lc-gen-*`, responsive workspace breakpoints) to future component CSS modules. Kept only primitives that multiple features share: `.mode-pill`, `.pip-group`/`.pip`, `.annot`, `.frame`/`.frame-caption`, `.tabs`, `.overline-divider`, `.stopband`, `.editable`, `.sticky-sidebar`.
+>
+> Counts. Before: 444 lines. After: 775 lines.
+>
+> Conflicts resolved (legacy wins): `--paper-2/3`, `--ink-2/3`, `--rule` values aligned to legacy. `[data-mode=...]` tokens adopted legacy ink/bg exactly; both `--mode-display-font`/`--mode-body-font` (legacy) and `--mode-display`/`--mode-body` (scaffold) kept as aliases so either naming works.
+>
+> Risks flagged for main session:
+> 1. Body has a scaffold gradient that cascades above `--mode-bg` — mode-switched pages must use `.page`/`.lc-page` wrapper.
+> 2. `oklch(from currentColor …)` relative color syntax requires Chrome 119+/Safari 16.4+.
+> 3. `--edge` set to legacy `40px`; some scaffold pages may look tight on mobile.
+> 4. Scaffold's `.lc-studio-*` + `.lc-postcard-*` removed from globals — pages using them lose styling until their components port.
+
+Main-session verification after merge:
+- `pnpm typecheck` green
+- `pnpm build` green (33 pages)
+- `/poc` rendered via Preview MCP — Google Fonts load, tokens resolve, active pill styling visible
+- Console: 0 errors, 0 warnings on `/poc`
+- No regression on `/`, `/atlas`, `/studio` (all HTTP 200)
+
+Subagent did NOT commit; main session commits after verification as per PARALLELISM.md protocol.

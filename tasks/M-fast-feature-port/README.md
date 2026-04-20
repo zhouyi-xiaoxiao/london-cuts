@@ -2,7 +2,6 @@
 
 **Goal:** Bring every working feature from `archive/app-html-prototype-2026-04-20/` into `web/`, with the same user-visible behaviour but as proper Next.js 14 + TypeScript code. No backend yet — data stays in localStorage / IndexedDB, OpenAI key pasted to sessionStorage (same as old app).
 
-**Duration:** 5 days target.
 
 **Exit criteria:**
 - Visiting `http://localhost:3000` gives the same experience as `http://localhost:8000/#workspace` did in the legacy prototype
@@ -20,23 +19,23 @@ Each task ports one vertical slice and is verified before moving on. If a step f
 
 ## Tasks
 
-| ID | Title | Kind | Blocked by | Est |
-|----|-------|------|------------|-----|
-| F-T000 | POC: port one trivial component to prove the pipeline | critical | M0 done | 20 min |
-| F-T001 | Port shared utilities: EXIF reader, image resize, palette, data seeds | critical | F-T000 | 0.5 day |
-| F-T002 | Split `store.jsx` (1000 lines) into domain stores (project / stop / postcard / mode / ui) as TS | critical | F-T001 | 1 day |
-| F-T003 | Port projects dashboard ("Your work." screen) | critical | F-T002 | 0.5 day |
-| F-T004 | Port workspace: stop spine + canvas + drawers layout | critical | F-T002 | 1 day |
-| F-T005 | Port stop editor (metadata, body, drag reorder, upload hero image) | critical | F-T004 | 0.5 day |
-| F-T006 | Port postcard editor (6 styles, flip card, orientation toggle, AI generate) | critical | F-T005 | 1 day |
-| F-T007 | Port vision pipeline (folder upload → GPT-4o → auto-stops) | critical | F-T006 | 0.5 day |
-| F-T008 | Port publish flow (pre-flight, visibility, publish action) | critical | F-T005 | 0.25 day |
-| F-T009 | Port public project page (hero + atlas + stops + flip postcards) | critical | F-T006, F-T008 | 0.5 day |
-| F-P001 | Port mode switcher (Fashion / Punk / Cinema) — pulls from already-present `web/` tokens | parallel | F-T002 | 0.5 day |
-| F-P002 | Port MapLibre atlas with mode-aware tile styles | parallel | F-T004 | 0.5 day |
-| F-P003 | Port PDF export (preserve `jspdf` + postcard layout) | parallel | F-T006 | 0.25 day |
-| F-P004 | Port PNG export (`html-to-image`) — **make button prominent** (was hidden in legacy) | parallel | F-T006 | 0.25 day |
-| F-P005 | Copy-port legacy CSS into `web/app/globals.css` (merge `base.css` + `v2.css`) | parallel | — | 0.25 day |
+| ID | Title | Kind | Blocked by |
+|----|-------|------|------------|
+| F-T000 | POC: port one trivial component to prove the pipeline | critical | M0 done |
+| F-T001 | Port shared utilities: EXIF reader, image resize, palette, data seeds | critical | F-T000 |
+| F-T002 | Split `store.jsx` (1000 lines) into domain stores (project / stop / postcard / mode / ui) as TS | critical | F-T001 |
+| F-T003 | Port projects dashboard ("Your work." screen) | critical | F-T002 |
+| F-T004 | Port workspace: stop spine + canvas + drawers layout | critical | F-T002 |
+| F-T005 | Port stop editor (metadata, body, drag reorder, upload hero image) | critical | F-T004 |
+| F-T006 | Port postcard editor (6 styles, flip card, orientation toggle, AI generate) | critical | F-T005 |
+| F-T007 | Port vision pipeline (folder upload → GPT-4o → auto-stops) | critical | F-T006 |
+| F-T008 | Port publish flow (pre-flight, visibility, publish action) | critical | F-T005 |
+| F-T009 | Port public project page (hero + atlas + stops + flip postcards) | critical | F-T006, F-T008 |
+| F-P001 | Port mode switcher (Fashion / Punk / Cinema) — pulls from already-present `web/` tokens | parallel | F-T002 |
+| F-P002 | Port MapLibre atlas with mode-aware tile styles | parallel | F-T004 |
+| F-P003 | Port PDF export (preserve `jspdf` + postcard layout) | parallel | F-T006 |
+| F-P004 | Port PNG export (`html-to-image`) — **make button prominent** (was hidden in legacy) | parallel | F-T006 |
+| F-P005 | Copy-port legacy CSS into `web/app/globals.css` (merge `base.css` + `v2.css`) | parallel | — |
 
 ## Porting rules
 
@@ -85,6 +84,6 @@ For every feature, here's the file to read in archive/:
 
 ## Owner checkpoints
 
-After F-T000 (POC, 20 min in): STOP and show user. Decide whether to proceed.
+After F-T000 (POC): STOP and show user. Decide whether to proceed.
 After F-T006 (postcard editor): STOP and show user. Biggest feature, highest risk.
 After F-T009 (public page): end of M-fast, move to M-preview.

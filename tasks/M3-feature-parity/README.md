@@ -3,7 +3,6 @@
 **🗄 Status:** SUPERSEDED by `tasks/M-fast-feature-port/` (plan v2.0). This folder's content is kept for reference but execution moved to M-fast (without server-side OpenAI dependency — that part shifts into M2).
 
 **Goal:** Port every real user-facing capability from legacy `app/` to `web/`. Wire OpenAI through the `ai-provider` seam (server-side only). No feature gap vs the old prototype.
-**Duration estimate:** 5 days (the biggest milestone).
 **Exit criteria:**
 - Authenticated user can create a project, upload photos, edit stops, generate postcards in 6 styles, export PDF + PNG, publish, view publicly
 - Vision pipeline (upload folder → auto-create stops) works through new server-side route

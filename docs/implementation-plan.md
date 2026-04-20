@@ -1,28 +1,28 @@
 # Implementation Plan — Beta Launch
 
-**Version:** 2.0 (2026-04-20, re-ordered)
+**Version:** 2.1 (2026-04-21, time estimates removed)
 **Target:** Working web/ prototype first, then add infra + invite-only public beta.
-**Method:** Multi-agent AI coding (Claude Code) executing tasks from `tasks/`.
+**Method:** AI coding (Claude Code) executing tasks from `tasks/`. Subagent parallelism where safe (see `tasks/PARALLELISM.md`).
 
-This is the high-level roadmap. Individual executable tasks live in `tasks/M{n}-*/`.
+This is the dependency-ordered roadmap. Individual executable tasks live in `tasks/M{n}-*/`. **We don't track wall-clock time** — with AI writing most of the code, time estimates are 5–10× off. Track dependency order + definition of done instead.
 
 ## Why v2.0 (change log from v1.0)
 
 **v1.0 ordered:** M0 → M1 (DB) → M2 (auth) → M3 (features) → M4 → M5 → M6.
-Problem: 7 days of "nothing visible to users" before features landed.
+Problem: a long stretch of "nothing visible to users" before features landed.
 
 **v2.0 reorders to features-first:** M0 → **M-fast (features)** → **M-preview (soft launch)** → iterate → M1/M2 (infra) → M5 → M6.
-Rationale: the `web/` scaffold currently has no real features — they only exist in the archived legacy `app/`. Porting them first gives us a working thing to test, demo, and iterate on *before* we invest in DB + auth infrastructure. The seam layer (`web/lib/*.ts`) was designed for exactly this: initial impls use localStorage / sessionStorage; later impls swap to Supabase / magic-link — with zero changes to business code.
+Rationale: the `web/` scaffold had no real features — they only exist in the archived legacy `app/`. Porting them first gives us a working thing to test, demo, and iterate on *before* we invest in DB + auth infrastructure. The seam layer (`web/lib/*.ts`) was designed for exactly this: initial impls use localStorage / sessionStorage; later impls swap to Supabase / magic-link — with zero changes to business code.
 
 ---
 
-## Milestones (v2.0)
+## Milestones (v2.1)
 
-### M0 — Consolidation ✅ in progress (days 1)
+### M0 — Consolidation ✅ done
 Freeze legacy `app/`, promote `next-scaffold/` → `web/`, establish seam layers, lock docs.
-**Exit criteria:** `web/` builds and runs; seam files exist (can be stubs); `app/` archived.
+**Exit criteria met.**
 
-### M-fast — Feature port from archived app/ (days 2–6) ⭐ NEW
+### M-fast — Feature port from archived app/ ⭐ active
 Port all working features from `archive/app-html-prototype-2026-04-20/` into `web/`, converting JSX → TSX and splitting the monolithic `store.jsx` into domain stores. Data still lives in browser (localStorage + IndexedDB — same as old app). AI key still pasted by user into sessionStorage (same as old app). No Supabase yet. No auth yet.
 **Exit criteria:**
 - Projects dashboard works (list / new / archive / switch)
@@ -34,31 +34,31 @@ Port all working features from `archive/app-html-prototype-2026-04-20/` into `we
 - Fashion / Punk / Cinema mode switcher works everywhere
 - Publish flow works (visibility = public / unlisted / private, public URL renders the project)
 
-### M-preview — Soft-launch preview (day 7) ⭐ NEW
+### M-preview — Soft-launch preview ⭐ next
 Deploy `web/` to Vercel as preview. Simple password gate (single shared password in env var) — not real auth, just a "don't scrape this" door. Send URL + password to a handful of trusted friends for feedback.
 **Exit criteria:** A friend can visit `<something>.vercel.app`, enter the shared password, and use the app. They give feedback.
 
-### M-iter — Iterate on feedback (days 8+, open-ended)
+### M-iter — Iterate on feedback (open-ended)
 Fix bugs. Polish UX. Add/remove features based on what real users hit. This loop can last as long as needed before committing to public launch.
-**Exit criteria:** You personally feel the product is "good enough" to open up wider.
+**Exit criteria:** Owner feels the product is "good enough" to open up wider.
 
-### M1 — Supabase & data model (2 days — deferred) ⏸
+### M1 — Supabase & data model ⏸ deferred
 Provision Supabase; write migrations; swap `lib/storage.ts` impl from localStorage → Supabase. Because all DB access went through `lib/storage.ts` since M-fast, business code doesn't change.
 **Exit criteria:** User can create / read / update projects and they persist across devices.
 
-### M2 — Auth & invites (2 days — deferred) ⏸
+### M2 — Auth & invites ⏸ deferred
 Magic link + invite codes. Swap `lib/auth.ts` impl from mock-user → Supabase Auth. Move OpenAI key from sessionStorage → server-side API route.
 **Exit criteria:** Invited email can sign up, log in, and use AI generation without ever seeing a key field.
 
-### M4 — Public pages polish (1 day — deferred) ⏸
+### M4 — Public pages polish ⏸ deferred
 Landing page polish, atlas polish, 404 / empty states, ToS + Privacy, feedback form, OG images.
 **Exit criteria:** Guest visits, sees a polished public project.
 
-### M5 — Observability & tests (1–2 days — deferred) ⏸
+### M5 — Observability & tests ⏸ deferred
 Sentry, PostHog, Vitest unit tests, GitHub Actions.
 **Exit criteria:** Errors show in Sentry; key events show in PostHog; CI gates PRs.
 
-### M6 — Launch (1 day — deferred) ⏸
+### M6 — Launch ⏸ deferred
 IONOS DNS → Vercel, apex domain wired, 30 invite codes issued, first cohort invited.
 **Exit criteria:** `zhouyixiaoxiao.org` serves the app; ≥ 3 non-admin users logged in.
 

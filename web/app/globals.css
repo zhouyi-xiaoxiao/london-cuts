@@ -1,92 +1,504 @@
+/* =========================================================================
+   London Cuts — global styles
+   ---------------------------------------------------------------------------
+   Merged from:
+     - archive/app-html-prototype-2026-04-20/styles/base.css   (legacy V1)
+     - archive/app-html-prototype-2026-04-20/styles/v2.css     (legacy V2)
+     - the M0 scaffold globals.css (lc-* helpers)
+   Legacy is canonical design truth; where tokens differ the LEGACY value wins
+   (see "moved to legacy value" markers).
+   Component-specific rules (workspace spine, postcard flip, atlas map,
+   node types, slide-over, publish help, variants grid, tour, …) live with
+   their respective components and are NOT merged here. See TODO markers.
+   ========================================================================= */
+
+
+/* =========================================================================
+   1. TOKENS
+   ========================================================================= */
+
 :root {
+  /* Neutrals — warm paper (moved to legacy values) */
   --paper: oklch(0.985 0.004 60);
-  --paper-2: oklch(0.962 0.006 60);
-  --paper-3: oklch(0.925 0.008 60);
+  --paper-2: oklch(0.96 0.005 60);
+  --paper-3: oklch(0.92 0.006 60);
   --ink: oklch(0.14 0.008 60);
-  --ink-2: oklch(0.3 0.01 60);
-  --ink-3: oklch(0.52 0.012 60);
-  --rule: oklch(0.87 0.006 60);
+  --ink-2: oklch(0.32 0.008 60);
+  --ink-3: oklch(0.55 0.008 60);
+  --rule: oklch(0.88 0.006 60);
+
+  /* Accent (mode-agnostic) */
+  --accent: oklch(0.55 0.14 20);
+
+  /* Shadows (from scaffold; retained for lc-card / lc-postcard) */
   --shadow-soft: 0 24px 70px rgb(17 14 11 / 0.08);
   --shadow-card: 0 14px 40px rgb(17 14 11 / 0.12);
 
-  --f-display: "Archivo Black", "Archivo", sans-serif;
-  --f-serif: "Instrument Serif", "Times New Roman", serif;
-  --f-fashion: "Bodoni Moda", "Didot", serif;
-  --f-sans: "Archivo", "Avenir Next", sans-serif;
-  --f-mono: "JetBrains Mono", "SF Mono", monospace;
-  --f-hand: "Caveat", cursive;
+  /* Type scale (moved to legacy values) */
+  --f-display: 'Archivo Black', 'Archivo', system-ui, sans-serif;
+  --f-serif: 'Instrument Serif', 'Times New Roman', serif;
+  --f-fashion: 'Bodoni Moda', 'Didot', 'Bodoni 72', serif;
+  --f-sans: 'Archivo', system-ui, -apple-system, sans-serif;
+  --f-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+  --f-hand: 'Caveat', cursive;
 
+  /* Grid */
+  --gutter: 24px;
+  --edge: 40px;
+
+  /* Mode tokens — overridden per mode */
   --mode-bg: var(--paper);
   --mode-surface: var(--paper-2);
   --mode-ink: var(--ink);
-  --mode-accent: oklch(0.55 0.14 20);
+  --mode-accent: var(--accent);
+  --mode-display-font: var(--f-serif);
+  --mode-body-font: var(--f-sans);
+  /* Back-compat aliases — some scaffold components use --mode-display / --mode-body */
   --mode-display: var(--f-serif);
   --mode-body: var(--f-sans);
 
-  --edge: clamp(1rem, 2vw, 2rem);
+  /* V2 structural tokens — workspace shell */
+  --spine-w: 288px;
+  --drawer-w: 340px;
+  --topbar-h: 60px;
+  --pip-size: 8px;
+
+  /* V2 editable-state accent (shared across modes) */
+  --edit-ring: oklch(0.62 0.18 230);
+  --edit-ring-punk: oklch(0.62 0.24 25);
+  --edit-ring-fashion: oklch(0.55 0.14 20);
+  --edit-ring-cinema: oklch(0.88 0.14 90);
+
+  /* V2 status dot palette for media tasks */
+  --status-queued: oklch(0.70 0.04 60);
+  --status-running: oklch(0.72 0.17 90);
+  --status-done: oklch(0.62 0.14 150);
+  --status-failed: oklch(0.58 0.22 25);
+
+  /* Container width helpers carried over from scaffold */
   --container: min(1420px, calc(100vw - 2 * var(--edge)));
 }
 
-* {
-  box-sizing: border-box;
-}
 
-html {
-  font-family: var(--f-sans);
+/* =========================================================================
+   2. RESET + BASE TYPOGRAPHY
+   ========================================================================= */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
   background: var(--paper);
   color: var(--ink);
+  font-family: var(--f-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100vh;
 }
 
+/* Retain scaffold's warm gradient on body root (only when no mode is set) */
 body {
-  margin: 0;
-  min-height: 100vh;
   background:
     radial-gradient(circle at top, rgb(255 255 255 / 0.9), transparent 40%),
     linear-gradient(180deg, #f8f6f1 0%, #f1ece4 100%);
-  color: var(--ink);
 }
 
-body[data-mode="punk"],
-[data-mode="punk"] {
-  --mode-bg: oklch(0.98 0 0);
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; image-orientation: from-image; }
+input, textarea, select { font: inherit; color: inherit; background: none; border: none; outline: none; }
+
+
+/* =========================================================================
+   3. MODE GRAMMARS — typography, rhythm, spacing
+   (moved to legacy values; scaffold's values were close but not canonical)
+   ========================================================================= */
+
+/* PUNK — zine, collage, raw, asymmetric, black on white with red */
+[data-mode="punk"],
+body[data-mode="punk"] {
+  --mode-bg: oklch(0.97 0 0);
   --mode-surface: oklch(0.94 0.003 0);
-  --mode-ink: oklch(0.1 0 0);
+  --mode-ink: oklch(0.08 0 0);
   --mode-accent: oklch(0.62 0.24 25);
+  --mode-display-font: var(--f-display);
+  --mode-body-font: var(--f-sans);
   --mode-display: var(--f-display);
   --mode-body: var(--f-sans);
 }
 
-body[data-mode="fashion"],
-[data-mode="fashion"] {
-  --mode-bg: oklch(0.985 0.009 74);
+/* FASHION — editorial, whitespace, bold crop, elegant serif */
+[data-mode="fashion"],
+body[data-mode="fashion"] {
+  --mode-bg: oklch(0.98 0.008 75);
   --mode-surface: oklch(0.972 0.01 74);
-  --mode-ink: oklch(0.17 0.01 35);
+  --mode-ink: oklch(0.16 0.01 40);
   --mode-accent: oklch(0.45 0.12 25);
+  --mode-display-font: var(--f-fashion);
+  --mode-body-font: var(--f-sans);
   --mode-display: var(--f-fashion);
   --mode-body: var(--f-sans);
 }
 
-body[data-mode="cinema"],
-[data-mode="cinema"] {
-  --mode-bg: oklch(0.13 0.015 250);
+/* CINEMA — scene card, subtitle, moody, dark */
+[data-mode="cinema"],
+body[data-mode="cinema"] {
+  --mode-bg: oklch(0.12 0.015 250);
   --mode-surface: oklch(0.17 0.017 250);
-  --mode-ink: oklch(0.93 0.01 80);
+  --mode-ink: oklch(0.92 0.01 80);
   --mode-accent: oklch(0.88 0.14 90);
+  --mode-display-font: var(--f-serif);
+  --mode-body-font: var(--f-mono);
   --mode-display: var(--f-serif);
   --mode-body: var(--f-mono);
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+
+/* =========================================================================
+   4. PRIMITIVES (legacy)
+   ========================================================================= */
+
+.page {
+  min-height: 100vh;
+  background: var(--mode-bg, var(--paper));
+  color: var(--mode-ink, var(--ink));
+  transition: background 400ms ease, color 400ms ease;
+  overflow-x: auto;
+  min-width: 0;
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
+.rule { height: 1px; background: currentColor; opacity: 0.15; }
+.rule-heavy { height: 2px; background: currentColor; }
+
+.mono { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.mono-sm { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.eyebrow { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.7; }
+
+/* Buttons — legacy surface. Scaffold's .lc-button is kept separately below. */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  background: transparent;
+  transition: all 150ms ease;
+  white-space: nowrap;
 }
+.btn:hover { background: currentColor; color: var(--mode-bg, var(--paper)); }
+.btn-solid {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.btn-solid:hover { background: var(--accent); border-color: var(--accent); color: white; }
+.btn-ghost { border-color: transparent; }
+.btn-ghost:hover { background: transparent; color: var(--accent); }
+.btn-sm { padding: 6px 10px; font-size: 10px; }
+
+/* Chip / tag */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 9px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  opacity: 0.8;
+}
+.chip-solid { background: var(--ink); color: var(--paper); border-color: var(--ink); opacity: 1; }
+
+/* Layout helpers */
+.row { display: flex; }
+.col { display: flex; flex-direction: column; }
+.gap-4 { gap: 4px; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.gap-16 { gap: 16px; }
+.gap-24 { gap: 24px; }
+.gap-32 { gap: 32px; }
+.gap-48 { gap: 48px; }
+.between { justify-content: space-between; }
+.center { align-items: center; justify-content: center; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+.flex-1 { flex: 1; }
+.grow { flex-grow: 1; }
+.wrap { flex-wrap: wrap; }
+
+/* Container widths */
+.max-editorial { max-width: 1440px; margin: 0 auto; padding: 0 var(--edge); }
+.max-narrow { max-width: 780px; margin: 0 auto; padding: 0 var(--edge); }
+.max-wide { max-width: 1680px; margin: 0 auto; padding: 0 var(--edge); }
+
+/* Scrollbar thin */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: oklch(0.8 0.008 60); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: oklch(0.6 0.008 60); }
+
+
+/* =========================================================================
+   5. IMAGE PLACEHOLDERS (legacy .img-ph)
+   ========================================================================= */
+
+.img-ph {
+  position: relative;
+  background: repeating-linear-gradient(
+    135deg,
+    oklch(0.88 0.01 60) 0 10px,
+    oklch(0.92 0.008 60) 10px 20px
+  );
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  color: oklch(0.35 0.01 60);
+}
+.img-ph::before {
+  content: attr(data-label);
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 10px 12px;
+  background: oklch(0.98 0.004 60 / 0.9);
+  margin: 10px;
+  border-radius: 2px;
+}
+.img-ph[data-tone="dark"] {
+  background: repeating-linear-gradient(
+    135deg,
+    oklch(0.2 0.01 250) 0 10px,
+    oklch(0.24 0.01 250) 10px 20px
+  );
+  color: oklch(0.7 0.01 60);
+}
+.img-ph[data-tone="dark"]::before {
+  background: oklch(0.15 0.01 250 / 0.9);
+  color: oklch(0.85 0.01 60);
+}
+.img-ph[data-tone="warm"] {
+  background: repeating-linear-gradient(
+    135deg,
+    oklch(0.82 0.04 50) 0 10px,
+    oklch(0.86 0.03 55) 10px 20px
+  );
+}
+.img-ph[data-tone="cool"] {
+  background: repeating-linear-gradient(
+    135deg,
+    oklch(0.78 0.04 240) 0 10px,
+    oklch(0.82 0.03 235) 10px 20px
+  );
+}
+.img-ph[data-tone="punk"] {
+  background: repeating-linear-gradient(
+    45deg,
+    oklch(0.15 0 0) 0 8px,
+    oklch(0.9 0 0) 8px 10px
+  );
+  color: #fff;
+}
+.img-ph[data-tone="punk"]::before {
+  background: oklch(0.62 0.24 25);
+  color: #fff;
+}
+
+
+/* =========================================================================
+   6. UNDERGROUND ROUNDEL (legacy .roundel)
+   ========================================================================= */
+
+.roundel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid var(--mode-accent);
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+}
+.roundel::after {
+  content: '';
+  position: absolute;
+  left: -5px; right: -5px; top: 50%;
+  height: 3px;
+  background: var(--mode-accent);
+  transform: translateY(-50%);
+}
+.roundel-xl { width: 40px; height: 40px; border-width: 4px; }
+.roundel-xl::after { left: -10px; right: -10px; height: 6px; }
+
+
+/* =========================================================================
+   7. SHARED V2 COMPONENTS — used across multiple features
+   (mode-pill, pip-group, annot, frame-caption, overline-divider, stopband,
+    slash, editable, tabs)
+   Feature-specific V2 rules (ws-shell, spine, canvas, drawers, node types,
+   slide-over, publish-help, variants, tour, postcard tile, atlas map) are
+   NOT merged — they will travel with their components in F-T* tasks.
+   ========================================================================= */
+
+/* Mode pill (top bar variant) */
+.mode-pill {
+  display: inline-flex;
+  border: 1px solid oklch(from currentColor l c h / 0.35);
+}
+.mode-pill button {
+  padding: 6px 14px;
+  font-family: var(--f-mono);
+  font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.mode-pill button[data-active="true"] {
+  background: var(--mode-accent);
+  color: white;
+  opacity: 1;
+}
+
+/* Progress pips — shown in spine rows AND standalone in publish checklist */
+.pip-group { display: inline-flex; gap: 3px; }
+.pip {
+  width: var(--pip-size); height: var(--pip-size);
+  border-radius: 50%;
+  border: 1px solid oklch(from currentColor l c h / 0.5);
+  background: transparent;
+}
+.pip[data-done="true"] { background: currentColor; border-color: currentColor; }
+.pip[data-running="true"] {
+  background: var(--status-running);
+  border-color: var(--status-running);
+  animation: pip-pulse 1.2s ease-in-out infinite;
+}
+@keyframes pip-pulse {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50%     { transform: scale(1.3); opacity: 0.6; }
+}
+
+/* Annotation chips — used throughout demos to point at design decisions */
+.annot {
+  position: absolute; z-index: 20;
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: oklch(0.45 0.18 230);
+  background: oklch(0.98 0.004 60);
+  border: 1px dashed oklch(0.55 0.18 230);
+  padding: 4px 8px;
+  max-width: 240px;
+  pointer-events: none;
+  box-shadow: 0 2px 6px oklch(0 0 0 / 0.08);
+}
+.annot::before {
+  content: ''; position: absolute; width: 36px; height: 1px;
+  border-top: 1px dashed oklch(0.55 0.18 230);
+}
+.annot[data-dir="left"]::before { left: -36px; top: 50%; }
+.annot[data-dir="right"]::before { right: -36px; top: 50%; }
+
+/* Frame + caption (used by preview frames and editorial crops) */
+.frame-wrap {
+  max-width: 1680px; margin: 0 auto; padding: 0 40px;
+}
+.frame {
+  position: relative;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  overflow: hidden;
+}
+.frame-caption {
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  opacity: 0.7; margin-top: 10px;
+}
+
+/* Tabs (generic) */
+.tabs {
+  display: inline-flex;
+  border: 1px solid var(--ink);
+  margin-bottom: 16px;
+  background: var(--paper);
+}
+.tabs button {
+  padding: 8px 18px;
+  font-family: var(--f-mono); font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+.tabs button[data-active="true"] { background: var(--ink); color: var(--paper); }
+
+/* Overline divider + stopband (lightweight primitives used widely) */
+.overline-divider {
+  display: flex; align-items: center; gap: 14px;
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  opacity: 0.55;
+  margin: 36px 0 18px;
+}
+.overline-divider::before, .overline-divider::after {
+  content: ''; flex: 1; height: 1px; background: currentColor;
+  opacity: 0.4;
+}
+.stopband {
+  display: inline-block;
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 2px 8px;
+  background: currentColor;
+  color: var(--mode-bg);
+}
+
+/* Sticky sidebar helper */
+.sticky-sidebar {
+  position: sticky; top: 20px;
+  align-self: flex-start;
+}
+
+/* Inline-editable region (used by postcard + node editors) */
+.editable {
+  position: relative;
+  cursor: text;
+}
+.editable[data-editing="true"] {
+  outline: 1.5px dashed var(--mode-accent);
+  outline-offset: 4px;
+  background: oklch(from var(--mode-accent) l c h / 0.04);
+}
+.editable[data-editing="true"]::after {
+  content: attr(data-edit-label);
+  position: absolute; top: -18px; left: 0;
+  font-family: var(--f-mono); font-size: 9px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--mode-accent);
+}
+[data-mode="punk"] .editable[data-editing="true"]::after {
+  background: var(--mode-accent); color: white;
+  padding: 2px 6px; top: -14px;
+  transform: rotate(-3deg);
+  box-shadow: 2px 2px 0 oklch(0 0 0 / 0.3);
+}
+[data-mode="cinema"] .editable[data-editing="true"] {
+  outline: 1px solid oklch(0.88 0.14 90 / 0.6);
+  background: oklch(0.02 0.01 240 / 0.4);
+}
+
+
+/* =========================================================================
+   8. SCAFFOLD HELPERS — the lc-* namespace
+   These were introduced by the M0 scaffold and are still referenced by the
+   current Next.js skeleton. Kept for visual continuity. Many overlap with
+   legacy primitives (btn/chip/eyebrow); usage will migrate to legacy names
+   as each feature ports.
+   ========================================================================= */
 
 .lc-page {
   min-height: 100vh;
@@ -256,17 +668,9 @@ select {
   gap: 1.5rem;
 }
 
-.lc-grid-2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.lc-grid-3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.lc-grid-4 {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
+.lc-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lc-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.lc-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
 .lc-masthead {
   padding: 4rem 0 3rem;
@@ -335,110 +739,37 @@ select {
   border: 1px solid color-mix(in oklab, var(--mode-ink) 10%, transparent);
 }
 
-.lc-studio-shell {
-  display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
-  min-height: 100vh;
-}
+/* TODO: move to component css module
+   — .lc-studio-shell / .lc-studio-sidebar / .lc-studio-main /
+     .lc-studio-topbar / .lc-studio-layout-3 belong with the workspace
+     component (F-T003 / F-T004 and later).
+   — .lc-postcard-stage / .lc-postcard-card / .lc-postcard-face(*) /
+     .lc-qrcode belong with components/postcard/ (postcard feature port).
+   Removed from globals to stay under the ~800-line budget. Re-introduce
+   as scoped module CSS when the owning component lands. */
 
-.lc-studio-sidebar {
-  background: #f2ede5;
-  border-right: 1px solid var(--rule);
-  padding: 1.5rem 1rem;
-  position: sticky;
-  top: 0;
-  align-self: start;
-  height: 100vh;
-}
 
-.lc-studio-main {
-  min-width: 0;
-  background: var(--paper);
-}
-
-.lc-studio-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  background: rgb(248 245 239 / 0.92);
-  backdrop-filter: blur(18px);
-  border-bottom: 1px solid var(--rule);
-}
-
-.lc-studio-layout-3 {
-  display: grid;
-  grid-template-columns: 240px minmax(0, 1fr) 340px;
-  gap: 0;
-  min-height: 42rem;
-  border: 1px solid var(--rule);
-}
-
-.lc-postcard-stage {
-  perspective: 2000px;
-}
-
-.lc-postcard-card {
-  position: relative;
-  aspect-ratio: 7 / 5;
-  transform-style: preserve-3d;
-  transition: transform 680ms cubic-bezier(0.2, 0.8, 0.3, 1);
-}
-
-.lc-postcard-card[data-flipped="true"] {
-  transform: rotateY(180deg);
-}
-
-.lc-postcard-face {
-  position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
-}
-
-.lc-postcard-face--back {
-  transform: rotateY(180deg);
-}
-
-.lc-qrcode {
-  padding: 0.5rem;
-  background: white;
-}
+/* =========================================================================
+   9. RESPONSIVE — lc-* scaffold breakpoints
+   Workspace (spine/drawer) breakpoints are deferred to the workspace
+   component CSS module.
+   ========================================================================= */
 
 @media (max-width: 1180px) {
   .lc-grid-4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .lc-studio-layout-3 {
-    grid-template-columns: 220px minmax(0, 1fr);
-  }
-
-  .lc-studio-layout-3 > :last-child {
-    grid-column: 1 / -1;
-    border-top: 1px solid var(--rule);
   }
 }
 
 @media (max-width: 940px) {
   .lc-grid-2,
   .lc-grid-3,
-  .lc-grid-4,
-  .lc-studio-shell {
+  .lc-grid-4 {
     grid-template-columns: 1fr;
   }
 
   .lc-public-nav__inner,
   .lc-toolbar-row {
     flex-wrap: wrap;
-  }
-
-  .lc-studio-sidebar {
-    position: static;
-    height: auto;
-  }
-
-  .lc-studio-layout-3 {
-    grid-template-columns: 1fr;
   }
 }

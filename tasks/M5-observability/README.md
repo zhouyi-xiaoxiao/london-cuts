@@ -1,7 +1,6 @@
 # M5 — Observability & tests
 
 **Goal:** We can see errors and user behaviour after launch. Core logic has unit tests. CI blocks broken builds.
-**Duration estimate:** 1–2 days.
 **Exit criteria:**
 - Sentry captures a thrown error in production build
 - PostHog records `signup`, `publish`, `ai_generate`, `ai_failure` events
