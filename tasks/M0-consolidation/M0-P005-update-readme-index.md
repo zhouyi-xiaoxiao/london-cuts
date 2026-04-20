@@ -3,16 +3,16 @@ id: M0-P005
 title: Update README.md and INDEX.md for new structure
 milestone: M0
 kind: parallel
-status: TODO
+status: DONE
 blocked_by: [M0-T001, M0-T002]
 blocks: []
 parallel_safe: true
 touches:
   - README.md
   - INDEX.md
-owner: null
-started_at: null
-completed_at: null
+owner: opus-4.7-session-20260420
+started_at: 2026-04-20T02:00Z
+completed_at: 2026-04-20T02:05Z
 ---
 
 # M0-P005 — Update `README.md` and `INDEX.md` for new structure

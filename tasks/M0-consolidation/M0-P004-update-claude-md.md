@@ -3,15 +3,16 @@ id: M0-P004
 title: Update CLAUDE.md to reflect single-track repo + task system
 milestone: M0
 kind: parallel
-status: TODO
+status: DONE
 blocked_by: []
 blocks: []
 parallel_safe: true
 touches:
   - CLAUDE.md
-owner: null
-started_at: null
-completed_at: null
+  - web/CLAUDE.md
+owner: opus-4.7-session-20260420
+started_at: 2026-04-20T01:40Z
+completed_at: 2026-04-20T02:05Z
 ---
 
 # M0-P004 — Update `CLAUDE.md` to reflect single-track repo + task system

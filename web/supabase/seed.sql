@@ -1,0 +1,2 @@
+-- Seed data for local development only. Do NOT apply in production.
+-- Populated in M1-P002. Currently a placeholder.

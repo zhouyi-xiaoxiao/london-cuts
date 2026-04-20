@@ -1,8 +1,9 @@
 # London Cuts
 
-> Image-first editorial storytelling about London — Punk / Fashion / Cinema modes, postcards, atlas, creator studio.
+> A creator tool for documenting a single-location trip (anywhere in the world) with photos, written stories, and AI-generated postcards. Three visual modes: **Fashion**, **Punk**, **Cinema**. Publish as a shareable page.
 
-This repo is the **single source of truth** for the London Cuts project. It consolidates everything that used to be scattered across Desktop folders, Downloads zips, and earlier design handoffs.
+**Working name:** London Cuts (placeholder; product may be renamed before public launch).
+**Live:** `zhouyixiaoxiao.org` (after M6).
 
 ---
 
@@ -11,8 +12,8 @@ This repo is the **single source of truth** for the London Cuts project. It cons
 ```bash
 cd web
 pnpm install
-pnpm dev
-# open http://localhost:3000
+cp .env.example .env.local   # fill in values as they're needed per milestone
+pnpm dev                     # http://localhost:3000
 ```
 
 **Browse the design system:**
@@ -24,34 +25,38 @@ open design-system/preview/brand-roundel.html
 
 ---
 
-## Layout
+## Where to start
 
-See `INDEX.md` for the machine-readable file map. High level:
+- **Contributor or AI agent:** read `CLAUDE.md`, then `tasks/AGENTS.md`, then pick a task from `tasks/STATE.md`.
+- **Reviewer / new teammate:** read `docs/requirements.md` → `docs/architecture.md` → `docs/data-model.md` → `docs/implementation-plan.md`.
+- **Designer:** read `design-system/README.md`.
+
+## Repo layout
 
 - `web/` — the product (Next.js 14 + TypeScript, pnpm, Node 22+)
 - `design-system/` — **canonical** tokens, components, seed imagery, preview pages
-- `docs/` — requirements, architecture, data model, implementation plan
-- `tasks/` — executable task system for AI coding agents (M0–M6)
-- `pitch/` — pitch deck assets (PDF + JSX slides)
-- `assets/` — brand marks, postcard exports
-- `archive/` — frozen historical versions, do not edit
+- `docs/` — requirements, architecture, data model, implementation plan (v2.0)
+- `tasks/` — executable task system for AI coding agents
+- `pitch/` — pitch deck (PDF + JSX slides)
+- `assets/` — brand marks
+- `archive/` — frozen prior work (do not edit)
 - `scripts/` — utilities
 
----
+## Rules
 
-## Project mission
+- **Design truth → `design-system/`.** Don't invent colours, spacing, or type scales.
+- **Single codebase → `web/`.** The legacy HTML prototype lives in `archive/app-html-prototype-2026-04-20/` for reference only.
+- **Seam discipline.** Business code imports only from `web/lib/*.ts`, never third-party SDKs directly. See `docs/architecture.md#4-the-seam-layers`.
+- **Never edit `archive/`.** Copy forward into `web/` if you need a pattern.
+- **Secrets via env vars.** See `web/.env.example`.
 
-From `docs/brief-mission.md`:
+## Docs
 
-> Build the core product shell for London Cuts. Image-to-image and image-to-video generation are owned by another teammate. This repo must provide the surrounding product experience: public story website, story atlas, creator studio, upload/organize/edit flow, mode switching, postcard generation, media provider adapter and integration shell.
+- `docs/requirements.md` — what we're building (v1.0, frozen)
+- `docs/architecture.md` — how `web/` is structured
+- `docs/data-model.md` — target DB schema
+- `docs/implementation-plan.md` — milestone roadmap (plan v2.0: features-first, then infra)
 
-Do **not** implement actual image-to-image or image-to-video model calls here — use the adapter interface and mock provider.
+## License
 
----
-
-## Contributing / extending
-
-- **Design changes** flow from `design-system/` outward. The tokens in `design-system/colors_and_type.css` and `design-system/ui_kits/studio/tokens.css` are the source of truth.
-- **Single codebase**: all product code lives in `web/`. The legacy HTML prototype is frozen in `archive/app-html-prototype-2026-04-20/` — do not edit it.
-- **Don't edit `archive/`**. If you need something from there, copy it forward into `web/`.
-- **Agent-friendly**: `CLAUDE.md` (root) describes the conventions. Each major subdirectory has its own `README.md`. Task system in `tasks/` is the live execution plan.
+(TBD — add before public launch.)

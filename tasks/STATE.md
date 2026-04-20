@@ -1,17 +1,17 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-20T01:30Z
+**Last updated:** 2026-04-20T02:40Z
 
 ## Plan version
 
-**Plan v2.0** (see `docs/implementation-plan.md`): re-ordered to features-first. M1 / M2 / M3 / M4 / M6 are now **postponed** until M-fast + M-preview complete and owner approves moving on. M3 is superseded by M-fast.
+**Plan v2.0** (see `docs/implementation-plan.md`): features-first. M0 complete → M-fast next. M1–M6 postponed until owner approves moving on. M3 superseded by M-fast.
 
 ## Summary
 
 | Milestone | TODO | IN_PROGRESS | DONE | BLOCKED | Total | Status |
 |-----------|------|-------------|------|---------|-------|--------|
-| M0 Consolidation        | 6  | 0 | 3 | 0 | 9  | in progress |
-| **M-fast Feature port** | 14 | 0 | 0 | 0 | 14 | **next** ⭐ |
+| M0 Consolidation        | 0  | 0 | 9 | 0 | 9  | ✅ **complete** |
+| **M-fast Feature port** | 14 | 0 | 0 | 0 | 14 | **active** ⭐ |
 | M-preview Soft launch   | —  | — | — | — | —  | after M-fast |
 | M1 Supabase & data      | 8  | 0 | 0 | 0 | 8  | ⏸ postponed |
 | M2 Auth & invites       | 10 | 0 | 0 | 0 | 10 | ⏸ postponed |
@@ -20,20 +20,17 @@
 | M5 Observability        | 6  | 0 | 0 | 0 | 6  | ⏸ postponed |
 | M6 Launch               | 9  | 0 | 0 | 0 | 9  | ⏸ postponed |
 
-## Active pipeline: M0 → M-fast → M-preview
-
 ## Eligible next tasks (TODO with no unmet blockers)
 
-- **M0-P001** — Create seam file stubs (parallel)
-- **M0-P002** — Create `web/.env.example` (parallel)
-- **M0-P004** — Finish CLAUDE.md updates (parallel)
-- **M0-P005** — Rewrite README.md + INDEX.md properly (parallel)
-- **M0-P006** — Create `web/supabase/migrations/` (parallel; minimal scope since M1 is deferred)
-- **M0-P007** — Expand M-fast task files (parallel; was "expand M1", redirected)
+Now entering M-fast. First task:
+
+- **F-T000** — POC: port one trivial component end-to-end (20 min, critical, sequential)
+
+Then F-T001 once F-T000 passes owner checkpoint.
 
 ## In progress
 
-_none (awaiting owner checkpoint before resuming)_
+_none (awaiting owner go-ahead for F-T000)_
 
 ## Blocked
 
@@ -41,9 +38,15 @@ _none_
 
 ## Recently completed
 
-- **M0-P003** (2026-04-20T01:15Z) — Rewrote next.config.ts (removed GitHub Pages static export), deleted deploy-pages.yml, dev server now serves `/` cleanly
-- **M0-T002** (2026-04-20T00:50Z) — app/ → archive/app-html-prototype-2026-04-20; legacy scripts moved; WHY-ARCHIVED written; build green
-- **M0-T001** (2026-04-20T00:25Z) — Rename next-scaffold → web; build/typecheck green
+- **M0-P007** (2026-04-20T02:40Z) — Expanded M-fast: 14 task files written (F-T000 through F-T009 + F-P001 through F-P005)
+- **M0-P005** (2026-04-20T02:05Z) — Rewrote README.md + INDEX.md for plan v2.0
+- **M0-P004** (2026-04-20T02:05Z) — CLAUDE.md (root) updated to v2 content; web/CLAUDE.md replaced with pointer to root
+- **M0-P006** (2026-04-20T01:58Z) — Created web/supabase/ dir scaffold
+- **M0-P002** (2026-04-20T01:53Z) — Created web/.env.example
+- **M0-P001** (2026-04-20T01:50Z) — Seam stubs in web/lib/ (storage, auth, ai-provider, email, analytics, env, errors)
+- **M0-P003** (2026-04-20T01:15Z) — Removed GitHub Pages config; dev server / returns 200
+- **M0-T002** (2026-04-20T00:50Z) — app/ → archive/app-html-prototype-2026-04-20
+- **M0-T001** (2026-04-20T00:25Z) — Renamed next-scaffold → web
 
 ## Active sessions
 

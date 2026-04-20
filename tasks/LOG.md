@@ -16,3 +16,10 @@ Keep lines short. Put details in the task's `Trace` section, not here.
 2026-04-20T00:50Z | opus-4.7-session-20260420 | DONE | M0-T002 | app/ archived to archive/app-html-prototype-2026-04-20; build green
 2026-04-20T01:15Z | opus-4.7-session-20260420 | DONE | M0-P003 | next.config.ts cleaned (no basePath/export); deploy-pages.yml deleted; dev server / returns 200
 2026-04-20T01:30Z | opus-4.7-session-20260420 | SCOPE | plan | v1.0→v2.0: features-first re-order. M-fast inserted; M1/M2/M4/M5/M6 postponed; M3 superseded by M-fast.
+2026-04-20T02:05Z | opus-4.7-session-20260420 | DONE | M0-P001 | seam stubs in web/lib/ (storage, auth, ai-provider, email, analytics, env, errors); typecheck green
+2026-04-20T02:05Z | opus-4.7-session-20260420 | DONE | M0-P002 | web/.env.example written with vars grouped by milestone
+2026-04-20T02:05Z | opus-4.7-session-20260420 | DONE | M0-P004 | root CLAUDE.md already v2; web/CLAUDE.md replaced with pointer
+2026-04-20T02:05Z | opus-4.7-session-20260420 | DONE | M0-P005 | README.md + INDEX.md rewritten for plan v2.0
+2026-04-20T02:00Z | opus-4.7-session-20260420 | DONE | M0-P006 | web/supabase/{migrations,README.md,seed.sql} scaffold
+2026-04-20T02:40Z | opus-4.7-session-20260420 | DONE | M0-P007 | 14 M-fast task files (F-T000..F-T009 + F-P001..F-P005) written
+2026-04-20T02:40Z | opus-4.7-session-20260420 | NOTE | M0 | M0 complete (9/9). Next eligible: F-T000 POC.

@@ -19,13 +19,15 @@ scripts/         [tools, utilities]                       Python scripts + utili
 ## `web/`
 ```
 web/app/                 — Next 14 app-router pages
-web/components/          — shared UI
+web/components/          — shared UI (scaffold stubs; real components land in M-fast)
 web/lib/                 — seam layer (storage, auth, ai-provider, email, analytics, env, errors)
 web/providers/           — React context providers (media provider adapter, demo store)
-web/prototype/           — legacy HTML prototype kept for reference inside the scaffold
-web/supabase/migrations/ — DB migrations (scaffold created in M0-P006)
+web/prototype/           — early scaffold prototype kept for reference
+web/stores/              — domain state (will land in M-fast, F-T002 split from legacy store.jsx)
+web/supabase/migrations/ — DB migrations (empty scaffold; filled in M1)
+web/.env.example         — environment variable template (M0-P002)
 web/package.json         — pnpm, next 16, react 19
-web/CLAUDE.md            — scaffold-specific agent notes (historical; root CLAUDE.md is authoritative)
+web/CLAUDE.md            — local pointer to root CLAUDE.md
 ```
 
 ## `design-system/`
@@ -47,13 +49,34 @@ pitch/deck/                        — 7 JSX slides + seed photos + deck-stage.j
 
 ## `docs/`
 ```
-docs/brief-mission.md              — mission / boundaries / priorities (was _reference/original-brief/CLAUDE.md)
-docs/brief-v1-readme.md            — v1 brief README
-docs/brief-v2.md                   — v2 design brief
-docs/handoff-v1.md                 — engineering handoff v1
-docs/handoff-v2.md                 — engineering handoff v2
+docs/requirements.md               — CURRENT: requirements v1.0 (frozen)
+docs/architecture.md               — CURRENT: target architecture + seam layers
+docs/data-model.md                 — CURRENT: target DB schema + RLS
+docs/implementation-plan.md        — CURRENT: milestone roadmap (plan v2.0)
+docs/SECURITY.md                   — security notes / past incidents
+docs/brief-mission.md              — historical: mission / boundaries (kept for context)
+docs/brief-v1-readme.md            — historical: v1 brief
+docs/brief-v2.md                   — historical: v2 design brief
+docs/handoff-v1.md                 — historical: engineering handoff v1
+docs/handoff-v2.md                 — historical: engineering handoff v2
 docs/ai-image-prompts.md           — OpenAI image prompt reference
-docs/deploy-github-pages.md        — how to deploy to GitHub Pages
+docs/deploy-github-pages.md        — (obsolete since Vercel; retained as reference)
+```
+
+## `tasks/`
+```
+tasks/README.md                    — how the task system works
+tasks/AGENTS.md                    — agent protocol (claim → do → verify → log)
+tasks/STATE.md                     — live snapshot of all task status
+tasks/LOG.md                       — append-only event history
+tasks/M0-consolidation/            — M0 tasks (in progress)
+tasks/M-fast-feature-port/         — M-fast tasks (next, after M0)
+tasks/M1-supabase-data/            — POSTPONED (per plan v2.0)
+tasks/M2-auth-invites/             — POSTPONED (per plan v2.0)
+tasks/M3-feature-parity/           — SUPERSEDED by M-fast
+tasks/M4-public-pages/             — POSTPONED
+tasks/M5-observability/            — POSTPONED
+tasks/M6-launch/                   — POSTPONED
 ```
 
 ## `assets/`

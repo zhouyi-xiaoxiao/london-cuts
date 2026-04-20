@@ -1,49 +1,34 @@
-# London Cuts
+# web/ — agent notes
 
-## Mission
-Build the core product shell for London Cuts.
+This subdirectory is the **product codebase**. Authoritative agent instructions live one level up at [../CLAUDE.md](../CLAUDE.md).
 
-Image-to-image and image-to-video generation are owned by another teammate.
-This repo must provide the surrounding product experience:
-- public story website
-- story atlas
-- creator studio
-- upload / organize / edit flow
-- mode switching
-- postcard generation
-- media provider adapter and integration shell
+Always start there:
 
-## MVP
-A complete demo includes:
-- Landing page
-- Public project page
-- Atlas page
-- Stop / Chapter page
-- Studio dashboard
-- Upload memory set
-- Organize stops
-- Story editor
-- Media outputs panel using mock provider
-- Postcard page
-- Publish page
+1. `../CLAUDE.md` — top-level agent instructions
+2. `../docs/requirements.md` — what we're building
+3. `../docs/architecture.md` — how `web/` is structured
+4. `../docs/implementation-plan.md` — current milestone (plan v2.0 — features-first)
+5. `../tasks/AGENTS.md` — protocol for claiming and finishing tasks
+6. `../tasks/STATE.md` — what's TODO / IN_PROGRESS / DONE right now
 
-## Boundaries
-Do not implement actual image-to-image or image-to-video model calls.
-Implement adapter interfaces and mock provider.
-The teammate’s real provider should be swappable later.
+## Local specifics to this folder
 
-## Design Priorities
-- editorial
-- cinematic
-- premium
-- London-specific
-- image-first
-- strong mode differences: Punk / Fashion / Cinema
+- Framework: Next.js 14 + TypeScript (app-router), pnpm, Node 22+.
+- Seams live in `lib/` — all external service access must go through them. See `../docs/architecture.md#4-the-seam-layers`.
+- Client state: domain stores under `stores/` (split during M-fast from the legacy monolithic `store.jsx`).
+- Never import third-party SDKs outside `lib/`.
 
-## Engineering Priorities
-1. complete happy path first
-2. use seed data early
-3. keep data model clean
-4. isolate media generation behind provider abstraction
-5. public demo must remain stable
-6. avoid broad rewrites
+## Do not
+
+- Re-introduce GitHub Pages config (`output: export`, `basePath`, `trailingSlash`) — removed in M0-P003.
+- Edit anything under `../archive/` — it's frozen reference material.
+- Invent new design tokens — pull from `../design-system/colors_and_type.css`.
+
+## Running
+
+```bash
+pnpm install
+pnpm dev         # http://localhost:3000
+pnpm typecheck
+pnpm build
+```

@@ -3,15 +3,15 @@ id: M0-P006
 title: Create web/supabase/migrations/ directory skeleton
 milestone: M0
 kind: parallel
-status: TODO
+status: DONE
 blocked_by: [M0-T001]
 blocks: [M1-T002, M1-T003]
 parallel_safe: true
 touches:
   - web/supabase/
-owner: null
-started_at: null
-completed_at: null
+owner: opus-4.7-session-20260420
+started_at: 2026-04-20T01:55Z
+completed_at: 2026-04-20T01:58Z
 ---
 
 # M0-P006 — Create `web/supabase/migrations/` directory skeleton

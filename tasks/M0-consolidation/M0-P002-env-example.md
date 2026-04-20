@@ -3,16 +3,16 @@ id: M0-P002
 title: Create web/.env.example with all required vars
 milestone: M0
 kind: parallel
-status: TODO
+status: DONE
 blocked_by: [M0-T001]
 blocks: []
 parallel_safe: true
 touches:
   - web/.env.example
   - web/.gitignore
-owner: null
-started_at: null
-completed_at: null
+owner: opus-4.7-session-20260420
+started_at: 2026-04-20T01:50Z
+completed_at: 2026-04-20T01:53Z
 ---
 
 # M0-P002 — Create `web/.env.example`

@@ -3,15 +3,15 @@ id: M0-P007
 title: Expand M-fast task files (unblock feature-port kickoff)
 milestone: M0
 kind: parallel
-status: TODO
+status: DONE
 blocked_by: []
 blocks: []
 parallel_safe: true
 touches:
   - tasks/M-fast-feature-port/
-owner: null
-started_at: null
-completed_at: null
+owner: opus-4.7-session-20260420
+started_at: 2026-04-20T02:10Z
+completed_at: 2026-04-20T02:40Z
 ---
 
 # M0-P007 — Expand M-fast task files (unblock feature-port kickoff)

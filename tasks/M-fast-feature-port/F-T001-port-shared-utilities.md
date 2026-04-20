@@ -1,0 +1,63 @@
+---
+id: F-T001
+title: Port shared utilities (EXIF, image resize, palette, seed)
+milestone: M-fast
+kind: critical
+status: TODO
+blocked_by: [F-T000]
+blocks: [F-T002, F-T006, F-T007]
+parallel_safe: false
+touches:
+  - web/lib/utils/
+  - web/lib/seed.ts
+  - web/lib/palette.ts
+owner: null
+started_at: null
+completed_at: null
+---
+
+# F-T001 — Port shared utilities
+
+## Why
+Low-level utility functions are used by many later tasks (image upload, postcard generation, vision pipeline). Porting them first means later tasks have solid building blocks.
+
+## Acceptance
+- [ ] EXIF reader in `web/lib/utils/exif.ts` (client-safe, no SSR import of `Image`)
+- [ ] Image resize/JPEG-encode helper in `web/lib/utils/image.ts` (max-edge 1600px, quality 0.85)
+- [ ] Orientation-aware image loader in `web/lib/utils/image.ts`
+- [ ] Hash helper in `web/lib/utils/hash.ts` (for `cache_key`)
+- [ ] Style/prompt palette in `web/lib/palette.ts` (the 6 postcard styles + their prompts)
+- [ ] Seed data in `web/lib/seed.ts` (demo projects / stops for dev, matches legacy `data.jsx`)
+- [ ] All files typed, no `any` without an explicit `// eslint-disable` with reason
+- [ ] `pnpm typecheck` passes
+
+## Legacy references
+- `archive/app-html-prototype-2026-04-20/src/shared.jsx` — shared helpers (EXIF, resize, base64, UUID)
+- `archive/app-html-prototype-2026-04-20/src/palette.jsx` — 6 styles + prompt templates
+- `archive/app-html-prototype-2026-04-20/src/data.jsx` — seed projects / stops
+- Legacy uses `createImageBitmap` with EXIF auto-rotate fallback — preserve this logic
+
+## Steps
+1. Read all three legacy files.
+2. Create `web/lib/utils/` directory.
+3. Port `exif.ts`:
+   - Export `readExifOrientation(blob: Blob): Promise<number>` (1, 3, 6, 8 are the common values)
+   - Keep the byte-walking code from legacy
+4. Port `image.ts`:
+   - `loadImage(file: File): Promise<HTMLImageElement>` with EXIF rotation applied via canvas
+   - `resizeToDataUrl(file: File, maxEdge = 1600, quality = 0.85): Promise<string>` returns `data:image/jpeg;base64,...`
+   - `hashFile(file: File): Promise<string>` — SHA-256 of file bytes, hex
+5. Port `hash.ts` if separate from image.ts, else inline.
+6. Port `palette.ts`:
+   - Export const `POSTCARD_STYLES: Record<PostcardStyle, StyleMeta>` where meta includes: `id`, `label`, `description`, `promptTemplate`, `swatchColor`
+   - Use prompt templates verbatim from legacy `palette.jsx`
+7. Port `seed.ts`:
+   - Export `SEED_PROJECTS: Project[]` with 1-2 demo projects + their stops
+   - Match shapes from `web/lib/storage.ts` types
+8. Verify `pnpm typecheck`.
+
+## Verification
+- Import each util from a scratch file and log results; confirm shapes match legacy.
+- Run unit test (write one if convenient): resize a fixture image, confirm output is under 1600px on the long edge.
+
+## Trace

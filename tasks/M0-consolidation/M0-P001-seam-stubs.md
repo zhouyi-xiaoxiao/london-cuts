@@ -3,15 +3,15 @@ id: M0-P001
 title: Create seam file stubs in web/lib/
 milestone: M0
 kind: parallel
-status: TODO
+status: DONE
 blocked_by: [M0-T001]
 blocks: []
 parallel_safe: true
 touches:
   - web/lib/
-owner: null
-started_at: null
-completed_at: null
+owner: opus-4.7-session-20260420
+started_at: 2026-04-20T01:42Z
+completed_at: 2026-04-20T01:50Z
 ---
 
 # M0-P001 — Create seam file stubs in `web/lib/`
