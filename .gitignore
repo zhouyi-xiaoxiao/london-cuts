@@ -38,3 +38,4 @@ out/
 # OS / misc
 Thumbs.db
 .cwd-placeholder
+.vercel

@@ -7,12 +7,18 @@
 //
 // When PREVIEW_PASSWORD is unset (local dev without a value), the gate
 // is disabled: requests pass straight through.
+//
+// Next.js 16 renamed the `middleware` convention to `proxy` — the file
+// and the exported function are both `proxy` now. Legacy `middleware.ts`
+// still compiles but makes Vercel's post-build step choke on a missing
+// `routes-manifest-deterministic.json` entry, which is why the
+// M-preview deploys were all erroring.
 
 import { NextResponse, type NextRequest } from "next/server";
 
 const COOKIE_NAME = "lc_preview_auth";
 
-// Paths the middleware must NOT block (otherwise the gate itself can't render).
+// Paths the proxy must NOT block (otherwise the gate itself can't render).
 const PUBLIC_PATHS = new Set<string>([
   "/gate",
   "/api/gate",
@@ -21,7 +27,7 @@ const PUBLIC_PATHS = new Set<string>([
   "/sitemap.xml",
 ]);
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const password = process.env.PREVIEW_PASSWORD;
   if (!password) return NextResponse.next();
 
@@ -43,7 +49,7 @@ export function middleware(req: NextRequest) {
 }
 
 // Run on EVERY path except Next.js asset prefixes + files with an extension.
-// (The sitemap/robots exceptions are handled inside middleware() above so
+// (The sitemap/robots exceptions are handled inside proxy() above so
 //  they can coexist with this matcher.)
 export const config = {
   matcher: [
