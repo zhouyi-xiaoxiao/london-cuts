@@ -147,7 +147,7 @@ function BlockEditor({
             rows={2}
             style={{
               ...textareaStyle,
-              fontFamily: "var(--f-fashion, var(--mode-display-font))",
+              fontFamily: "var(--mode-display-font, var(--f-fashion))",
               fontStyle: "italic",
               fontSize: 22,
               lineHeight: 1.3,

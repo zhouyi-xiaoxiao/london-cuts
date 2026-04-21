@@ -102,7 +102,7 @@ export function ProjectsDashboard() {
           />
           <span
             style={{
-              fontFamily: "var(--f-fashion, var(--mode-display-font))",
+              fontFamily: "var(--mode-display-font, var(--f-fashion))",
               fontSize: 15,
               fontStyle: "italic",
             }}
@@ -158,7 +158,7 @@ export function ProjectsDashboard() {
           <div className="eyebrow">Studio</div>
           <h1
             style={{
-              fontFamily: "var(--f-fashion, var(--mode-display-font))",
+              fontFamily: "var(--mode-display-font, var(--f-fashion))",
               fontSize: "clamp(48px, 8vw, 72px)",
               fontStyle: "italic",
               lineHeight: 1,
@@ -376,7 +376,7 @@ function ProjectCard(props: CardProps) {
       >
         <h2
           style={{
-            fontFamily: "var(--f-fashion, var(--mode-display-font))",
+            fontFamily: "var(--mode-display-font, var(--f-fashion))",
             fontStyle: "italic",
             fontSize: 24,
             lineHeight: 1.05,
@@ -402,7 +402,7 @@ function ProjectCard(props: CardProps) {
             fontSize: 13,
             opacity: 0.7,
             fontStyle: "italic",
-            fontFamily: "var(--f-fashion, var(--mode-display-font))",
+            fontFamily: "var(--mode-display-font, var(--f-fashion))",
             overflow: "hidden",
             display: "-webkit-box",
             WebkitLineClamp: 2,
@@ -550,7 +550,7 @@ function NewProjectModal({ onClose, onCreate }: NewProjectModalProps) {
         <h2
           id="new-project-title"
           style={{
-            fontFamily: "var(--f-fashion, var(--mode-display-font))",
+            fontFamily: "var(--mode-display-font, var(--f-fashion))",
             fontStyle: "italic",
             fontSize: 32,
             lineHeight: 1,

@@ -250,7 +250,7 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
           <div className="eyebrow">New from photos</div>
           <h2
             style={{
-              fontFamily: "var(--f-fashion, var(--mode-display-font))",
+              fontFamily: "var(--mode-display-font, var(--f-fashion))",
               fontStyle: "italic",
               fontSize: "clamp(28px, 4vw, 40px)",
               lineHeight: 1,
@@ -337,7 +337,7 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
                     style={{
                       fontSize: 12,
                       fontStyle: "italic",
-                      fontFamily: "var(--f-fashion, var(--mode-display-font))",
+                      fontFamily: "var(--mode-display-font, var(--f-fashion))",
                       flex: 2,
                       minWidth: 0,
                       overflow: "hidden",
