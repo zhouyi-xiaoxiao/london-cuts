@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-21T00:30Z
+**Last updated:** 2026-04-21T01:45Z
 
 ## Plan version
 
@@ -11,7 +11,7 @@
 | Milestone | TODO | IN_PROGRESS | DONE | BLOCKED | Total | Status |
 |-----------|------|-------------|------|---------|-------|--------|
 | M0 Consolidation        | 0  | 0 | 9 | 0 | 9  | ✅ **complete** |
-| **M-fast Feature port** | 11 | 0 | 3 | 0 | 14 | **active** ⭐ |
+| **M-fast Feature port** | 10 | 0 | 4 | 0 | 14 | **active** ⭐ |
 | M-preview Soft launch   | —  | — | — | — | —  | after M-fast |
 | M1 Supabase & data      | 8  | 0 | 0 | 0 | 8  | ⏸ postponed |
 | M2 Auth & invites       | 10 | 0 | 0 | 0 | 10 | ⏸ postponed |
@@ -22,8 +22,11 @@
 
 ## Eligible next tasks (TODO with no unmet blockers)
 
-- **F-T002** — Split legacy `store.jsx` into domain stores (critical, unblocks most of the rest of M-fast)
-- No parallel-safe tasks currently unblocked until F-T002 completes — F-P001/P002/P003/P004 all depend on stores or postcard editor
+F-T002 is done → 3 downstream tasks unblock:
+
+- **F-T003** — Port projects dashboard ("Your work." screen) — critical, uses stores
+- **F-T004** — Port workspace three-column layout — critical, uses stores
+- **F-P001** — Port mode switcher (Fashion / Punk / Cinema) — parallel-safe
 
 ## In progress
 
@@ -35,10 +38,11 @@ _none_
 
 ## Recently completed
 
-- **F-P005** (2026-04-21T00:30Z) — Legacy CSS merged into web/app/globals.css (444 → 775 lines). Ran in parallel via subagent under PARALLELISM.md protocol. Verified no regressions.
-- **F-T001** (2026-04-21T00:30Z) — Shared utilities ported: web/lib/utils/{exif,image,hash}.ts + web/lib/seed.ts. Added `exifr` dep. Found + fixed cream-on-cream StylePicker bug via Preview MCP.
+- **F-T002** (2026-04-21T01:45Z) — Split legacy store.jsx into Zustand + 6 domain hook files (types/root/idb/project/stop/postcard/asset/mode/ui). Seam storage.ts fully impl'd. 8 new tests green (13 total). Defensive safeLocalStorage shim fixed jsdom flakiness.
+- **F-P005** (2026-04-21T00:30Z) — Legacy CSS merged into web/app/globals.css (444 → 775 lines)
+- **F-T001** (2026-04-21T00:30Z) — Shared utilities ported: web/lib/utils/{exif,image,hash}.ts + web/lib/seed.ts
 - **F-T000** (2026-04-20T03:10Z) — POC: StylePicker ported, `/poc` page live
-- **M0-P007** (2026-04-20T02:40Z) — Expanded M-fast: 14 task files written
+- **housekeeping** (2026-04-21T01:30Z) — Vitest set up (subagent), pre-commit hook (subagent)
 - **M0-P005** (2026-04-20T02:05Z) — Rewrote README.md + INDEX.md for plan v2.0
 - **M0-P004** (2026-04-20T02:05Z) — CLAUDE.md (root) updated to v2 content; web/CLAUDE.md replaced with pointer to root
 - **M0-P006** (2026-04-20T01:58Z) — Created web/supabase/ dir scaffold

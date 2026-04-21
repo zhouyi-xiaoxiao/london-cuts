@@ -1,7 +1,13 @@
 // Data access seam. All DB reads/writes go through here.
-// Implementations land in M-fast (localStorage + IndexedDB) → M1 (Supabase).
-// See ../docs/architecture.md#the-seam-layers and ../docs/data-model.md
+// See docs/architecture.md#4-the-seam-layers and docs/data-model.md
+//
+// M-fast impl: backed by the Zustand root store + localStorage persist +
+// IndexedDB for binary assets (ported from legacy).
+// M1 swap target: Supabase. Only this file changes; callers stay identical.
+
 import { NotImplementedError } from "./errors";
+
+// ─── Shared types ──────────────────────────────────────────────────────
 
 export type ProjectStatus = "draft" | "published";
 export type ProjectVisibility = "public" | "unlisted" | "private";
@@ -23,38 +29,102 @@ export interface Project {
   updatedAt: string;
 }
 
-export async function getProject(_id: string): Promise<Project | null> {
-  throw new NotImplementedError("getProject");
+// ─── Project CRUD (client-only, backed by Zustand) ────────────────────
+
+// We lazy-import the store to avoid pulling Zustand into RSC bundles.
+async function store() {
+  const { useRootStore } = await import("@/stores/root");
+  return useRootStore.getState();
+}
+
+export async function getProject(id: string): Promise<Project | null> {
+  const s = await store();
+  if (s.project.id === id) return s.project;
+  const archived = s.projectsArchive[id];
+  return archived?.project ?? null;
 }
 
 export async function getProjectByHandleAndSlug(
   _handle: string,
-  _slug: string,
+  slug: string,
 ): Promise<Project | null> {
-  throw new NotImplementedError("getProjectByHandleAndSlug");
+  const s = await store();
+  // M-fast: single-user, ignore handle.
+  if (s.project.slug === slug) return s.project;
+  for (const ap of Object.values(s.projectsArchive)) {
+    if (ap.project.slug === slug) return ap.project;
+  }
+  return null;
 }
 
 export async function listProjects(_args: {
   ownerId: string;
 }): Promise<Project[]> {
-  throw new NotImplementedError("listProjects");
+  const s = await store();
+  const archived = Object.values(s.projectsArchive).map((ap) => ap.project);
+  return [s.project, ...archived];
 }
 
 export async function createProject(
-  _input: Partial<Project> & { ownerId: string; title: string; slug: string },
+  input: Partial<Project> & { ownerId: string; title: string; slug: string },
 ): Promise<Project> {
-  throw new NotImplementedError("createProject");
+  const s = await store();
+  const now = new Date().toISOString();
+  const next: Project = {
+    id: input.id ?? `proj-${Date.now().toString(36)}`,
+    ownerId: input.ownerId,
+    slug: input.slug,
+    title: input.title,
+    subtitle: input.subtitle ?? null,
+    locationName: input.locationName ?? null,
+    defaultMode: input.defaultMode ?? "fashion",
+    status: input.status ?? "draft",
+    visibility: input.visibility ?? "public",
+    coverAssetId: input.coverAssetId ?? null,
+    publishedAt: input.publishedAt ?? null,
+    createdAt: input.createdAt ?? now,
+    updatedAt: now,
+  };
+  // Archive the current project, then adopt the new one as current.
+  s.archiveCurrentProject();
+  s.setProject(next);
+  return next;
 }
 
 export async function updateProject(
-  _id: string,
-  _patch: Partial<Project>,
+  id: string,
+  patch: Partial<Project>,
 ): Promise<Project> {
-  throw new NotImplementedError("updateProject");
+  const s = await store();
+  if (s.project.id !== id) {
+    throw new Error(
+      `updateProject: only the current project is mutable in M-fast (got ${id})`,
+    );
+  }
+  s.setProject(patch);
+  return (await store()).project;
 }
 
-export async function softDeleteProject(_id: string): Promise<void> {
-  throw new NotImplementedError("softDeleteProject");
+export async function softDeleteProject(id: string): Promise<void> {
+  const s = await store();
+  if (s.project.id === id) {
+    // Current project — archive it.
+    s.archiveCurrentProject();
+    s.resetToSeed();
+    return;
+  }
+  s.deleteArchivedProject(id);
 }
 
-// Stops, Postcards, Assets: fill in during M-fast as each feature lands.
+// ─── Stops, Postcards, Assets ──────────────────────────────────────────
+// Stop / postcard / asset mutations go through their scoped hooks
+// (stores/stop.ts etc.) from component code. If you need a non-React
+// entry point, import from stores/root.ts directly — intentionally not
+// re-exported here because it creates an easy foot-gun for SSR misuse.
+
+// ─── Not yet implemented (M1+) ────────────────────────────────────────
+
+/** Hard delete (GDPR). M1: only admin with service role. */
+export async function hardDeleteProject(_id: string): Promise<void> {
+  throw new NotImplementedError("hardDeleteProject");
+}

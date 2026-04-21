@@ -3,16 +3,16 @@ id: F-T002
 title: Split legacy store.jsx (1000 lines) into TS domain stores
 milestone: M-fast
 kind: critical
-status: TODO
+status: DONE
 blocked_by: [F-T001]
 blocks: [F-T003, F-T004, F-P001]
 parallel_safe: false
 touches:
   - web/stores/
   - web/lib/storage.ts
-owner: null
-started_at: null
-completed_at: null
+owner: opus-4.7-session-20260421
+started_at: 2026-04-21T01:00Z
+completed_at: 2026-04-21T01:45Z
 ---
 
 # F-T002 — Split `store.jsx` into TS domain stores
@@ -65,3 +65,40 @@ Legacy `store.jsx` is ~1000 lines holding everything: projects, stops, postcards
 After F-T002 ships, the test script runs: create project → add stop → reload the process → stores repopulate from localStorage with the same data.
 
 ## Trace
+
+**2026-04-21T01:45Z — opus-4.7-session-20260421 — DONE**
+
+Architecture decision: hybrid of what the task described. Not 6 separate Zustand stores. Instead **one Zustand store** (`web/stores/root.ts`) with all slices inline, and **6 domain hook files** (`project.ts` / `stop.ts` / `postcard.ts` / `asset.ts` / `mode.ts` / `ui.ts`) that are thin typed selectors over it. Reason: cross-store references between stops + postcards + assets would be awkward with separate stores.
+
+Dep added: `zustand@5.0.12`.
+
+Files:
+- `web/stores/types.ts` — shared TS types extending the seam contract (Project extends lib/storage.Project; adds legacy-facing fields)
+- `web/stores/idb.ts` — IndexedDB helpers (assets bucket + variants bucket)
+- `web/stores/root.ts` — the Zustand store with persist middleware, all actions, safeLocalStorage() defensive wrap, schedulePersistAssetsToIdb debounced side-channel, idbHydrate() async rehydration
+- `web/stores/project.ts` — useProject, useProjectArchive, useProjectActions
+- `web/stores/stop.ts` — useStops, useStop, useActiveStopId, useActiveStop, useStopActions
+- `web/stores/postcard.ts` — usePostcard, usePostcardActions
+- `web/stores/asset.ts` — useAssets, useAsset, useAssetsByStop, useLooseAssets, useAssetActions
+- `web/stores/mode.ts` — useMode, useSetMode, NARRATIVE_MODES const
+- `web/stores/ui.ts` — useUi, useUiActions, useHydrated
+- `web/lib/storage.ts` — seam rewritten: getProject / getProjectByHandleAndSlug / listProjects / createProject / updateProject / softDeleteProject all return real data from the Zustand store. hardDeleteProject still NotImplementedError (M1).
+
+Parallelism during this task:
+- Subagent 1 (Vitest setup): added vitest 4.1.5 + @vitest/ui + jsdom + @testing-library/react, created vitest.config.ts + tests/palette.test.ts + tests/hash.test.ts (5 tests, all green)
+- Subagent 2 (pre-commit hook): scripts/hooks/pre-commit typecheck guard (51 lines)
+- Main session (F-T002): the above work
+- Zero file-touch conflicts
+
+Test coverage added in tests/store.test.ts: seed data load, project patch + updatedAt bump, stop reorder, stop update, postcard update, archive + restore roundtrip, lib/storage seam happy paths. 8 new tests, 13 total.
+
+Bugs found + fixed:
+- Vitest jsdom env: `localStorage` in the test env reported as plain `Object` rather than the jsdom `Storage` class, causing `createJSONStorage(() => localStorage)` to capture a broken reference at module-eval time. Fixed with a `safeLocalStorage()` getter in `root.ts` that falls back to an in-memory Map shim when `window.localStorage.setItem` isn't a function. This also hardens SSR — the store no longer crashes if accidentally imported in a server context.
+
+Verification:
+- `pnpm typecheck` green
+- `pnpm build` green (33 pages)
+- `pnpm test` — 13/13 green
+- Preview MCP `/poc` screenshot — no regression, 0 console errors
+
+Unblocks: F-T003 (dashboard), F-T004 (workspace), F-P001 (mode switcher).

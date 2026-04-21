@@ -30,3 +30,9 @@ Keep lines short. Put details in the task's `Trace` section, not here.
 2026-04-21T00:30Z | subagent-F-P005-via-opus-4.7-main | DONE | F-P005 | Legacy base.css + v2.css merged into web/app/globals.css (444 → 775 lines)
 2026-04-21T00:30Z | opus-4.7-session-20260421 | DONE | F-T001 | Shared utils (exif/image/hash/seed) to web/lib/{utils,seed}. exifr dep added.
 2026-04-21T00:30Z | opus-4.7-session-20260421 | NOTE | F-T000 | Found + fixed active-pill cream-on-cream bug via Preview MCP screenshot
+2026-04-21T01:00Z | opus-4.7-session-20260421 | CLAIM | F-T002 | Split legacy store.jsx into typed domain stores; implement lib/storage.ts against localStorage+IndexedDB
+2026-04-21T01:00Z | subagent-vitest-via-opus-4.7-main | CLAIM | housekeeping | Vitest config + sample tests for lib/palette + lib/utils/hash
+2026-04-21T01:00Z | subagent-pre-commit-via-opus-4.7-main | CLAIM | housekeeping | pre-commit hook: typecheck web/ on staged TS/TSX changes
+2026-04-21T01:30Z | subagent-vitest-via-opus-4.7-main | DONE | housekeeping | Vitest config + palette.test + hash.test — 5 tests green
+2026-04-21T01:30Z | subagent-pre-commit-via-opus-4.7-main | DONE | housekeeping | scripts/hooks/pre-commit — typecheck guard for staged ts/tsx under web/
+2026-04-21T01:45Z | opus-4.7-session-20260421 | DONE | F-T002 | Split legacy store.jsx into Zustand+6 domain hooks. 8 new tests (13/13 total). safeLocalStorage shim fixed jsdom/SSR.

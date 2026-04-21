@@ -1,0 +1,434 @@
+// Root Zustand store — the single source of truth for all client-side state.
+// Split into domain "slices" via comments for readability; consumers access via
+// the domain-scoped hooks in project.ts / stop.ts / postcard.ts / asset.ts.
+// Mode + UI are separately exposed via their own files because they don't
+// depend on any other slice.
+//
+// Persistence strategy (ported from legacy store.jsx):
+//   - localStorage holds lean metadata (no data URLs — data: URLs replaced by
+//     `{_idb: true}` markers)
+//   - IndexedDB holds asset binary data (data URLs) keyed by asset.id
+//   - After hydration, idbHydrate() fills real imageUrls back in asynchronously
+//     and triggers a re-render.
+//   - Writes to IDB are debounced 300ms.
+"use client";
+
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+
+import type {
+  ArchivedProject,
+  Asset,
+  MediaTask,
+  Project,
+  Stop,
+  UiState,
+} from "./types";
+import type { NarrativeMode } from "@/lib/storage";
+import {
+  PROJECTS_FEED,
+  SEED_ASSETS,
+  SEED_BODY_05,
+  SEED_POSTCARD_05,
+  SEED_PROJECT,
+  SEED_STOPS,
+  SEED_TASKS,
+} from "@/lib/seed";
+import {
+  idbAllAssetKeys,
+  idbDeleteAsset,
+  idbGetAsset,
+  idbPutAsset,
+} from "./idb";
+
+// ─── Hydrated default state ────────────────────────────────────────────
+
+const DEFAULT_RECIPIENT = {
+  name: "",
+  line1: "",
+  line2: "",
+  country: "",
+};
+
+function seedStateFromDataModule(): RootState {
+  const stops: Stop[] = SEED_STOPS.map((s) => {
+    const isStop05 = s.n === "05";
+    return {
+      ...s,
+      body: isStop05 ? SEED_BODY_05 : [],
+      postcard: isStop05
+        ? { ...SEED_POSTCARD_05 }
+        : { message: "", recipient: { ...DEFAULT_RECIPIENT } },
+      heroAssetId: null,
+      assetIds: [],
+    };
+  });
+
+  const assetsPool: Asset[] = SEED_ASSETS.map((a) => ({
+    ...a,
+    imageUrl: null, // populated on the fly by F-T005 uploads
+  }));
+
+  const project: Project = {
+    // StorageProject fields (matches lib/storage.ts Project interface)
+    id: "seed-a-year-in-se1",
+    ownerId: "seed-owner",
+    slug: SEED_PROJECT.slug,
+    title: SEED_PROJECT.title,
+    subtitle: SEED_PROJECT.subtitle,
+    locationName: "London SE1",
+    defaultMode: SEED_PROJECT.defaultMode,
+    status: SEED_PROJECT.status,
+    visibility: SEED_PROJECT.visibility,
+    coverAssetId: null,
+    publishedAt: SEED_PROJECT.published,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    // Legacy-facing extras
+    author: SEED_PROJECT.author,
+    tags: SEED_PROJECT.tags,
+    published: SEED_PROJECT.published,
+    reads: SEED_PROJECT.reads,
+    saves: SEED_PROJECT.saves,
+    duration: SEED_PROJECT.duration,
+    coverLabel: SEED_PROJECT.coverLabel,
+  };
+
+  return {
+    project,
+    stops,
+    assetsPool,
+    mediaTasks: SEED_TASKS.map((t) => ({ ...t }) as MediaTask),
+    projectsArchive: {},
+    projectsFeed: [...PROJECTS_FEED],
+    mode: SEED_PROJECT.defaultMode,
+    ui: {
+      drawerOpen: true,
+      drawerTab: "assets",
+      publishOpen: false,
+      activeStopId: "05",
+      tour: { active: false, step: 0 },
+    },
+    hydrated: false,
+  };
+}
+
+// ─── State shape ───────────────────────────────────────────────────────
+
+export interface RootState {
+  // Project slice
+  project: Project;
+  projectsArchive: Record<string, ArchivedProject>;
+  projectsFeed: Array<(typeof PROJECTS_FEED)[number]>;
+
+  // Stop slice
+  stops: Stop[];
+
+  // Asset slice
+  assetsPool: Asset[];
+
+  // Media tasks (moving to postcard/ai-provider in F-T006)
+  mediaTasks: MediaTask[];
+
+  // Mode slice
+  mode: NarrativeMode;
+
+  // UI slice
+  ui: UiState;
+
+  /** True after async idbHydrate() has merged binary data back in. */
+  hydrated: boolean;
+}
+
+export interface RootActions {
+  // Project
+  setProject: (patch: Partial<Project>) => void;
+  archiveCurrentProject: () => void;
+  restoreProject: (id: string) => void;
+  deleteArchivedProject: (id: string) => void;
+  resetToSeed: () => void;
+
+  // Stop
+  setStops: (stops: Stop[]) => void;
+  updateStop: (stopId: string, patch: Partial<Stop>) => void;
+  reorderStops: (orderedIds: string[]) => void;
+  setActiveStop: (stopId: string) => void;
+
+  // Postcard (scoped to a stop)
+  updatePostcard: (stopId: string, patch: Partial<Stop["postcard"]>) => void;
+
+  // Asset
+  addAsset: (asset: Asset) => void;
+  updateAsset: (id: string, patch: Partial<Asset>) => void;
+  removeAsset: (id: string) => void;
+
+  // Media tasks
+  addMediaTask: (task: MediaTask) => void;
+  updateMediaTask: (id: string, patch: Partial<MediaTask>) => void;
+
+  // Mode
+  setMode: (mode: NarrativeMode) => void;
+
+  // UI
+  setDrawerOpen: (open: boolean) => void;
+  setDrawerTab: (tab: UiState["drawerTab"]) => void;
+  setPublishOpen: (open: boolean) => void;
+}
+
+export type RootStore = RootState & RootActions;
+
+// ─── The store ─────────────────────────────────────────────────────────
+
+const PERSIST_KEY = "lc_store_v4";
+
+// Lean a single asset so we don't put data URLs in localStorage.
+function leanAsset(a: Asset): Asset {
+  if (typeof a.imageUrl === "string" && a.imageUrl.startsWith("data:")) {
+    return { ...a, imageUrl: null };
+  }
+  return a;
+}
+
+// Defensive storage getter. In the browser (real Storage on window) this
+// returns the actual localStorage. In Node/SSR/Vitest-jsdom where the
+// Storage shim may be missing or incomplete, it returns a no-op that
+// satisfies the Zustand persist contract without throwing.
+function safeLocalStorage(): Storage {
+  if (
+    typeof window !== "undefined" &&
+    window.localStorage &&
+    typeof window.localStorage.setItem === "function"
+  ) {
+    return window.localStorage;
+  }
+  const mem = new Map<string, string>();
+  return {
+    get length() {
+      return mem.size;
+    },
+    clear: () => mem.clear(),
+    getItem: (k) => mem.get(k) ?? null,
+    key: (i) => Array.from(mem.keys())[i] ?? null,
+    removeItem: (k) => {
+      mem.delete(k);
+    },
+    setItem: (k, v) => {
+      mem.set(k, v);
+    },
+  } satisfies Storage;
+}
+
+export const useRootStore = create<RootStore>()(
+  persist(
+    (set) => ({
+      ...seedStateFromDataModule(),
+
+      // ─ Project ─
+      setProject: (patch) =>
+        set((s) => ({
+          project: {
+            ...s.project,
+            ...patch,
+            updatedAt: new Date().toISOString(),
+          },
+        })),
+      archiveCurrentProject: () =>
+        set((s) => {
+          const id = `archive-${Date.now()}`;
+          return {
+            projectsArchive: {
+              ...s.projectsArchive,
+              [id]: {
+                id,
+                createdAt: Date.now(),
+                project: s.project,
+                stops: s.stops,
+                assetsPool: s.assetsPool,
+                mediaTasks: s.mediaTasks,
+              },
+            },
+          };
+        }),
+      restoreProject: (id) =>
+        set((s) => {
+          const archived = s.projectsArchive[id];
+          if (!archived) return {};
+          const { [id]: _removed, ...rest } = s.projectsArchive;
+          return {
+            project: archived.project,
+            stops: [...archived.stops],
+            assetsPool: [...archived.assetsPool],
+            mediaTasks: [...archived.mediaTasks],
+            projectsArchive: rest,
+          };
+        }),
+      deleteArchivedProject: (id) =>
+        set((s) => {
+          const { [id]: _removed, ...rest } = s.projectsArchive;
+          return { projectsArchive: rest };
+        }),
+      resetToSeed: () => set(() => seedStateFromDataModule()),
+
+      // ─ Stops ─
+      setStops: (stops) => set({ stops }),
+      updateStop: (stopId, patch) =>
+        set((s) => ({
+          stops: s.stops.map((st) =>
+            st.n === stopId ? { ...st, ...patch } : st,
+          ),
+        })),
+      reorderStops: (orderedIds) =>
+        set((s) => {
+          const byId = new Map(s.stops.map((st) => [st.n, st]));
+          return {
+            stops: orderedIds
+              .map((id) => byId.get(id))
+              .filter((st): st is Stop => Boolean(st)),
+          };
+        }),
+      setActiveStop: (stopId) =>
+        set((s) => ({ ui: { ...s.ui, activeStopId: stopId } })),
+
+      // ─ Postcard ─
+      updatePostcard: (stopId, patch) =>
+        set((s) => ({
+          stops: s.stops.map((st) =>
+            st.n === stopId
+              ? { ...st, postcard: { ...st.postcard, ...patch } }
+              : st,
+          ),
+        })),
+
+      // ─ Assets ─
+      addAsset: (asset) =>
+        set((s) => ({ assetsPool: [...s.assetsPool, asset] })),
+      updateAsset: (id, patch) =>
+        set((s) => ({
+          assetsPool: s.assetsPool.map((a) =>
+            a.id === id ? { ...a, ...patch } : a,
+          ),
+        })),
+      removeAsset: (id) =>
+        set((s) => ({
+          assetsPool: s.assetsPool.filter((a) => a.id !== id),
+        })),
+
+      // ─ Media tasks ─
+      addMediaTask: (task) =>
+        set((s) => ({ mediaTasks: [...s.mediaTasks, task] })),
+      updateMediaTask: (id, patch) =>
+        set((s) => ({
+          mediaTasks: s.mediaTasks.map((t) =>
+            t.id === id ? { ...t, ...patch } : t,
+          ),
+        })),
+
+      // ─ Mode ─
+      setMode: (mode) => set({ mode }),
+
+      // ─ UI ─
+      setDrawerOpen: (open) =>
+        set((s) => ({ ui: { ...s.ui, drawerOpen: open } })),
+      setDrawerTab: (tab) =>
+        set((s) => ({ ui: { ...s.ui, drawerTab: tab } })),
+      setPublishOpen: (open) =>
+        set((s) => ({ ui: { ...s.ui, publishOpen: open } })),
+    }),
+    {
+      name: PERSIST_KEY,
+      storage: createJSONStorage(() => safeLocalStorage()),
+      // Only serialise lean data to localStorage. IDB handles the rest.
+      partialize: (state) => ({
+        project: state.project,
+        stops: state.stops,
+        assetsPool: state.assetsPool.map(leanAsset),
+        mediaTasks: state.mediaTasks,
+        projectsArchive: Object.fromEntries(
+          Object.entries(state.projectsArchive).map(([id, ap]) => [
+            id,
+            {
+              ...ap,
+              assetsPool: ap.assetsPool.map(leanAsset),
+            },
+          ]),
+        ),
+        mode: state.mode,
+      }),
+      version: 4,
+    },
+  ),
+);
+
+// ─── IndexedDB hydrate + persist (async side-channel for data URLs) ────
+
+let idbPersistTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Persist all data-URL assets in the pool (and archives) to IDB.
+ * Debounced 300ms, same as legacy behaviour.
+ */
+export function schedulePersistAssetsToIdb() {
+  if (typeof window === "undefined") return;
+  if (idbPersistTimer) clearTimeout(idbPersistTimer);
+  idbPersistTimer = setTimeout(persistAssetsNow, 300);
+}
+
+async function persistAssetsNow() {
+  const state = useRootStore.getState();
+  const current = new Map<string, string>();
+  const push = (a: Asset) => {
+    if (typeof a.imageUrl === "string" && a.imageUrl.startsWith("data:")) {
+      current.set(a.id, a.imageUrl);
+    }
+  };
+  for (const a of state.assetsPool) push(a);
+  for (const ap of Object.values(state.projectsArchive)) {
+    for (const a of ap.assetsPool) push(a);
+  }
+
+  try {
+    for (const [id, url] of current) {
+      await idbPutAsset(id, url);
+    }
+    // Garbage-collect IDB entries that were dropped from state.
+    const existing = await idbAllAssetKeys();
+    for (const k of existing) {
+      if (!current.has(k)) await idbDeleteAsset(k);
+    }
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn("[stores] IDB persist failed", err);
+  }
+}
+
+/**
+ * Read IDB and fill imageUrl for any asset whose localStorage entry is lean.
+ * Call once after mount. Sets `hydrated: true` when done.
+ */
+export async function idbHydrate(): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    const state = useRootStore.getState();
+    const hydratedPool: Asset[] = await Promise.all(
+      state.assetsPool.map(async (a) => {
+        if (a.imageUrl) return a;
+        const url = await idbGetAsset(a.id);
+        return url ? { ...a, imageUrl: url } : a;
+      }),
+    );
+    useRootStore.setState({ assetsPool: hydratedPool, hydrated: true });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn("[stores] IDB hydrate failed", err);
+    useRootStore.setState({ hydrated: true });
+  }
+}
+
+// Subscribe: any assetsPool change → schedule IDB persist.
+if (typeof window !== "undefined") {
+  useRootStore.subscribe((state, prev) => {
+    if (state.assetsPool !== prev.assetsPool) {
+      schedulePersistAssetsToIdb();
+    }
+  });
+}

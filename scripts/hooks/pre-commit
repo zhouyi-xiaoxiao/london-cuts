@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# pre-commit — run `pnpm typecheck` in web/ whenever a staged change
+# touches a TypeScript file under web/. Skipped entirely if no matching
+# files are staged, so commits to docs / tasks / scripts stay snappy.
+#
+# Install (in a fresh clone):
+#   git config core.hooksPath scripts/hooks
+#
+# Skip in emergency (not recommended):
+#   git commit --no-verify
+
+set -euo pipefail
+
+# Only look at Added/Copied/Modified/Renamed/Type-changed files — never
+# Deleted, so removing a .ts file alone doesn't trigger a typecheck.
+# --diff-filter=ACMRT keeps us from firing on pure deletions or unmerged paths.
+staged=$(git diff --cached --name-only --diff-filter=ACMRT -z \
+         | tr '\0' '\n' \
+         | grep -E '^web/.*\.(ts|tsx)$' \
+         || true)
+
+if [ -z "$staged" ]; then
+  exit 0
+fi
+
+# Resolve the repo root so the hook works no matter where git invokes it from.
+repo_root=$(git rev-parse --show-toplevel)
+
+# Run typecheck; capture exit code without aborting via set -e.
+set +e
+(cd "$repo_root/web" && pnpm typecheck)
+rc=$?
+set -e
+
+if [ $rc -ne 0 ]; then
+  echo "========================================================================" >&2
+  echo "🛑  pre-commit aborted: pnpm typecheck failed in web/." >&2
+  echo "========================================================================" >&2
+  echo >&2
+  echo "Staged TypeScript files that triggered the check:" >&2
+  echo "$staged" | sed 's/^/    /' >&2
+  echo >&2
+  echo "What to do:" >&2
+  echo "  1) Fix the type errors above, then re-stage and commit again." >&2
+  echo "  2) Or, if you need to bypass once (not recommended):" >&2
+  echo "       git commit --no-verify" >&2
+  echo "========================================================================" >&2
+  exit 1
+fi
+
+exit 0
