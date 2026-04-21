@@ -35,7 +35,7 @@ M0 consolidation → **M-fast feature port** (active, ~half) → M-preview soft-
 **Next eligible:** M-preview — see "The road ahead" section at the bottom of this file.
 
 **OpenAI pipeline live (don't regress):**
-- `/api/ai/generate` for postcard art (gpt-image-1); `/api/vision/describe` for photo analysis (gpt-4o-mini).
+- `/api/ai/generate` for postcard art (**gpt-image-2**, swapped in 2026-04-21 after initial verification with gpt-image-1); `/api/vision/describe` for photo analysis (gpt-4o-mini).
 - `lib/ai-provider.ts` has MOCK mode (default, returns tinted SVG / pseudo-random JSON) and REAL mode (needs `AI_PROVIDER_MOCK=false` + valid `OPENAI_API_KEY` in `web/.env.local`).
 - Spend cap: `OPENAI_SPEND_CAP_CENTS` env (default 800 = $8). Enforced in `ai-provider.ts` before every call; throws `QuotaExceededError` → API returns HTTP 429.
 - Pipeline verified end-to-end on 2026-04-21: 1 postcard (gpt-image-1 watercolour, 2¢/19s) + 1 vision (gpt-4o-mini, 1¢/7s). If a new session needs to test real gen, ask the owner for a fresh key + flip `AI_PROVIDER_MOCK=false` + **revert to `true` before committing**.

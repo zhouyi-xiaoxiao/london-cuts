@@ -50,11 +50,13 @@ export interface GeneratePostcardResult {
 // ─── Spend tracking ────────────────────────────────────────────────────
 
 /**
- * Approximate cost per call, in cents. OpenAI's image-edit pricing varies
- * by size + quality; these are conservative upper-bound estimates so the
- * spend cap triggers before we actually exceed the user's budget.
+ * Approximate cost per call, in cents. Conservative upper-bound estimates so
+ * the spend cap triggers before actual spend exceeds the user's budget.
  *
- * Source: OpenAI pricing as of 2026-04 (gpt-image-1 / dall-e-2 image-edits).
+ * Model: gpt-image-2 (current). We budget the same as gpt-image-1 tiers
+ * until OpenAI confirms final pricing; if gpt-image-2 turns out cheaper
+ * than this, the spend cap just triggers later than strictly needed —
+ * which is fine, fails safely.
  */
 const COST_CENTS: Record<"low" | "medium" | "high", number> = {
   low: 2,
@@ -118,9 +120,11 @@ async function realGenerate(
   const bytes = Buffer.from(b64, "base64");
   const file = new File([bytes], "source.png", { type: mime });
 
-  // gpt-image-1 supports style prompts better than dall-e-2 for edits.
+  // Model: gpt-image-2 — current OpenAI image-edit model. Same request
+  // shape as gpt-image-1; swap in place. If OpenAI deprecates this name
+  // later, change the one string below.
   const response = await client.images.edit({
-    model: "gpt-image-1",
+    model: "gpt-image-2",
     image: file,
     prompt: style.prompt,
     size: quality === "high" ? "1024x1024" : quality === "medium" ? "1024x1024" : "1024x1024",
