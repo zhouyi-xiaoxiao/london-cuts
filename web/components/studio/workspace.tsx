@@ -141,7 +141,7 @@ export function Workspace() {
           <span
             style={{
               fontFamily: "var(--mode-display-font, var(--f-fashion))",
-              fontStyle: "italic",
+              fontStyle: "var(--mode-italic, italic)",
               fontSize: 17,
               overflow: "hidden",
               textOverflow: "ellipsis",

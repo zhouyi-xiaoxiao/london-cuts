@@ -92,7 +92,7 @@ export function ChapterPage({
             href={`/${authorHandle}/${project.slug}`}
             style={{
               fontFamily: "var(--mode-display-font, var(--f-serif, serif))",
-              fontStyle: "italic",
+              fontStyle: "var(--mode-italic, italic)",
               fontSize: 22,
               textDecoration: "none",
               color: "inherit",
@@ -280,7 +280,7 @@ function BodyBlocks({
       <p
         style={{
           marginTop: 36,
-          fontStyle: "italic",
+          fontStyle: "var(--mode-italic, italic)",
           opacity: 0.6,
           lineHeight: 1.6,
         }}
@@ -329,7 +329,7 @@ function BlockView({
           paddingLeft: 18,
           borderLeft: "3px solid var(--mode-accent, currentColor)",
           fontFamily: "var(--f-fashion, var(--f-serif, serif))",
-          fontStyle: "italic",
+          fontStyle: "var(--mode-italic, italic)",
           fontSize: "clamp(22px, 3vw, 30px)",
           lineHeight: 1.3,
         }}
@@ -455,7 +455,7 @@ function BlockPlaceholder({
         {label} placeholder
       </div>
       {caption && (
-        <div style={{ fontStyle: "italic", opacity: 0.8 }}>{caption}</div>
+        <div style={{ fontStyle: "var(--mode-italic, italic)", opacity: 0.8 }}>{caption}</div>
       )}
     </div>
   );

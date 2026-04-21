@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation";
 
 import { Atlas, type AtlasStop } from "@/components/map/atlas";
 import { ModeSwitcher } from "@/components/mode-switcher";
+import { useMode } from "@/stores/mode";
 import { NotFoundCard } from "./not-found-card";
 import {
   stopSlugFrom,
@@ -50,6 +51,17 @@ export function PublicProjectPage({
   }
 
   const { project, stops, assets } = lookup;
+  const mode = useMode();
+
+  // Cover photo: first stop with a heroAssetId wins. Falls back to first
+  // stop, then null. Mirrors the dashboard's coverUrlFor() logic so the
+  // public hero matches the dashboard card.
+  const coverStop = stops.find((s) => s.heroAssetId) ?? stops[0];
+  const coverAsset = coverStop?.heroAssetId
+    ? assets.find((a) => a.id === coverStop.heroAssetId)
+    : assets.find((a) => a.imageUrl);
+  const coverUrl = coverAsset?.imageUrl ?? null;
+  const coverLabel = (coverStop?.label ?? project.coverLabel ?? "").toUpperCase();
 
   const atlasStops: readonly AtlasStop[] = stops.map((s) => ({
     n: s.n,
@@ -97,7 +109,7 @@ export function PublicProjectPage({
             <h1
               style={{
                 fontFamily: "var(--mode-display-font, var(--f-serif, serif))",
-                fontStyle: "italic",
+                fontStyle: "var(--mode-italic, italic)",
                 fontSize: "clamp(24px, 3vw, 32px)",
                 lineHeight: 1,
                 margin: 0,
@@ -120,7 +132,9 @@ export function PublicProjectPage({
         </div>
       </header>
 
-      {/* Hero */}
+      {/* Hero — cover image (when present) + title overlay. Cinema mode adds
+          the legacy letterbox bands + EXT. <LOCATION> subtitle so the mode
+          actually feels like cinema rather than just dark colors. */}
       <section
         style={{
           maxWidth: 1280,
@@ -128,6 +142,81 @@ export function PublicProjectPage({
           padding: "48px 40px 32px",
         }}
       >
+        {coverUrl && (
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              aspectRatio: mode === "cinema" ? "21 / 9" : "16 / 9",
+              overflow: "hidden",
+              marginBottom: 28,
+              background: "var(--paper-2)",
+            }}
+            data-mode-aware-hero
+          >
+            <img
+              src={coverUrl}
+              alt=""
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
+            />
+            {mode === "cinema" && (
+              <>
+                <div
+                  aria-hidden
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 48,
+                    background: "black",
+                  }}
+                />
+                <div
+                  aria-hidden
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 48,
+                    background: "black",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 60,
+                    left: 24,
+                    right: 24,
+                    textAlign: "center",
+                    pointerEvents: "none",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "inline-block",
+                      background: "rgba(0,0,0,0.55)",
+                      padding: "6px 14px",
+                      fontFamily: "var(--f-mono)",
+                      fontSize: 13,
+                      letterSpacing: "0.12em",
+                      color: "oklch(0.88 0.14 90)",
+                    }}
+                  >
+                    EXT. {coverLabel || "LONDON · GOLDEN HOUR"}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         <div
           className="eyebrow"
           style={{
@@ -149,6 +238,7 @@ export function PublicProjectPage({
             letterSpacing: "-0.01em",
             margin: 0,
             maxWidth: "18ch",
+            textTransform: "var(--mode-uppercase, none)" as React.CSSProperties["textTransform"],
           }}
         >
           {project.subtitle ?? project.title}

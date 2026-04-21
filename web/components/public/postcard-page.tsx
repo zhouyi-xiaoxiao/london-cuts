@@ -154,7 +154,7 @@ export function PostcardPage({
             href={`/${authorHandle}/${project.slug}/chapter/${stopSlugFrom(stop.title)}`}
             style={{
               fontFamily: "var(--mode-display-font, var(--f-serif, serif))",
-              fontStyle: "italic",
+              fontStyle: "var(--mode-italic, italic)",
               fontSize: 20,
               textDecoration: "none",
               color: "inherit",

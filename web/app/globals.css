@@ -115,6 +115,14 @@ input, textarea, select { font: inherit; color: inherit; background: none; borde
    (moved to legacy values; scaffold's values were close but not canonical)
    ========================================================================= */
 
+/* Sensible defaults so var(--mode-italic) doesn't compute to invalid when
+   no [data-mode] ancestor is set. Each mode block below overrides. */
+:root {
+  --mode-italic: italic;
+  --mode-uppercase: none;
+  --mode-h1-scale: 1;
+}
+
 /* PUNK — zine, collage, raw, asymmetric, black on white with red */
 [data-mode="punk"],
 body[data-mode="punk"] {
@@ -126,6 +134,11 @@ body[data-mode="punk"] {
   --mode-body-font: var(--f-sans);
   --mode-display: var(--f-display);
   --mode-body: var(--f-sans);
+  /* Punk h1: NOT italic, ALL CAPS, slightly larger (legacy public-project.jsx
+     used 132px vs others 116px) */
+  --mode-italic: normal;
+  --mode-uppercase: uppercase;
+  --mode-h1-scale: 1.14;
 }
 
 /* FASHION — editorial, whitespace, bold crop, elegant serif */
@@ -139,6 +152,10 @@ body[data-mode="fashion"] {
   --mode-body-font: var(--f-sans);
   --mode-display: var(--f-fashion);
   --mode-body: var(--f-sans);
+  /* Fashion h1: italic, mixed case, baseline size */
+  --mode-italic: italic;
+  --mode-uppercase: none;
+  --mode-h1-scale: 1;
 }
 
 /* CINEMA — scene card, subtitle, moody, dark */
@@ -152,6 +169,11 @@ body[data-mode="cinema"] {
   --mode-body-font: var(--f-mono);
   --mode-display: var(--f-serif);
   --mode-body: var(--f-mono);
+  /* Cinema h1: NOT italic (it's the editorial serif standing alone),
+     mixed case, baseline size */
+  --mode-italic: normal;
+  --mode-uppercase: none;
+  --mode-h1-scale: 1;
 }
 
 

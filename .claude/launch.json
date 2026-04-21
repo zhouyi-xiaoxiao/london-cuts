@@ -8,7 +8,7 @@
       "port": 3000
     },
     {
-      "name": "legacy-prototype",
+      "name": "london-cuts-legacy",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8000", "--directory", "archive/app-html-prototype-2026-04-20"],
       "port": 8000

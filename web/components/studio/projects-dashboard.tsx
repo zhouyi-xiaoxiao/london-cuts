@@ -104,7 +104,7 @@ export function ProjectsDashboard() {
             style={{
               fontFamily: "var(--mode-display-font, var(--f-fashion))",
               fontSize: 15,
-              fontStyle: "italic",
+              fontStyle: "var(--mode-italic, italic)",
             }}
           >
             London Cuts Studio
@@ -160,7 +160,7 @@ export function ProjectsDashboard() {
             style={{
               fontFamily: "var(--mode-display-font, var(--f-fashion))",
               fontSize: "clamp(48px, 8vw, 72px)",
-              fontStyle: "italic",
+              fontStyle: "var(--mode-italic, italic)",
               lineHeight: 1,
               marginTop: 8,
               letterSpacing: "-0.02em",
@@ -377,7 +377,7 @@ function ProjectCard(props: CardProps) {
         <h2
           style={{
             fontFamily: "var(--mode-display-font, var(--f-fashion))",
-            fontStyle: "italic",
+            fontStyle: "var(--mode-italic, italic)",
             fontSize: 24,
             lineHeight: 1.05,
             margin: 0,
@@ -401,7 +401,7 @@ function ProjectCard(props: CardProps) {
             marginTop: 6,
             fontSize: 13,
             opacity: 0.7,
-            fontStyle: "italic",
+            fontStyle: "var(--mode-italic, italic)",
             fontFamily: "var(--mode-display-font, var(--f-fashion))",
             overflow: "hidden",
             display: "-webkit-box",
@@ -551,7 +551,7 @@ function NewProjectModal({ onClose, onCreate }: NewProjectModalProps) {
           id="new-project-title"
           style={{
             fontFamily: "var(--mode-display-font, var(--f-fashion))",
-            fontStyle: "italic",
+            fontStyle: "var(--mode-italic, italic)",
             fontSize: 32,
             lineHeight: 1,
             margin: 0,

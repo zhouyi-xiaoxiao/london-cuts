@@ -250,7 +250,7 @@ export function PublishDialog() {
             <div
               style={{
                 fontFamily: "var(--mode-display-font, var(--f-fashion))",
-                fontStyle: "italic",
+                fontStyle: "var(--mode-italic, italic)",
                 fontSize: 22,
                 marginTop: 2,
                 overflow: "hidden",
