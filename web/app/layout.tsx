@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { HtmlModeAttr } from "@/components/mode-switcher";
-import { RootProviders } from "@/providers/root-providers";
 
 import "@/app/globals.css";
 
@@ -42,7 +41,7 @@ export default function RootLayout({
             the [data-mode="punk"] { … } rules in globals.css apply
             globally. Client-only; renders nothing in the tree. */}
         <HtmlModeAttr />
-        <RootProviders>{children}</RootProviders>
+        {children}
       </body>
     </html>
   );

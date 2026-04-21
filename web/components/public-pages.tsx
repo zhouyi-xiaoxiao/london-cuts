@@ -1,36 +1,152 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import { toPng } from "html-to-image";
 
 import { atlasPath, chapterPath, postcardPath, projectPath, studioProjectPath } from "@/lib/routes";
-import { exploreProjects, getProjectBySlug, getStopBySlug, seedProject } from "@/lib/seed-data";
-import { useDemoStore } from "@/providers/demo-store-provider";
-import type { NarrativeMode, Project, StoryStop } from "@/lib/types";
+import type { ExploreProject, NarrativeMode, Project, StoryStop } from "@/lib/types";
 import {
   DisplayAsset,
   MetricCard,
   ModeSwitcher,
   PublicNav,
-  Roundel,
   StopInlineLink,
   StoryCard,
 } from "@/components/ui";
+import { useLegacyStudioAdapter } from "@/components/studio-pages.adapter";
 
-function useResolvedProject(authorHandle?: string, slug?: string) {
-  const { state } = useDemoStore();
+// ─── Scaffold-only browsing data ──────────────────────────────────────
+// Used to exist in `lib/seed-data.ts` — inlined here so the dead-code
+// cleanup can remove that file. These are the "explore" cards shown on
+// the landing + atlas pages. Replaced by real published projects in M4.
+
+const EXPLORE_PROJECTS: ExploreProject[] = [
+  {
+    id: "seed-a-year-in-se1",
+    title: "A Year in SE1",
+    author: "Ana Ishii",
+    authorHandle: "@ana-ishii",
+    slug: "a-year-in-se1",
+    stops: 12,
+    mode: "fashion",
+    label: "SOUTHWARK · COVER",
+    reads: "2.4k",
+    borough: "SE1 Southwark",
+    tone: "warm",
+    summary: "Twelve walks between Bermondsey and Waterloo, assembled over a year on foot.",
+    lat: 51.507,
+    lng: -0.103,
+  },
+  {
+    id: "project-mudlark",
+    title: "Mudlark Diaries",
+    author: "Ty Okafor",
+    authorHandle: "@ty-okafor",
+    slug: "mudlark-diaries",
+    stops: 14,
+    mode: "punk",
+    label: "THAMES · FORESHORE",
+    reads: "891",
+    borough: "SE1 Southwark",
+    tone: "punk",
+    summary: "A rough-cut walk through low tide finds and river residue.",
+    lat: 51.503,
+    lng: -0.106,
+  },
+  {
+    id: "project-e8",
+    title: "48 Hours in E8",
+    author: "Priya Shah",
+    authorHandle: "@priya-shah",
+    slug: "48-hours-in-e8",
+    stops: 8,
+    mode: "cinema",
+    label: "HACKNEY · NIGHT",
+    reads: "4.1k",
+    borough: "E8 Hackney",
+    tone: "dark",
+    summary: "Two sleepless days staged like a low-budget film.",
+    lat: 51.546,
+    lng: -0.075,
+  },
+  {
+    id: "project-jubilee",
+    title: "The Jubilee Walk",
+    author: "Lena Park",
+    authorHandle: "@lena-park",
+    slug: "the-jubilee-walk",
+    stops: 12,
+    mode: "fashion",
+    label: "WESTMINSTER · DAY",
+    reads: "1.2k",
+    borough: "SW1 Westminster",
+    tone: "warm",
+    summary: "River landmarks rendered as a polished editorial essay.",
+    lat: 51.5007,
+    lng: -0.1246,
+  },
+  {
+    id: "project-last-trains",
+    title: "Last Trains",
+    author: "Marco Reed",
+    authorHandle: "@marco-reed",
+    slug: "last-trains",
+    stops: 7,
+    mode: "cinema",
+    label: "UNDERGROUND · 00:47",
+    reads: "3.6k",
+    borough: "W1 Soho / Fitzrovia",
+    tone: "dark",
+    summary: "A night transport diary told as scene cards and subtitles.",
+    lat: 51.515,
+    lng: -0.141,
+  },
+  {
+    id: "project-brick-lane",
+    title: "Brick Lane after rain",
+    author: "Yui Tanaka",
+    authorHandle: "@yui-tanaka",
+    slug: "brick-lane-after-rain",
+    stops: 9,
+    mode: "punk",
+    label: "E1 · WET ASPHALT",
+    reads: "624",
+    borough: "E1 Whitechapel",
+    tone: "punk",
+    summary: "Stickered shutters, wet signs and a camera that stays too close.",
+    lat: 51.521,
+    lng: -0.071,
+  },
+];
+
+function getProjectBySlug(
+  authorHandle: string,
+  slug: string,
+  projects: Project[],
+): Project | undefined {
+  return projects.find(
+    (project) => project.authorHandle === authorHandle && project.slug === slug,
+  );
+}
+
+function getStopBySlug(slug: string, stops: StoryStop[]): StoryStop | undefined {
+  return stops.find((stop) => stop.slug === slug);
+}
+
+function useResolvedProject(authorHandle?: string, slug?: string): Project {
+  const { state } = useLegacyStudioAdapter();
   return (
     (authorHandle && slug ? getProjectBySlug(authorHandle, slug, state.projects) : undefined) ??
     state.projects.find((project) => project.id === state.activeProjectId) ??
-    seedProject
+    state.projects[0]
   );
 }
 
 function useProjectAssets(project: Project) {
-  const { state } = useDemoStore();
+  const { state } = useLegacyStudioAdapter();
   const stopMap = new Map(state.stops.map((stop) => [stop.id, stop]));
   const assetMap = new Map(state.assets.map((asset) => [asset.id, asset]));
   const stops = project.stopIds
@@ -41,10 +157,10 @@ function useProjectAssets(project: Project) {
 }
 
 export function LandingPage() {
-  const { currentMode, setMode, state } = useDemoStore();
-  const project = state.projects[0] ?? seedProject;
+  const { currentMode, setMode, state } = useLegacyStudioAdapter();
+  const project = state.projects[0];
   const { coverAsset, assetMap } = useProjectAssets(project);
-  const featuredStories = exploreProjects.slice(0, 3);
+  const featuredStories = EXPLORE_PROJECTS.slice(0, 3);
 
   const masthead = {
     punk: (
@@ -212,12 +328,12 @@ export function LandingPage() {
 }
 
 export function AtlasPage() {
-  const { currentMode, setMode, state } = useDemoStore();
-  const project = state.projects[0] ?? seedProject;
-  const [selectedId, setSelectedId] = useState(exploreProjects[0]?.id ?? "");
+  const { currentMode, setMode, state } = useLegacyStudioAdapter();
+  const project = state.projects[0];
+  const [selectedId, setSelectedId] = useState(EXPLORE_PROJECTS[0]?.id ?? "");
 
   const selectedProject =
-    exploreProjects.find((item) => item.id === selectedId) ?? exploreProjects[0];
+    EXPLORE_PROJECTS.find((item) => item.id === selectedId) ?? EXPLORE_PROJECTS[0];
 
   return (
     <div className="lc-page" data-mode={currentMode}>
@@ -276,7 +392,7 @@ export function AtlasPage() {
                 fill="oklch(0.82 0.04 240)"
                 opacity="0.42"
               />
-              {exploreProjects.map((item) => {
+              {EXPLORE_PROJECTS.map((item) => {
                 const x = 100 + (item.lng + 0.16) * 2600;
                 const y = 570 - (item.lat - 51.48) * 2600;
                 const active = item.id === selectedProject.id;
@@ -358,7 +474,7 @@ export function AtlasPage() {
                 Borough index
               </div>
               <div className="lc-stack" style={{ gap: "0.7rem" }}>
-                {exploreProjects.map((item, index) => (
+                {EXPLORE_PROJECTS.map((item, index) => (
                   <button
                     key={item.id}
                     type="button"
@@ -406,7 +522,7 @@ export function AtlasPage() {
           <div className="lc-mono">2,487 projects · 31 boroughs</div>
         </div>
         <div className="lc-grid-4">
-          {exploreProjects.map((item) => (
+          {EXPLORE_PROJECTS.map((item) => (
             <StoryCard
               key={item.id}
               href={item.id === project.id ? projectPath(project) : atlasPath()}
@@ -429,7 +545,7 @@ export function PublicProjectPage({
   authorHandle: string;
   slug: string;
 }) {
-  const { currentMode, setMode } = useDemoStore();
+  const { currentMode, setMode } = useLegacyStudioAdapter();
   const project = useResolvedProject(authorHandle, slug);
   const { stops, coverAsset, assetMap } = useProjectAssets(project);
 
@@ -503,7 +619,7 @@ export function ChapterPage({
   slug: string;
   stopSlug: string;
 }) {
-  const { currentMode, setMode } = useDemoStore();
+  const { currentMode, setMode } = useLegacyStudioAdapter();
   const project = useResolvedProject(authorHandle, slug);
   const { stops, assetMap } = useProjectAssets(project);
   const stop = getStopBySlug(stopSlug, stops) ?? stops[4] ?? stops[0];
@@ -576,7 +692,8 @@ export function PostcardPage({
   slug: string;
   stopSlug: string;
 }) {
-  const { currentMode, setMode, state, setActivePostcardVersion } = useDemoStore();
+  const adapter = useLegacyStudioAdapter();
+  const { currentMode, setMode, state, setActivePostcardVersion } = adapter;
   const project = useResolvedProject(authorHandle, slug);
   const { stops, assetMap } = useProjectAssets(project);
   const stop = getStopBySlug(stopSlug, stops) ?? stops[4] ?? stops[0];
@@ -731,7 +848,7 @@ function PunkProject({
   stops: StoryStop[];
   coverAssetId: string;
 }) {
-  const { state } = useDemoStore();
+  const { state } = useLegacyStudioAdapter();
   const asset = state.assets.find((item) => item.id === coverAssetId) ?? state.assets[0];
   return (
     <section className="lc-container" style={{ paddingBlock: "2.2rem 4rem" }}>
@@ -813,7 +930,7 @@ function FashionProject({
   stops: StoryStop[];
   coverAssetId: string;
 }) {
-  const { state } = useDemoStore();
+  const { state } = useLegacyStudioAdapter();
   const asset = state.assets.find((item) => item.id === coverAssetId) ?? state.assets[0];
   return (
     <section className="lc-container" style={{ paddingBlock: "4rem 4.5rem" }}>
@@ -861,7 +978,7 @@ function CinemaProject({
   stops: StoryStop[];
   coverAssetId: string;
 }) {
-  const { state } = useDemoStore();
+  const { state } = useLegacyStudioAdapter();
   const asset = state.assets.find((item) => item.id === coverAssetId) ?? state.assets[0];
   return (
     <section style={{ background: "var(--mode-bg)" }}>
@@ -933,7 +1050,7 @@ function CinemaProject({
 }
 
 function PunkChapter({ project, stop }: { project: Project; stop: StoryStop }) {
-  const { state } = useDemoStore();
+  const { state } = useLegacyStudioAdapter();
   const asset = state.assets.find((item) => item.id === stop.coverAssetId) ?? state.assets[0];
   return (
     <section className="lc-container" style={{ paddingBlock: "2.4rem 3rem" }}>
@@ -963,8 +1080,8 @@ function PunkChapter({ project, stop }: { project: Project; stop: StoryStop }) {
   );
 }
 
-function FashionChapter({ project, stop }: { project: Project; stop: StoryStop }) {
-  const { state } = useDemoStore();
+function FashionChapter({ project: _project, stop }: { project: Project; stop: StoryStop }) {
+  const { state } = useLegacyStudioAdapter();
   const asset = state.assets.find((item) => item.id === stop.coverAssetId) ?? state.assets[0];
   return (
     <section className="lc-container" style={{ paddingBlock: "4rem 3rem" }}>
@@ -989,8 +1106,8 @@ function FashionChapter({ project, stop }: { project: Project; stop: StoryStop }
   );
 }
 
-function CinemaChapter({ project, stop }: { project: Project; stop: StoryStop }) {
-  const { state } = useDemoStore();
+function CinemaChapter({ project: _project, stop }: { project: Project; stop: StoryStop }) {
+  const { state } = useLegacyStudioAdapter();
   const asset = state.assets.find((item) => item.id === stop.coverAssetId) ?? state.assets[0];
   const shots = [
     "Wide · South look · dusk",
@@ -1047,12 +1164,12 @@ function PostcardFront({
 }: {
   mode: NarrativeMode;
   stop: StoryStop;
-  asset: ReturnType<typeof useDemoStore>["state"]["assets"][number];
+  asset: { id: string; label: string; title: string; tone: string; kind: string; src?: string; caption?: string };
 }) {
   if (mode === "punk") {
     return (
       <div style={{ height: "100%", background: "black", position: "relative" }}>
-        <DisplayAsset asset={asset} ratio="7 / 5" meta={stop.place} />
+        <DisplayAsset asset={asset as Parameters<typeof DisplayAsset>[0]["asset"]} ratio="7 / 5" meta={stop.place} />
         <div style={{ position: "absolute", top: "1rem", left: "1rem", background: "var(--mode-accent)", color: "white", padding: "0.45rem 0.6rem", fontFamily: "var(--f-display)", transform: "rotate(-4deg)" }}>
           {stop.code}
         </div>
@@ -1070,7 +1187,7 @@ function PostcardFront({
   if (mode === "cinema") {
     return (
       <div style={{ height: "100%", background: "black", position: "relative" }}>
-        <DisplayAsset asset={asset} ratio="7 / 5" meta={stop.place} />
+        <DisplayAsset asset={asset as Parameters<typeof DisplayAsset>[0]["asset"]} ratio="7 / 5" meta={stop.place} />
         <div style={{ position: "absolute", insetInline: 0, top: 0, height: "2rem", background: "black" }} />
         <div style={{ position: "absolute", insetInline: 0, bottom: 0, height: "2.5rem", background: "black" }} />
         <div style={{ position: "absolute", left: "1rem", top: "2.5rem" }} className="lc-mono">
@@ -1098,7 +1215,7 @@ function PostcardFront({
           </div>
         </div>
       </div>
-      <DisplayAsset asset={asset} ratio="7 / 5" meta={stop.label} />
+      <DisplayAsset asset={asset as Parameters<typeof DisplayAsset>[0]["asset"]} ratio="7 / 5" meta={stop.label} />
     </div>
   );
 }

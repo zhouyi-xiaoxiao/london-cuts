@@ -30,7 +30,7 @@ M0 consolidation → **M-fast feature port** (active, ~half) → M-preview soft-
 - **F-T006** — postcard editor (6 AI styles, 3D flip card, orientation). **Biggest remaining single feature.** Unlocks F-P003/P004 exports.
 - **F-T008** — publish flow (pre-flight + visibility + publish action)
 - **F-P003** / **F-P004** — PDF + PNG export (can start scaffolding before F-T006 lands)
-- housekeeping (partway done): subagent has migrated `web/lib/static-params.ts` off `@/lib/seed-data` → `@/lib/seed`. Still to do: migrate `web/components/studio-pages.tsx` + `web/components/public-pages.tsx` off `DemoStoreProvider`, then delete `web/providers/*` + `web/lib/media-provider.ts` + `web/lib/seed-data.ts` + `web/lib/types.ts` (scaffold) + simplify `web/app/layout.tsx`
+- housekeeping **done** as of 2026-04-21T04:00Z: `web/providers/` is GONE. `web/lib/media-provider.ts` and `web/lib/seed-data.ts` deleted. `web/app/layout.tsx` is a clean server component (just `<HtmlModeAttr />` + fonts). Scaffold `studio-pages.tsx` + `public-pages.tsx` now use the adapter `web/components/studio-pages.adapter.ts` to read Zustand in the shape they expect. Still present: `web/lib/types.ts` (kept — referenced by `components/ui.tsx`, `lib/routes.ts`, etc.). Future cleanup: if those files get refactored off legacy types, `lib/types.ts` can go too.
 
 ## How to keep moving
 

@@ -55,3 +55,4 @@ Keep lines short. Put details in the task's `Trace` section, not here.
 2026-04-21T03:45Z | subagent-F-P002-via-opus-4.7-main | DONE | F-P002 | MapLibre atlas shipped; maplibre-gl@5.23.0 added; /atlas renders 19-stop cross-location map
 2026-04-21T03:50Z | opus-4.7-session-20260421 | DONE | F-T005 | Stop editor fleshed out: HeroSlot + metadata form + body editor. useAssetsByStop useShallow fix. 31/31 tests.
 2026-04-21T03:50Z | opus-4.7-session-20260421 | NOTE | housekeeping | Dead-code subagent still in-flight; phase 1 partial (static-params.ts migrated). Deferring phase 2/3 (delete providers) to next round.
+2026-04-21T04:00Z | subagent-deadcode-migrate-via-opus-4.7-main | DONE | housekeeping | Dead-code cleanup done: providers/ deleted, media-provider + seed-data deleted, layout simplified (no more RootProviders), public-pages migrated via adapter. lib/types.ts kept (still referenced by ui.tsx / routes.ts).
