@@ -3,16 +3,17 @@ id: F-T003
 title: Port projects dashboard ("Your work.")
 milestone: M-fast
 kind: critical
-status: TODO
+status: DONE
 blocked_by: [F-T002]
 blocks: [F-T004]
 parallel_safe: false
 touches:
   - web/app/studio/page.tsx
   - web/components/studio/projects-dashboard.tsx
-owner: null
-started_at: null
-completed_at: null
+  - web/stores/*.ts (useShallow fix)
+owner: opus-4.7-session-20260421
+started_at: 2026-04-21T02:10Z
+completed_at: 2026-04-21T02:30Z
 ---
 
 # F-T003 — Port projects dashboard
@@ -52,3 +53,35 @@ The first screen a logged-in user sees: "Your work." with a grid of project card
 - Manual: load a demo, confirm previous current becomes archived
 
 ## Trace
+
+**2026-04-21T02:30Z — opus-4.7-session-20260421 — DONE**
+
+Ran alongside F-P001 subagent + dead-code-audit subagent (3 threads).
+
+Files created/modified:
+- `web/components/studio/projects-dashboard.tsx` (new, ~400 lines) — ProjectsDashboard + ProjectCard + ArchivedCard + NewProjectModal. Uses `useProject`, `useStops`, `useAssets`, `useMode`, `useProjectArchive`, `useProjectActions`.
+- `web/app/studio/page.tsx` — 1-line swap from scaffold's `StudioDashboardPage` to `<ProjectsDashboard />`.
+- `web/tests/projects-dashboard.test.tsx` (new) — 4 tests: heading renders, seed project title appears as CURRENT, stop count shown, Reset Data prompts confirm.
+
+Scope deviations from task file (all consciously):
+- **Removed legacy seed-demo buttons** ("Load London Memories demo", "Load Hackathon demo"). They relied on legacy `loadLondonMemoryDemo` globals which no longer exist. These are F-T007 territory (Vision Pipeline).
+- **Removed "Demo tour" + "FirstVisitBanner"**. Tour was scope-creep; can come back later as a UX task.
+- **Rewrote NewProjectModal location field from legacy "postcode chips" (SE1 / E1 / …) to free-text input**. Matches product scope ("any location anywhere") vs legacy London-only chips.
+- **Workspace nav**: cards link to `/studio/<projectId>/editor` which doesn't exist yet — F-T004 will wire that route.
+
+Bug surfaced during smoke test: Zustand's default selector does strict-equality; my action-bundle selectors returned fresh `{ setX, setY, ... }` objects → every render triggered another render → "Maximum update depth exceeded". Fixed with `useShallow` wrappers across **5 hook files**: project.ts, stop.ts, postcard.ts, asset.ts, ui.ts. Added an import line to each and wrapped every `useRootStore(selector)` that returns a new object.
+
+This is a latent-bug class — worth a memory note for future Zustand work: **any hook that returns a fresh object literal must use `useShallow`**. I'll update memory.
+
+Parallel subagents:
+- F-P001 (mode switcher) — shipped `web/components/mode-switcher.tsx` + `HtmlModeAttr` wired into `web/app/layout.tsx`. 1 new test (`tests/mode-switcher.test.tsx`).
+- Dead-code audit — delivered full migration map; **not acted upon this round** (scope was "report only"). Next-round candidate: migrate `studio-pages.tsx` + `public-pages.tsx` off the legacy `DemoStoreProvider`, then delete `providers/*`, `lib/media-provider.ts`, `lib/seed-data.ts`, `lib/types.ts`, `lib/static-params.ts`.
+
+Verification:
+- `pnpm typecheck` green
+- `pnpm test` — 18/18 green (13 baseline + 1 F-P001 + 4 F-T003)
+- `pnpm build` — green, 33 pages
+- Preview MCP `/studio` screenshot — dashboard renders with seed project card, activity feed, header nav
+- Preview MCP `/poc` regression — no change, 0 console errors
+
+Unblocks: F-T004 (workspace three-column layout).

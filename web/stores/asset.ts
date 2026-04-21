@@ -2,6 +2,8 @@
 // holds the index (id → metadata + cached imageUrl when hydrated).
 "use client";
 
+import { useShallow } from "zustand/react/shallow";
+
 import { useRootStore } from "./root";
 import type { Asset } from "./types";
 
@@ -22,9 +24,11 @@ export function useLooseAssets(): readonly Asset[] {
 }
 
 export function useAssetActions() {
-  return useRootStore((s) => ({
-    addAsset: s.addAsset,
-    updateAsset: s.updateAsset,
-    removeAsset: s.removeAsset,
-  }));
+  return useRootStore(
+    useShallow((s) => ({
+      addAsset: s.addAsset,
+      updateAsset: s.updateAsset,
+      removeAsset: s.removeAsset,
+    })),
+  );
 }

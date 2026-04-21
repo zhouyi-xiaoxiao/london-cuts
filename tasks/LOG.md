@@ -36,3 +36,9 @@ Keep lines short. Put details in the task's `Trace` section, not here.
 2026-04-21T01:30Z | subagent-vitest-via-opus-4.7-main | DONE | housekeeping | Vitest config + palette.test + hash.test — 5 tests green
 2026-04-21T01:30Z | subagent-pre-commit-via-opus-4.7-main | DONE | housekeeping | scripts/hooks/pre-commit — typecheck guard for staged ts/tsx under web/
 2026-04-21T01:45Z | opus-4.7-session-20260421 | DONE | F-T002 | Split legacy store.jsx into Zustand+6 domain hooks. 8 new tests (13/13 total). safeLocalStorage shim fixed jsdom/SSR.
+2026-04-21T02:10Z | opus-4.7-session-20260421 | CLAIM | F-T003 | Port projects dashboard ("Your work.") to web/app/studio/page.tsx
+2026-04-21T02:10Z | subagent-F-P001-via-opus-4.7-main | CLAIM | F-P001 | Port mode switcher + wire data-mode to <html>
+2026-04-21T02:10Z | subagent-deadcode-via-opus-4.7-main | CLAIM | housekeeping | Audit web/ scaffold dead code post-F-T002
+2026-04-21T02:20Z | subagent-deadcode-via-opus-4.7-main | DONE | housekeeping | Scaffold dead-code audit delivered; blocker = studio-pages/public-pages still use DemoStoreProvider
+2026-04-21T02:25Z | subagent-F-P001-via-opus-4.7-main | DONE | F-P001 | Mode switcher + HtmlModeAttr wired into layout.tsx; 1 new test
+2026-04-21T02:30Z | opus-4.7-session-20260421 | DONE | F-T003 | Dashboard ported + useShallow fix across 5 hooks + 4 new tests (18/18)

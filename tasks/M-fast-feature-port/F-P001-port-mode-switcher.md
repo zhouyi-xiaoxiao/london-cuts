@@ -3,16 +3,17 @@ id: F-P001
 title: Port mode switcher (Fashion / Punk / Cinema)
 milestone: M-fast
 kind: parallel
-status: TODO
+status: DONE
 blocked_by: [F-T002]
 blocks: []
 parallel_safe: true
 touches:
   - web/components/mode-switcher.tsx
-  - web/app/globals.css
-owner: null
-started_at: null
-completed_at: null
+  - web/app/layout.tsx
+  - web/tests/mode-switcher.test.tsx
+owner: subagent-F-P001-via-opus-4.7-main
+started_at: 2026-04-21T02:10Z
+completed_at: 2026-04-21T02:25Z
 ---
 
 # F-P001 — Port mode switcher

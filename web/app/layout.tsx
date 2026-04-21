@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { HtmlModeAttr } from "@/components/mode-switcher";
 import { RootProviders } from "@/providers/root-providers";
 
 import "@/app/globals.css";
@@ -37,6 +38,10 @@ export default function RootLayout({
         <link rel="stylesheet" href={GOOGLE_FONTS} />
       </head>
       <body>
+        {/* Mirrors the Zustand `mode` slice onto <html data-mode=…> so
+            the [data-mode="punk"] { … } rules in globals.css apply
+            globally. Client-only; renders nothing in the tree. */}
+        <HtmlModeAttr />
         <RootProviders>{children}</RootProviders>
       </body>
     </html>

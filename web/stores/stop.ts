@@ -1,6 +1,8 @@
 // Stop-scoped hooks over the root Zustand store.
 "use client";
 
+import { useShallow } from "zustand/react/shallow";
+
 import { useRootStore } from "./root";
 import type { Stop } from "./types";
 
@@ -21,10 +23,12 @@ export function useActiveStop(): Stop | undefined {
 }
 
 export function useStopActions() {
-  return useRootStore((s) => ({
-    setStops: s.setStops,
-    updateStop: s.updateStop,
-    reorderStops: s.reorderStops,
-    setActiveStop: s.setActiveStop,
-  }));
+  return useRootStore(
+    useShallow((s) => ({
+      setStops: s.setStops,
+      updateStop: s.updateStop,
+      reorderStops: s.reorderStops,
+      setActiveStop: s.setActiveStop,
+    })),
+  );
 }

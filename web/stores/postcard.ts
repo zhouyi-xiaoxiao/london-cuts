@@ -3,6 +3,8 @@
 // to locate one and mutate it by stop id.
 "use client";
 
+import { useShallow } from "zustand/react/shallow";
+
 import { useRootStore } from "./root";
 import type { Postcard } from "./types";
 
@@ -11,7 +13,9 @@ export function usePostcard(stopId: string): Postcard | undefined {
 }
 
 export function usePostcardActions() {
-  return useRootStore((s) => ({
-    updatePostcard: s.updatePostcard,
-  }));
+  return useRootStore(
+    useShallow((s) => ({
+      updatePostcard: s.updatePostcard,
+    })),
+  );
 }

@@ -1,5 +1,5 @@
-import { StudioDashboardPage } from "@/components/studio-pages";
+import { ProjectsDashboard } from "@/components/studio/projects-dashboard";
 
 export default function Page() {
-  return <StudioDashboardPage />;
+  return <ProjectsDashboard />;
 }
