@@ -1,9 +1,16 @@
 "use client";
 
 // 3D flip card — the star widget of the postcard editor.
-// Click to flip between front (AI-generated art) and back (message +
-// recipient address). Ported from legacy postcard-editor.jsx's flip
-// container (rotateY transform, 700ms transition).
+// Dedicated Flip button in the caption row switches between front
+// (AI-generated art) and back (message + recipient address). Ported
+// from legacy postcard-editor.jsx's flip container (rotateY transform,
+// 700ms transition).
+//
+// DESIGN NOTE (2026-04-22): early versions had onClick={toggleFlip}
+// on the card wrapper itself. That caused clicks on the back's
+// editable inputs to bubble up and flip the card mid-edit. The
+// gesture is now exclusive to an explicit button + keyboard focus
+// on that button.
 
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 
@@ -76,19 +83,6 @@ export const PostcardCard = forwardRef<PostcardCardHandle, PostcardCardProps>(
         }}
       >
         <div
-          role="button"
-          tabIndex={0}
-          aria-pressed={flipped}
-          aria-label={
-            flipped ? "Postcard back — click to flip to front" : "Postcard front — click to flip to back"
-          }
-          onClick={toggleFlip}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              toggleFlip();
-            }
-          }}
           style={{
             position: "relative",
             width: "100%",
@@ -96,10 +90,10 @@ export const PostcardCard = forwardRef<PostcardCardHandle, PostcardCardProps>(
             transformStyle: "preserve-3d",
             transition: "transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1)",
             transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
-            cursor: "pointer",
             outline: "none",
           }}
           data-testid="postcard-card"
+          aria-live="polite"
         >
           <div
             ref={frontRef}
@@ -138,11 +132,40 @@ export const PostcardCard = forwardRef<PostcardCardHandle, PostcardCardProps>(
           style={{
             textAlign: "center",
             marginTop: 14,
-            opacity: 0.55,
             fontSize: 10,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 12,
           }}
         >
-          {flipped ? "BACK" : "FRONT"} · {dims.label} · click to flip
+          <span style={{ opacity: 0.55 }}>
+            {flipped ? "BACK" : "FRONT"} · {dims.label}
+          </span>
+          <button
+            type="button"
+            onClick={toggleFlip}
+            aria-label={
+              flipped
+                ? "Flip postcard to the front (art)"
+                : "Flip postcard to the back (message + address)"
+            }
+            style={{
+              fontFamily: "var(--f-mono)",
+              fontSize: 10,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              padding: "4px 10px",
+              border: "1px solid var(--rule)",
+              background: "var(--paper)",
+              color: "var(--ink)",
+              cursor: "pointer",
+              lineHeight: 1,
+            }}
+            data-testid="postcard-flip-button"
+          >
+            ⇋ Flip to {flipped ? "front" : "back"}
+          </button>
         </div>
       </div>
     );
