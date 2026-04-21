@@ -1,11 +1,16 @@
 "use client";
 
-// Center column of the workspace. Shows the active stop's header info,
-// body preview, and postcard slot. This is the SHELL only — the hero image
-// slot, variants row, drag-drop, and rich body editor land in F-T005/F-T006.
+// Center column of the workspace.
+// F-T005: wires the real HeroSlot, StopMetadataForm, StopBodyEditor.
+// Postcard slot is still a placeholder until F-T006 brings the 3D flip
+// card + AI generation.
 
 import { useStopActions } from "@/stores/stop";
 import type { Stop } from "@/stores/types";
+
+import { HeroSlot } from "./hero-slot";
+import { StopBodyEditor } from "./stop-body-editor";
+import { StopMetadataForm } from "./stop-metadata-form";
 
 export interface StopCanvasProps {
   stop: Stop | undefined;
@@ -59,76 +64,50 @@ export function StopCanvas({ stop }: StopCanvasProps) {
       >
         {stop.title || "(untitled stop)"}
       </h1>
-      <input
-        type="text"
-        aria-label="Stop title"
-        value={stop.title}
-        onChange={(e) => updateStop(stop.n, { title: e.target.value })}
-        placeholder="Give this stop a title…"
+      <label
         style={{
+          display: "block",
           marginTop: 16,
-          width: "100%",
-          fontSize: 14,
-          padding: "8px 0",
-          borderBottom: "1px solid var(--rule)",
-          background: "transparent",
-          fontFamily: "var(--f-sans)",
         }}
-      />
-
-      {/* Hero slot placeholder — F-T005 will render the real hero image
-          + EXIF orientation + drag-drop. For now just an empty frame so
-          the layout doesn't collapse. */}
-      <figure
-        style={{
-          marginTop: 32,
-          aspectRatio: "7 / 5",
-          border: "1px dashed var(--rule)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "var(--paper-2)",
-        }}
-        aria-label="Hero image slot (feature coming in F-T005)"
       >
-        <div
+        <span
           className="mono-sm"
-          style={{ opacity: 0.45, letterSpacing: "0.2em" }}
+          style={{
+            fontSize: 10,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            opacity: 0.55,
+          }}
         >
-          HERO IMAGE · F-T005
-        </div>
-      </figure>
+          Title
+        </span>
+        <input
+          type="text"
+          value={stop.title}
+          onChange={(e) => updateStop(stop.n, { title: e.target.value })}
+          placeholder="Give this stop a title…"
+          style={{
+            marginTop: 6,
+            width: "100%",
+            fontSize: 16,
+            padding: "8px 0",
+            borderBottom: "1px solid var(--rule)",
+            background: "transparent",
+            fontFamily: "var(--f-sans)",
+          }}
+        />
+      </label>
 
-      {/* Body preview. F-T005 will add a real paragraph editor; here we
-          just render what's in the store as read-only paragraphs. */}
-      <div style={{ marginTop: 40 }}>
-        <div className="eyebrow" style={{ marginBottom: 12 }}>
-          Body ({stop.body.length} blocks)
-        </div>
-        {stop.body.length === 0 ? (
-          <p
-            className="mono-sm"
-            style={{ opacity: 0.5, fontStyle: "italic" }}
-          >
-            No body yet. Paragraph editor lands in F-T005.
-          </p>
-        ) : (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-              maxWidth: 720,
-            }}
-          >
-            {stop.body.map((block, i) => (
-              <BodyBlockPreview key={i} block={block} />
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Hero image slot — F-T005 real impl */}
+      <HeroSlot stop={stop} />
 
-      {/* Postcard slot placeholder — F-T006. */}
+      {/* Stop metadata form — F-T005 */}
+      <StopMetadataForm stop={stop} />
+
+      {/* Story body editor — F-T005 */}
+      <StopBodyEditor stop={stop} />
+
+      {/* Postcard slot — placeholder until F-T006 */}
       <aside
         style={{
           marginTop: 40,
@@ -163,56 +142,5 @@ export function StopCanvas({ stop }: StopCanvasProps) {
         </p>
       </aside>
     </section>
-  );
-}
-
-function BodyBlockPreview({
-  block,
-}: {
-  block: Stop["body"][number];
-}) {
-  if (block.type === "paragraph") {
-    return <p style={{ lineHeight: 1.6 }}>{block.content}</p>;
-  }
-  if (block.type === "pullQuote") {
-    return (
-      <blockquote
-        style={{
-          fontFamily: "var(--f-fashion, var(--mode-display-font))",
-          fontSize: 22,
-          fontStyle: "italic",
-          borderLeft: "3px solid var(--mode-accent)",
-          paddingLeft: 16,
-          margin: 0,
-        }}
-      >
-        “{block.content}”
-      </blockquote>
-    );
-  }
-  if (block.type === "metaRow") {
-    return (
-      <div
-        className="mono-sm"
-        style={{
-          display: "flex",
-          gap: 16,
-          opacity: 0.6,
-          flexWrap: "wrap",
-        }}
-      >
-        {block.content.map((c, i) => (
-          <span key={i}>{c}</span>
-        ))}
-      </div>
-    );
-  }
-  return (
-    <div
-      className="mono-sm"
-      style={{ opacity: 0.4, fontStyle: "italic" }}
-    >
-      [{block.type}] — rendered in F-T005
-    </div>
   );
 }

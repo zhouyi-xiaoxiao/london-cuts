@@ -3,16 +3,18 @@ id: F-P002
 title: Port MapLibre atlas with mode-aware tiles
 milestone: M-fast
 kind: parallel
-status: TODO
+status: DONE
 blocked_by: [F-T004]
 blocks: []
 parallel_safe: true
 touches:
   - web/components/map/atlas.tsx
   - web/components/map/stop-pin.tsx
-owner: null
-started_at: null
-completed_at: null
+  - web/app/atlas/page.tsx
+  - web/tests/atlas.test.tsx
+owner: subagent-F-P002-via-opus-4.7-main
+started_at: 2026-04-21T03:30Z
+completed_at: 2026-04-21T03:50Z
 ---
 
 # F-P002 — Port MapLibre atlas

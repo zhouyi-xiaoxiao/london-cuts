@@ -46,7 +46,14 @@ describe("F-T004 Workspace shell", () => {
 
   it("mode pill cycles modes via click", () => {
     render(<Workspace />);
-    const punkBtn = screen.getByRole("radio", { name: /punk/i });
+    // The workspace has TWO radiogroups: narrative mode (Fashion/Punk/Cinema)
+    // in the top bar, and stop tone (warm/cool/punk) in the metadata form.
+    // Scope to the narrative-mode group.
+    const modeGroup = screen.getByRole("radiogroup", { name: /narrative mode/i });
+    const punkBtn = screen
+      .getAllByRole("radio", { name: /punk/i })
+      .find((b) => modeGroup.contains(b));
+    if (!punkBtn) throw new Error("punk mode button not found inside narrative group");
     fireEvent.click(punkBtn);
     expect(useRootStore.getState().mode).toBe("punk");
   });

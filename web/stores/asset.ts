@@ -16,11 +16,17 @@ export function useAsset(id: string): Asset | undefined {
 }
 
 export function useAssetsByStop(stopId: string): readonly Asset[] {
-  return useRootStore((s) => s.assetsPool.filter((a) => a.stop === stopId));
+  // `.filter` creates a new array reference on every call, so wrap with
+  // useShallow — otherwise consumers re-render in a loop.
+  return useRootStore(
+    useShallow((s) => s.assetsPool.filter((a) => a.stop === stopId)),
+  );
 }
 
 export function useLooseAssets(): readonly Asset[] {
-  return useRootStore((s) => s.assetsPool.filter((a) => a.stop == null));
+  return useRootStore(
+    useShallow((s) => s.assetsPool.filter((a) => a.stop == null)),
+  );
 }
 
 export function useAssetActions() {

@@ -15,20 +15,22 @@ A creator tool for documenting a single-location trip (anywhere in the world) wi
 `docs/implementation-plan.md` is at **v2.1** — features-first ordering:
 M0 consolidation → **M-fast feature port** (active, ~half) → M-preview soft-launch → iterate → M1 Supabase → M2 Auth+invites → M4/M5/M6.
 
-**M-fast progress: 7/14 done.** In order:
+**M-fast progress: 9/14 done.** In order:
 - F-T000 POC (style picker)
 - F-T001 shared utilities (exif / image / hash / seed)
 - F-T002 Zustand root store + 6 domain hooks + IndexedDB
 - F-T003 "Your work." dashboard
 - F-T004 workspace 3-column shell (spine + canvas + drawers)
+- F-T005 stop editor (HeroSlot with EXIF-aware upload, metadata form, body editor)
 - F-P001 mode switcher + `<HtmlModeAttr />`
+- F-P002 MapLibre atlas with mode-aware tiles (maplibre-gl 5.23 added)
 - F-P005 legacy CSS merged into globals.css
 
 **Next eligible (TODO, no unmet blockers):**
-- F-T005 stop editor (flesh out the placeholders in `web/components/studio/stop-canvas.tsx` — real title input, paragraph editor for body blocks, hero image upload flow using the `prepareImage` helper from F-T001)
-- F-P002 MapLibre atlas with mode-aware tiles
-- F-P003 / F-P004 PDF + PNG export (will integrate with F-T006 postcard editor)
-- housekeeping: migrate scaffold `studio-pages.tsx` + `public-pages.tsx` off `DemoStoreProvider`, then delete `web/providers/*` + `web/lib/media-provider.ts` + `web/lib/seed-data.ts` + `web/lib/types.ts` (see audit map in project memory)
+- **F-T006** — postcard editor (6 AI styles, 3D flip card, orientation). **Biggest remaining single feature.** Unlocks F-P003/P004 exports.
+- **F-T008** — publish flow (pre-flight + visibility + publish action)
+- **F-P003** / **F-P004** — PDF + PNG export (can start scaffolding before F-T006 lands)
+- housekeeping (partway done): subagent has migrated `web/lib/static-params.ts` off `@/lib/seed-data` → `@/lib/seed`. Still to do: migrate `web/components/studio-pages.tsx` + `web/components/public-pages.tsx` off `DemoStoreProvider`, then delete `web/providers/*` + `web/lib/media-provider.ts` + `web/lib/seed-data.ts` + `web/lib/types.ts` (scaffold) + simplify `web/app/layout.tsx`
 
 ## How to keep moving
 
@@ -39,7 +41,7 @@ M0 consolidation → **M-fast feature port** (active, ~half) → M-preview soft-
 
 ## Things a fresh session must NOT regress (latent bug classes)
 
-- **Zustand selectors returning fresh object literals MUST use `useShallow`**. Otherwise "Maximum update depth exceeded" on mount. All existing `use*Actions()` hooks already do this; keep it when adding new ones. See `web/stores/project.ts` for the pattern.
+- **Zustand selectors returning any fresh reference (object literal, filtered array, mapped array) MUST use `useShallow`**. Otherwise "Maximum update depth exceeded" on mount. All existing `use*Actions()`, `useAssetsByStop`, `useLooseAssets` already do this. Caught twice in M-fast (F-T003 action bundles, F-T005 filter selectors). When adding new hooks, default to `useShallow` unless the selector returns a primitive or a value that IS a stable reference.
 - **Test environment**: `vitest.config.ts` defaults to `jsdom`. The Zustand store uses a `safeLocalStorage()` shim in `web/stores/root.ts` that falls back to an in-memory Map. Don't remove — fixes both jsdom and SSR.
 - **Postcard style IDs stay legacy-verbatim**: `illustration | poster | riso | inkwash | anime | artnouveau`. Don't rename to semantic — they key into the variants cache and OpenAI calls later.
 - **Next.js private folders**: `_xxx/` prefix excludes a folder from routing. Use plain `xxx/` for test/poc routes.

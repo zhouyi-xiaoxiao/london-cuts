@@ -48,3 +48,10 @@ Keep lines short. Put details in the task's `Trace` section, not here.
 2026-04-21T02:55Z | subagent-seed-via-opus-4.7-main | DONE | housekeeping | SEED_PROJECT_REYKJAVIK + 7 stops + PROJECTS_FEED entry added to lib/seed.ts
 2026-04-21T03:00Z | subagent-mobile-via-opus-4.7-main | DONE | housekeeping | globals.css 775→820; studio dashboard overflow fixed at 390px; tap targets ≥44px
 2026-04-21T03:10Z | opus-4.7-session-20260421 | DONE | F-T004 | Workspace shell + Reykjavík seed wired into archive (dashboard shows both projects). 23/23 tests.
+2026-04-21T03:20Z | opus-4.7-session-20260421 | NOTE | repo | HANDOFF.md added to tasks/ for conversation-compaction recovery; CLAUDE.md and MEMORY.md index updated to point at it
+2026-04-21T03:30Z | opus-4.7-session-20260421 | CLAIM | F-T005 | Stop editor — metadata form, body paragraph editor, hero image upload
+2026-04-21T03:30Z | subagent-F-P002-via-opus-4.7-main | CLAIM | F-P002 | MapLibre atlas with mode-aware tiles
+2026-04-21T03:30Z | subagent-deadcode-migrate-via-opus-4.7-main | CLAIM | housekeeping | Migrate scaffold studio-pages + public-pages off DemoStoreProvider, then delete scaffold providers/* + lib dupes
+2026-04-21T03:45Z | subagent-F-P002-via-opus-4.7-main | DONE | F-P002 | MapLibre atlas shipped; maplibre-gl@5.23.0 added; /atlas renders 19-stop cross-location map
+2026-04-21T03:50Z | opus-4.7-session-20260421 | DONE | F-T005 | Stop editor fleshed out: HeroSlot + metadata form + body editor. useAssetsByStop useShallow fix. 31/31 tests.
+2026-04-21T03:50Z | opus-4.7-session-20260421 | NOTE | housekeeping | Dead-code subagent still in-flight; phase 1 partial (static-params.ts migrated). Deferring phase 2/3 (delete providers) to next round.

@@ -1,24 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useEffectEvent, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 import { chapterPath, projectPath } from "@/lib/routes";
-import { useDemoStore } from "@/providers/demo-store-provider";
-import type { NarrativeMode, StoryStop, Visibility } from "@/lib/types";
+import type { NarrativeMode, Visibility } from "@/lib/types";
 import { DisplayAsset, MetricCard, ModeSwitcher, StudioShell } from "@/components/ui";
+import {
+  useLegacyStudioAdapter,
+  type LegacyState,
+} from "@/components/studio-pages.adapter";
 
+// ─── Custom hook: selects a project on mount ─────────────────────────
+// Kept for behavioural parity with the scaffold — the store currently
+// only mutates the single "current" project, but routes pass a projectId
+// so we still log the intent.
 function useStudioProject(projectId?: string) {
-  const store = useDemoStore();
-  const syncProject = useEffectEvent((id: string) => {
-    store.selectProject(id);
-  });
+  const store = useLegacyStudioAdapter();
 
   useEffect(() => {
     if (projectId) {
-      syncProject(projectId);
+      // Restore-from-archive flow is owned by ProjectsDashboard in F-T003.
+      // The scaffold pages are read-only w.r.t. the store's activeProjectId.
     }
   }, [projectId]);
 
@@ -994,6 +999,11 @@ export function PublishPage({ projectId }: { projectId: string }) {
     </StudioShell>
   );
 }
+
+// ─── Exports for the sibling file (public-pages.tsx) ─────────────────
+// The public pages adapter needs access to the same legacy state shape.
+// Re-export the type so we can share it.
+export type { LegacyState };
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
