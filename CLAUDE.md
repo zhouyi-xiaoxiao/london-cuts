@@ -2,12 +2,14 @@
 
 You're working in the London Cuts repo. Before any substantial change, read:
 
-1. `docs/requirements.md` — what we're building (frozen for M0–M6)
-2. `docs/architecture.md` — how it's structured
-3. `docs/data-model.md` — DB schema
-4. `docs/implementation-plan.md` — milestone roadmap
-5. `tasks/AGENTS.md` — the execution protocol (how to claim and finish tasks)
-6. `tasks/STATE.md` — current status of every task
+1. **`tasks/HANDOFF.md`** — "resume from here" snapshot if you just walked in cold
+2. `docs/requirements.md` — what we're building (frozen for M0–M6)
+3. `docs/architecture.md` — how it's structured
+4. `docs/data-model.md` — DB schema
+5. `docs/implementation-plan.md` — milestone roadmap
+6. `tasks/AGENTS.md` — the execution protocol (how to claim and finish tasks)
+7. `tasks/PARALLELISM.md` — subagent coordination rules
+8. `tasks/STATE.md` — current status of every task
 
 ## Mission
 
