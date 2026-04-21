@@ -3,6 +3,10 @@
 // The full postcard editor — orchestrates the flip card, style picker,
 // generate button, export buttons. Wires through to the server via
 // POST /api/ai/generate (mock or real depending on env).
+//
+// Variant cache (M-iter F-I008): re-picking the same style for the
+// same hero asset reuses the cached IDB variant instead of paying for
+// another generation. Cache key = `${heroAsset.id}:${styleId}`.
 
 import { useRef, useState } from "react";
 
@@ -11,6 +15,7 @@ import { exportPostcardPdf } from "@/lib/export/pdf";
 import { exportNodeToPng, suggestPostcardFilename } from "@/lib/export/png";
 import { getStyleMeta, POSTCARD_STYLES } from "@/lib/palette";
 import { useAssetActions, useAssetsByStop } from "@/stores/asset";
+import { idbGetVariant, idbPutVariant } from "@/stores/idb";
 import { useProject } from "@/stores/project";
 import { usePostcardActions } from "@/stores/postcard";
 import type { Asset, Stop } from "@/stores/types";
@@ -68,6 +73,41 @@ export function PostcardEditor({ stop, totalStops }: PostcardEditorProps) {
       });
       return;
     }
+
+    const cacheKey = `${heroAsset.id}:${style}`;
+    const meta = getStyleMeta(style);
+
+    // ─── Cache check ─────────────────────────────────────────────────
+    // If the user has already generated this (heroAsset, style) pair,
+    // restore from IDB at $0 instead of re-paying. Falls through on any
+    // IDB error (private mode, quota, etc.) — the user just pays again.
+    try {
+      const cached = await idbGetVariant(cacheKey);
+      if (cached?.imageUrl) {
+        const newAssetId = `variant-${stop.n}-${style}-cached-${Date.now().toString(36)}`;
+        addAsset({
+          id: newAssetId,
+          stop: stop.n,
+          tone: stop.tone,
+          imageUrl: cached.imageUrl,
+          generatedAt: cached.generatedAt ?? Date.now(),
+          prompt: cached.prompt,
+          styleId: style,
+          styleLabel: cached.styleLabel ?? meta.label,
+        });
+        updatePostcard(stop.n, {
+          frontAssetId: newAssetId,
+          style,
+          orientation,
+        });
+        setGeneration({ kind: "idle" });
+        return;
+      }
+    } catch (e) {
+      console.warn("[postcard] variant cache lookup failed; will regenerate", e);
+    }
+
+    // ─── Fresh generation ────────────────────────────────────────────
     setGeneration({ kind: "generating", style });
     try {
       const res = await fetch("/api/ai/generate", {
@@ -96,7 +136,6 @@ export function PostcardEditor({ stop, totalStops }: PostcardEditorProps) {
       }
 
       // Save the generated asset to the pool + remember it on the postcard.
-      const meta = getStyleMeta(style);
       const newAssetId = `variant-${stop.n}-${style}-${Date.now().toString(36)}`;
       addAsset({
         id: newAssetId,
@@ -113,6 +152,23 @@ export function PostcardEditor({ stop, totalStops }: PostcardEditorProps) {
         style,
         orientation,
       });
+
+      // ─── Cache write (best-effort) ────────────────────────────────
+      // Storing the data URL doubles up vs the asset pool, but lets
+      // the cache survive across sessions independent of the Zustand
+      // pool's compaction / reset logic.
+      try {
+        await idbPutVariant(cacheKey, {
+          imageUrl: json.imageDataUrl,
+          prompt: json.prompt,
+          styleLabel: meta.label,
+          styleId: style,
+          generatedAt: Date.now(),
+        });
+      } catch (e) {
+        console.warn("[postcard] variant cache write failed", e);
+      }
+
       setGeneration({ kind: "idle" });
     } catch (err) {
       setGeneration({
