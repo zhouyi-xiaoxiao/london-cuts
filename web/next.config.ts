@@ -2,15 +2,17 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // Pin workspace root so (a) Turbopack stops warning about the stray
-  // package-lock.json in the user's home dir locally, and (b) Vercel
-  // stops warning about outputFileTracingRoot !== turbopack.root when
-  // Vercel auto-injects outputFileTracingRoot. We set BOTH to the same
-  // absolute path.
+  // Pin Turbopack root to silence the local warning about the stray
+  // package-lock.json in the user's home directory.
+  //
+  // Do NOT set outputFileTracingRoot here — when Vercel's Root Directory
+  // is `web/`, Vercel's post-build step looks for manifests at
+  // `/vercel/path0/.next/` (repo root) while a custom tracing root
+  // redirects output to `web/.next/`, causing an ENOENT on
+  // `routes-manifest-deterministic.json`. Let Vercel auto-infer it.
   turbopack: {
     root: __dirname,
   },
-  outputFileTracingRoot: __dirname,
   images: {
     remotePatterns: [
       {
