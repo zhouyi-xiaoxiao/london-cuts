@@ -3,16 +3,17 @@ id: F-P004
 title: Port PNG export AND make the button prominent
 milestone: M-fast
 kind: parallel
-status: TODO
+status: DONE
 blocked_by: [F-T006]
 blocks: []
 parallel_safe: true
 touches:
   - web/lib/export/png.ts
-  - web/components/postcard/export-buttons.tsx
-owner: null
-started_at: null
-completed_at: null
+  - web/tests/export-png.test.ts
+  - web/components/postcard/postcard-editor.tsx (main session consumed utilities here)
+owner: subagent-F-P004-via-opus-4.7-main
+started_at: 2026-04-21T04:10Z
+completed_at: 2026-04-21T04:30Z
 ---
 
 # F-P004 — Port PNG export, with a prominent button

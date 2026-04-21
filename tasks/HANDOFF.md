@@ -15,22 +15,31 @@ A creator tool for documenting a single-location trip (anywhere in the world) wi
 `docs/implementation-plan.md` is at **v2.1** — features-first ordering:
 M0 consolidation → **M-fast feature port** (active, ~half) → M-preview soft-launch → iterate → M1 Supabase → M2 Auth+invites → M4/M5/M6.
 
-**M-fast progress: 9/14 done.** In order:
+**M-fast progress: 12/14 done.** In order:
 - F-T000 POC (style picker)
 - F-T001 shared utilities (exif / image / hash / seed)
 - F-T002 Zustand root store + 6 domain hooks + IndexedDB
 - F-T003 "Your work." dashboard
 - F-T004 workspace 3-column shell (spine + canvas + drawers)
-- F-T005 stop editor (HeroSlot with EXIF-aware upload, metadata form, body editor)
+- F-T005 stop editor (HeroSlot with EXIF upload, metadata form, body editor)
+- F-T006 postcard editor (3D flip card + 6 AI styles + generate route + PDF/PNG exports)
 - F-P001 mode switcher + `<HtmlModeAttr />`
-- F-P002 MapLibre atlas with mode-aware tiles (maplibre-gl 5.23 added)
+- F-P002 MapLibre atlas with mode-aware tiles (maplibre-gl 5.23)
+- F-P003 PDF export (jspdf 4.2.1)
+- F-P004 PNG export (html-to-image, 2× pixel density), prominent top-bar buttons
 - F-P005 legacy CSS merged into globals.css
 
 **Next eligible (TODO, no unmet blockers):**
-- **F-T006** — postcard editor (6 AI styles, 3D flip card, orientation). **Biggest remaining single feature.** Unlocks F-P003/P004 exports.
-- **F-T008** — publish flow (pre-flight + visibility + publish action)
-- **F-P003** / **F-P004** — PDF + PNG export (can start scaffolding before F-T006 lands)
-- housekeeping **done** as of 2026-04-21T04:00Z: `web/providers/` is GONE. `web/lib/media-provider.ts` and `web/lib/seed-data.ts` deleted. `web/app/layout.tsx` is a clean server component (just `<HtmlModeAttr />` + fonts). Scaffold `studio-pages.tsx` + `public-pages.tsx` now use the adapter `web/components/studio-pages.adapter.ts` to read Zustand in the shape they expect. Still present: `web/lib/types.ts` (kept — referenced by `components/ui.tsx`, `lib/routes.ts`, etc.). Future cleanup: if those files get refactored off legacy types, `lib/types.ts` can go too.
+- **F-T007** — vision pipeline (folder upload → GPT-4o describe → auto-create stops). Uses ai-provider seam + a new `/api/vision/describe` route. Cost ~$0.01/photo.
+- **F-T008** — publish flow (pre-flight checklist + visibility chooser + publish action).
+- **F-T009** — public project page + atlas page for readers (no auth).
+
+**OpenAI pipeline live (don't regress):**
+- `/api/ai/generate` is wired. `lib/ai-provider.ts` has MOCK mode (default, returns tinted SVG) and REAL mode (needs `AI_PROVIDER_MOCK=false` + valid `OPENAI_API_KEY` in `web/.env.local`).
+- Spend cap: `OPENAI_SPEND_CAP_CENTS` env (default 800 = $8). Enforced in `ai-provider.ts` before every call; throws `QuotaExceededError` → API returns HTTP 429.
+- Pipeline was end-to-end verified on 2026-04-21 with a real key (now revoked). Watercolour postcard of an SE1 seed photo, $0.02 spent, 19s. If a new session needs to test real gen, ask the owner for a fresh key + flip `AI_PROVIDER_MOCK=false` + **revert to `true` before committing**.
+
+**Housekeeping done:** `web/providers/` removed. `web/lib/media-provider.ts` + `web/lib/seed-data.ts` deleted. `web/app/layout.tsx` simplified. Scaffold `studio-pages.tsx` + `public-pages.tsx` now read Zustand via `web/components/studio-pages.adapter.ts`. `web/lib/types.ts` still present (ui.tsx + routes.ts still import it).
 
 ## How to keep moving
 

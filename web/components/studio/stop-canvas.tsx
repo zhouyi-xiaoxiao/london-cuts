@@ -1,11 +1,11 @@
 "use client";
 
 // Center column of the workspace.
-// F-T005: wires the real HeroSlot, StopMetadataForm, StopBodyEditor.
-// Postcard slot is still a placeholder until F-T006 brings the 3D flip
-// card + AI generation.
+// F-T005 wired the real HeroSlot, StopMetadataForm, StopBodyEditor.
+// F-T006 adds the real PostcardEditor (3D flip card + AI generate).
 
-import { useStopActions } from "@/stores/stop";
+import { PostcardEditor } from "@/components/postcard/postcard-editor";
+import { useStops, useStopActions } from "@/stores/stop";
 import type { Stop } from "@/stores/types";
 
 import { HeroSlot } from "./hero-slot";
@@ -18,6 +18,7 @@ export interface StopCanvasProps {
 
 export function StopCanvas({ stop }: StopCanvasProps) {
   const { updateStop } = useStopActions();
+  const stops = useStops();
 
   if (!stop) {
     return (
@@ -107,40 +108,8 @@ export function StopCanvas({ stop }: StopCanvasProps) {
       {/* Story body editor — F-T005 */}
       <StopBodyEditor stop={stop} />
 
-      {/* Postcard slot — placeholder until F-T006 */}
-      <aside
-        style={{
-          marginTop: 40,
-          padding: 24,
-          border: "1px solid var(--rule)",
-          background: "var(--paper-2)",
-        }}
-        aria-label="Postcard (feature coming in F-T006)"
-      >
-        <div className="eyebrow">Postcard</div>
-        <p
-          style={{
-            fontFamily: "var(--f-fashion, var(--mode-display-font))",
-            fontStyle: "italic",
-            fontSize: 20,
-            marginTop: 8,
-          }}
-        >
-          {stop.postcard.message || "No message yet."}
-        </p>
-        {stop.postcard.recipient.name && (
-          <p className="mono-sm" style={{ marginTop: 8, opacity: 0.6 }}>
-            → {stop.postcard.recipient.name},{" "}
-            {stop.postcard.recipient.line1}
-          </p>
-        )}
-        <p
-          className="mono-sm"
-          style={{ marginTop: 12, opacity: 0.45 }}
-        >
-          Rich editor lands in F-T006 (6 AI styles, 3D flip card, PDF/PNG export).
-        </p>
-      </aside>
+      {/* Postcard editor — F-T006 real impl */}
+      <PostcardEditor stop={stop} totalStops={stops.length} />
     </section>
   );
 }

@@ -3,16 +3,16 @@ id: F-P003
 title: Port PDF export
 milestone: M-fast
 kind: parallel
-status: TODO
+status: DONE
 blocked_by: [F-T006]
 blocks: []
 parallel_safe: true
 touches:
   - web/lib/export/pdf.ts
-  - web/components/postcard/export-buttons.tsx
-owner: null
-started_at: null
-completed_at: null
+  - web/tests/export-pdf.test.ts
+owner: subagent-F-P003-via-opus-4.7-main
+started_at: 2026-04-21T04:10Z
+completed_at: 2026-04-21T04:30Z
 ---
 
 # F-P003 — Port PDF export

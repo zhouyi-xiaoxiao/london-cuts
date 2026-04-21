@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-21T03:50Z
+**Last updated:** 2026-04-21T04:40Z
 
 ## Plan version
 
@@ -10,8 +10,8 @@
 
 | Milestone | TODO | IN_PROGRESS | DONE | BLOCKED | Total | Status |
 |-----------|------|-------------|------|---------|-------|--------|
-| M0 Consolidation        | 0  | 0 | 9 | 0 | 9  | ✅ **complete** |
-| **M-fast Feature port** | 5  | 0 | 9 | 0 | 14 | **active** ⭐ |
+| M0 Consolidation        | 0  | 0 | 9  | 0 | 9  | ✅ **complete** |
+| **M-fast Feature port** | 2  | 0 | 12 | 0 | 14 | **active** ⭐ (12/14) |
 | M-preview Soft launch   | —  | — | — | — | —  | after M-fast |
 | M1 Supabase & data      | 8  | 0 | 0 | 0 | 8  | ⏸ postponed |
 | M2 Auth & invites       | 10 | 0 | 0 | 0 | 10 | ⏸ postponed |
@@ -22,11 +22,9 @@
 
 ## Eligible next tasks (TODO with no unmet blockers)
 
-- **F-T006** — Postcard editor (6 styles, flip card, orientation toggle, AI generate). Biggest remaining feature.
-- **F-T008** — Publish flow (pre-flight, visibility, publish action).
-- **F-P003** — PDF export (jspdf). Can start scaffolding.
-- **F-P004** — PNG export (html-to-image). Can start scaffolding.
-- Dead-code migration Phase 2/3 (housekeeping): subagent is partway through Phase 1 (static-params.ts migrated). Next round: finish migrating `studio-pages.tsx` + `public-pages.tsx` off `DemoStoreProvider`, then delete scaffold providers + lib dupes.
+- **F-T007** — Vision pipeline (folder upload → GPT-4o describe → auto-create stops). Uses existing ai-provider seam + new server route.
+- **F-T008** — Publish flow (pre-flight checklist + visibility chooser + publish action).
+- **F-T009** — Public project page + atlas page (readers, no auth).
 
 ## In progress
 
@@ -38,10 +36,13 @@ _none_
 
 ## Recently completed
 
-- **F-T005** (2026-04-21T03:50Z) — Stop editor fleshed out: real HeroSlot (upload + EXIF), metadata form, body editor (paragraph/pullQuote/metaRow). 5 new tests (31/31). `useAssetsByStop` useShallow fix prevented a second Zustand filter-loop bug class.
-- **F-P002** (2026-04-21T03:50Z) — MapLibre atlas component shipped by subagent (ran parallel to F-T005). `maplibre-gl@5.23.0` added. Mode-aware tiles.
-- **F-T004** (2026-04-21T03:10Z) — Workspace 3-column shell + Reykjavík seed wired into archive.
-- **housekeeping: mobile responsive** (2026-04-21T03:00Z) — globals.css 775→820, tap targets ≥44px
+- **F-T006** (2026-04-21T04:40Z) — Postcard editor: 3D flip card + 6-style picker + orientation toggle + generate flow via /api/ai/generate + variants carousel + prominent PNG/PDF buttons. Pipeline proven with real OpenAI call ($0.02, watercolour of an SE1 seed photo). Mock mode default; real mode behind AI_PROVIDER_MOCK=false + OPENAI_SPEND_CAP_CENTS=800.
+- **F-P003** (2026-04-21T04:30Z) — PDF export via jspdf@4.2.1. 4 tests.
+- **F-P004** (2026-04-21T04:30Z) — PNG export via html-to-image (2× pixel density). 9 tests. Buttons consumed by postcard editor as PROMINENT top-bar actions per task.
+- **F-T005** (2026-04-21T03:50Z) — Stop editor fleshed out.
+- **F-P002** (2026-04-21T03:50Z) — MapLibre atlas.
+- **F-T004** (2026-04-21T03:10Z) — Workspace shell.
+- **housekeeping: scaffold dead code** (2026-04-21T04:00Z) — providers/ deleted, layout simplified.
 - **housekeeping: mobile responsive** (2026-04-21T03:00Z) — Subagent added 45 lines of @media rules to globals.css, fixed studio dashboard overflow at 390px, bumped tap targets to 44px.
 - **housekeeping: Reykjavík seed** (2026-04-21T02:55Z) — Subagent added `SEED_PROJECT_REYKJAVIK` + 7 stops + PROJECTS_FEED entry.
 - **F-T003** (2026-04-21T02:30Z) — Dashboard "Your work." ported. Fixed Zustand `useShallow` infinite-loop across 5 hooks.

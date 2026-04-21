@@ -56,3 +56,10 @@ Keep lines short. Put details in the task's `Trace` section, not here.
 2026-04-21T03:50Z | opus-4.7-session-20260421 | DONE | F-T005 | Stop editor fleshed out: HeroSlot + metadata form + body editor. useAssetsByStop useShallow fix. 31/31 tests.
 2026-04-21T03:50Z | opus-4.7-session-20260421 | NOTE | housekeeping | Dead-code subagent still in-flight; phase 1 partial (static-params.ts migrated). Deferring phase 2/3 (delete providers) to next round.
 2026-04-21T04:00Z | subagent-deadcode-migrate-via-opus-4.7-main | DONE | housekeeping | Dead-code cleanup done: providers/ deleted, media-provider + seed-data deleted, layout simplified (no more RootProviders), public-pages migrated via adapter. lib/types.ts kept (still referenced by ui.tsx / routes.ts).
+2026-04-21T04:10Z | opus-4.7-session-20260421 | CLAIM | F-T006 | Postcard editor (3D flip + 6 styles + /api/ai/generate; MOCK default, real call verifies pipeline)
+2026-04-21T04:10Z | subagent-F-P003-via-opus-4.7-main | CLAIM | F-P003 | PDF export via jspdf (pure utility, no postcard component dep)
+2026-04-21T04:10Z | subagent-F-P004-via-opus-4.7-main | CLAIM | F-P004 | PNG export via html-to-image (pure utility)
+2026-04-21T04:30Z | subagent-F-P003-via-opus-4.7-main | DONE | F-P003 | PDF export via jspdf@4.2.1 (2-page A6). 4 tests, 44/44 total.
+2026-04-21T04:30Z | subagent-F-P004-via-opus-4.7-main | DONE | F-P004 | PNG export via html-to-image (pixelRatio 2). 9 tests. suggestPostcardFilename helper.
+2026-04-21T04:40Z | opus-4.7-session-20260421 | DONE | F-T006 | Postcard editor: flip card + style picker + generate route + exports. Real API verified $0.02.
+2026-04-21T04:40Z | opus-4.7-session-20260421 | NOTE | F-T006 | Real OpenAI gpt-image-1 pipeline proven end-to-end; mock reverted to default before commit.

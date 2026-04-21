@@ -6,6 +6,10 @@ export const env = {
   SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
   OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? "",
+  /** Max cents we're willing to spend on OpenAI image generation. Default $8. */
+  OPENAI_SPEND_CAP_CENTS: process.env.OPENAI_SPEND_CAP_CENTS ?? "800",
+  /** "true" = return mock placeholder images, never call OpenAI. */
+  AI_PROVIDER_MOCK: process.env.AI_PROVIDER_MOCK ?? "true",
   RESEND_API_KEY: process.env.RESEND_API_KEY ?? "",
   POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "",
   POSTHOG_HOST:
