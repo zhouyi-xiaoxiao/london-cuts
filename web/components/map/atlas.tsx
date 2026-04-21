@@ -186,7 +186,9 @@ function buildStyle(mode: NarrativeMode) {
           "raster-saturation": -0.35,
           "raster-hue-rotate": 20,
           "raster-brightness-min": 0.85,
-          "raster-brightness-max": 1.08,
+          // Capped at 1.0 — MapLibre rejects > 1 and the resulting console
+          // error wakes Next dev tools' "1 issue" badge on every public page.
+          "raster-brightness-max": 1.0,
           "raster-contrast": -0.05,
           "raster-opacity": 0.9,
         },
