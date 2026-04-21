@@ -13,7 +13,9 @@ A creator tool for documenting a single-location trip (anywhere in the world) wi
 ## Plan version + where we are
 
 `docs/implementation-plan.md` is at **v2.1** — features-first ordering:
-M0 consolidation → **M-fast feature port** (active, ~half) → M-preview soft-launch → iterate → M1 Supabase → M2 Auth+invites → M4/M5/M6.
+M0 consolidation → M-fast feature port → **M-preview soft-launch (LIVE)** → M-iter (active — see backlog below) → M1 Supabase → M2 Auth+invites → M4/M5/M6.
+
+**M-preview LIVE**: `https://london-cuts.vercel.app` serving commits on `main`. `/` redirects to `/studio`. 13 seed photos (SE1) + 1 cover render from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired (IONOS CNAME + Vercel custom domain still pending). Preview gate via `web/proxy.ts` (set `PREVIEW_PASSWORD` in Vercel env to activate).
 
 **M-fast: COMPLETE 14/14.** In order:
 - F-T000 POC (style picker)
@@ -56,6 +58,27 @@ M0 consolidation → **M-fast feature port** (active, ~half) → M-preview soft-
 - **Postcard style IDs stay legacy-verbatim**: `illustration | poster | riso | inkwash | anime | artnouveau`. Don't rename to semantic — they key into the variants cache and OpenAI calls later.
 - **Next.js private folders**: `_xxx/` prefix excludes a folder from routing. Use plain `xxx/` for test/poc routes.
 - **Seed data**: `web/stores/root.ts` pre-seeds `projectsArchive` with a Reykjavík demo. Tests that count archive entries need to account for baseline=1 (see `tests/store.test.ts`).
+- **`next.config.ts` must NOT set `outputFileTracingRoot`** — breaks Vercel deploy with `ENOENT: routes-manifest-deterministic.json`. See "Deploy gotchas" below.
+- **`proxy.ts` (NOT `middleware.ts`)** — Next 16 renamed the convention. Both the file and the exported function are `proxy`. Legacy `middleware.ts` compiles but files a deprecation warning.
+
+## Deploy gotchas (2026-04-21 session — don't re-learn these)
+
+- **Vercel root directory is `web/`** (configured at project level). Linking locally: `cd` to repo root, `npx vercel link` (the repo-level `.vercel/project.json` points at `london-cuts`). Do NOT run `vercel --prod` from inside `web/` — that creates a second orphan project called `web`.
+- **`next.config.ts` `outputFileTracingRoot` is a trap.** Setting it to `__dirname` seems to "fix" a harmless Vercel startup warning but actually redirects Next's `.next/` output in a way that breaks Vercel's post-build `routes-manifest-deterministic.json` check. Leave it unset; Vercel auto-infers from Root Directory.
+- **Build success ≠ deploy success.** Vercel's build logs can say "Build Completed in /vercel/output" and still `status ● Error` because the deploy-phase check fails. Look at `npx vercel --prod --yes` output (or `vercel logs`) for the real error — the build-log tail alone will lie to you.
+- **5 environment variables live in Vercel prod env**: `OPENAI_API_KEY`, `OPENAI_SPEND_CAP_CENTS=800`, `AI_PROVIDER_MOCK=true` (flip to `false` when running real AI), `PREVIEW_PASSWORD` (the shared gate password), `NEXT_PUBLIC_APP_URL`. To inspect: `npx vercel env ls production`.
+- **Custom domain `zhouyixiaoxiao.org` not yet wired.** When ready: IONOS DNS panel → CNAME `@` and `www` → `cname.vercel-dns.com`, then Vercel → Settings → Domains → Add. HTTPS is auto.
+
+## M-iter backlog — known UX/feature gaps from owner dogfooding (2026-04-21)
+
+These are real issues owner hit in the deployed preview. NOT M-preview blockers, but the next loop of work. Don't close any without owner confirmation.
+
+1. **Dashboard photo list capped/fixed.** Owner reports "left side 12 photos can't add new." Likely the dashboard shows 13 SEED_ASSETS fixed via `web/lib/seed.ts` + upload entry point unclear. Fix: either wire an upload path from the dashboard into a specific project, or make the seed clearly labelled "demo — create a new trip to add your own."
+2. **Mode switcher doesn't swap fonts.** Three modes (Fashion/Punk/Cinema) change colours but not typography. Legacy prototype switched both. Check `web/stores/mode.ts` or tokens in `design-system/ui_kits/studio/tokens.css` — might only be swapping `--ink`/`--paper` not `--f-serif`/`--f-sans`.
+3. **Postcard click flips card → blocks editing.** The 3D flip-on-click gesture in F-T006 conflicts with "click to edit fields on the back." Legacy probably used hover-flip or a separate edit toggle. Separate the gestures: flip on button, edit on field focus.
+4. **Publish flow doesn't surface a shareable URL.** F-T008 PublishDialog records the project as public but doesn't display the resulting `/[author]/[slug]` URL or a copy button. Add a post-publish state showing the live URL + copy-to-clipboard.
+5. **Custom domain pending.** Owner wants `zhouyixiaoxiao.org`. Blocker: IONOS DNS + Vercel domain setup (~15 min of manual clicks).
+6. **Owner noted "还有很多我没告诉你发现的问题"** — i.e. more bugs exist that weren't enumerated. Next time owner loads the app, take 20 min together to walk through screen-by-screen and expand this list.
 
 ## Verification pipeline (run before every commit)
 

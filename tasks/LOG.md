@@ -71,3 +71,8 @@ Keep lines short. Put details in the task's `Trace` section, not here.
 2026-04-21T05:30Z | subagent-F-T009-via-opus-4.7-main | DONE | F-T009 | Public pages (PublicProjectPage + ChapterPage + PostcardPage) + NotFoundCard + static-params extended. 3 tests.
 2026-04-21T05:30Z | opus-4.7-session-20260421 | DONE | F-T009 | Main-session fixup: 4 TS18048 errors in postcard-page.tsx (narrow captured in const before closure) — typecheck now green.
 2026-04-21T05:35Z | opus-4.7-session-20260421 | NOTE | M-fast | M-fast 14/14 COMPLETE. 51/51 tests green. Real AI pipeline (postcard art + vision) proven end-to-end. Next milestone: M-preview (password-gated Vercel soft-launch).
+2026-04-21T22:00Z | opus-4.7-session-20260421 | CLAIM | M-preview | Vercel deploy: password gate via middleware, 13 seed photos to public/, / redirect to /studio
+2026-04-21T22:10Z | opus-4.7-session-20260421 | BLOCK | M-preview | 5 commits pushed, all auto-deploys Error after fac50d4 despite build completing (Vercel UI misleading; deploy-phase failure invisible in build logs)
+2026-04-21T23:10Z | opus-4.7-session-20260421 | NOTE | M-preview | Root cause found: `outputFileTracingRoot: __dirname` in next.config.ts broke Vercel's post-build routes-manifest-deterministic.json check. Dropped the config.
+2026-04-21T23:15Z | opus-4.7-session-20260421 | DONE | M-preview | Deploy b75c087 Ready at london-cuts.vercel.app; / → /studio; 13 seed images serving; orphan `web` project removed; proxy.ts restored with correct Next 16 `proxy` export. See HANDOFF.md → "Deploy gotchas".
+2026-04-21T23:15Z | opus-4.7-session-20260421 | NOTE | M-iter | Owner reported 4+ real UX issues during dogfooding; captured in HANDOFF.md M-iter backlog.
