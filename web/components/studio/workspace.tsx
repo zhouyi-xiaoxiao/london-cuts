@@ -17,6 +17,7 @@ import type { NarrativeMode } from "@/stores/types";
 import { StopSpine } from "./stop-spine";
 import { StopCanvas } from "./stop-canvas";
 import { Drawers } from "./drawers/drawers";
+import { PublishDialog } from "./publish-dialog";
 
 // ─── Hook: narrow-viewport detection with auto-close on first mount ────
 
@@ -211,6 +212,9 @@ export function Workspace() {
           />
         )}
       </div>
+
+      {/* ─── Publish slideover (F-T008) ───────────────────────── */}
+      {ui.publishOpen && <PublishDialog />}
     </div>
   );
 }

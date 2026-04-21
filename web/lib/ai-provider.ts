@@ -175,13 +175,92 @@ export async function generatePostcardArt(
 
 export interface VisionAnalysisResult {
   title: string;
-  body: string;
-  excerpt: string;
+  paragraph: string;
+  pullQuote: string;
   postcardMessage: string;
+  mood: string;
+  tone: "warm" | "cool" | "punk";
+  locationHint: string;
+}
+
+// Conservative cost: gpt-4o-mini vision ~$0.01 per photo
+// (1024x input + short JSON output).
+const VISION_COST_CENTS = 1;
+
+function mockVision(seed: string): VisionAnalysisResult {
+  const moods = ["Amber", "Steel", "Glacier", "Ember", "Neon", "Gold"];
+  const tones: VisionAnalysisResult["tone"][] = ["warm", "cool", "punk"];
+  const i = Math.abs(
+    seed.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7),
+  );
+  return {
+    title: `A moment at ${moods[i % moods.length].toLowerCase()} hour`,
+    paragraph:
+      "MOCK — a quiet, warm-toned scene with clean architectural lines. The light is soft and angled. In the distance, something small reminds you of the hour.",
+    pullQuote: "Light moves faster than attention.",
+    postcardMessage:
+      "MOCK — walked here this morning, thought of you. The light does not wait.",
+    mood: moods[i % moods.length],
+    tone: tones[i % tones.length],
+    locationHint: "Unknown — flip AI_PROVIDER_MOCK=false for a real call.",
+  };
+}
+
+async function realDescribePhoto(
+  imageDataUrl: string,
+): Promise<VisionAnalysisResult> {
+  if (!env.OPENAI_API_KEY) {
+    throw new AuthRequiredError();
+  }
+  const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+
+  const response = await client.chat.completions.create({
+    model: "gpt-4o-mini",
+    max_tokens: 500,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content:
+          'You analyse personal travel/memory photographs for a creator tool. Respond as JSON only with fields: title (5-10 words), paragraph (40-70 words describing what is visible), pullQuote (under 15 words, evocative), postcardMessage (1-2 short sentences, first-person, like a note to a friend), mood (single word like "Amber", "Steel", "Ember"), tone ("warm"|"cool"|"punk"), locationHint (neighborhood or landmark if recognisable).',
+      },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "Analyse this photo. Return JSON." },
+          { type: "image_url", image_url: { url: imageDataUrl } },
+        ],
+      },
+    ],
+  });
+
+  const raw = response.choices[0]?.message?.content;
+  if (!raw) throw new Error("vision response empty");
+  const parsed = JSON.parse(raw) as Partial<VisionAnalysisResult>;
+
+  const tone: VisionAnalysisResult["tone"] =
+    parsed.tone === "cool" || parsed.tone === "punk" ? parsed.tone : "warm";
+  return {
+    title: parsed.title?.trim() || "Untitled",
+    paragraph: parsed.paragraph?.trim() || "",
+    pullQuote: parsed.pullQuote?.trim() || "",
+    postcardMessage: parsed.postcardMessage?.trim() || "",
+    mood: parsed.mood?.trim() || "Mood",
+    tone,
+    locationHint: parsed.locationHint?.trim() || "",
+  };
 }
 
 export async function describePhoto(
-  _assetId: string,
-): Promise<VisionAnalysisResult> {
-  throw new Error("describePhoto — implemented in F-T007");
+  imageDataUrl: string,
+): Promise<VisionAnalysisResult & { costCents: number; mock: boolean }> {
+  const mockMode = env.AI_PROVIDER_MOCK === "true" || !env.OPENAI_API_KEY;
+  if (mockMode) {
+    const seed = imageDataUrl.slice(0, 64);
+    return { ...mockVision(seed), costCents: 0, mock: true };
+  }
+  assertWithinBudget(VISION_COST_CENTS);
+  const result = await realDescribePhoto(imageDataUrl);
+  spendToDateCents += VISION_COST_CENTS;
+  return { ...result, costCents: VISION_COST_CENTS, mock: false };
 }

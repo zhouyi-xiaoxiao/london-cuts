@@ -1,4 +1,4 @@
-import { PublicProjectPage } from "@/components/public-pages";
+import { PublicProjectPage } from "@/components/public/public-project-page";
 import { getPublicProjectParams } from "@/lib/static-params";
 
 export const dynamicParams = false;

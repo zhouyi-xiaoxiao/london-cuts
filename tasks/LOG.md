@@ -63,3 +63,11 @@ Keep lines short. Put details in the task's `Trace` section, not here.
 2026-04-21T04:30Z | subagent-F-P004-via-opus-4.7-main | DONE | F-P004 | PNG export via html-to-image (pixelRatio 2). 9 tests. suggestPostcardFilename helper.
 2026-04-21T04:40Z | opus-4.7-session-20260421 | DONE | F-T006 | Postcard editor: flip card + style picker + generate route + exports. Real API verified $0.02.
 2026-04-21T04:40Z | opus-4.7-session-20260421 | NOTE | F-T006 | Real OpenAI gpt-image-1 pipeline proven end-to-end; mock reverted to default before commit.
+2026-04-21T05:00Z | opus-4.7-session-20260421 | CLAIM | F-T007 | Vision pipeline: describePhoto + /api/vision/describe + VisionUpload UI wired into dashboard "New from photos"
+2026-04-21T05:00Z | subagent-F-T008-via-opus-4.7-main | CLAIM | F-T008 | Publish flow: pre-flight checklist + PublishDialog slideover + workspace button wiring
+2026-04-21T05:00Z | subagent-F-T009-via-opus-4.7-main | CLAIM | F-T009 | Public project page: hero + atlas + flip postcards (read-only)
+2026-04-21T05:15Z | opus-4.7-session-20260421 | DONE | F-T007 | Vision pipeline: describePhoto + /api/vision/describe + VisionUpload; real GPT-4o-mini call verified 1¢/7s
+2026-04-21T05:25Z | subagent-F-T008-via-opus-4.7-main | DONE | F-T008 | PublishDialog slideover + pre-flight checklist + visibility radio + publish action. 4 tests.
+2026-04-21T05:30Z | subagent-F-T009-via-opus-4.7-main | DONE | F-T009 | Public pages (PublicProjectPage + ChapterPage + PostcardPage) + NotFoundCard + static-params extended. 3 tests.
+2026-04-21T05:30Z | opus-4.7-session-20260421 | DONE | F-T009 | Main-session fixup: 4 TS18048 errors in postcard-page.tsx (narrow captured in const before closure) — typecheck now green.
+2026-04-21T05:35Z | opus-4.7-session-20260421 | NOTE | M-fast | M-fast 14/14 COMPLETE. 51/51 tests green. Real AI pipeline (postcard art + vision) proven end-to-end. Next milestone: M-preview (password-gated Vercel soft-launch).

@@ -3,18 +3,20 @@ id: F-T009
 title: Port public project page + atlas page
 milestone: M-fast
 kind: critical
-status: TODO
+status: DONE
 blocked_by: [F-T006, F-T008]
 blocks: []
-parallel_safe: false
+parallel_safe: true
 touches:
-  - web/app/[handle]/[slug]/page.tsx
-  - web/app/[handle]/[slug]/chapter/[stop]/page.tsx
-  - web/app/[handle]/[slug]/p/[stop]/page.tsx
-  - web/app/atlas/page.tsx
-owner: null
-started_at: null
-completed_at: null
+  - web/app/[author]/[slug]/page.tsx
+  - web/app/[author]/[slug]/chapter/[stop]/page.tsx
+  - web/app/[author]/[slug]/p/[stop]/page.tsx
+  - web/components/public/
+  - web/lib/static-params.ts
+  - web/tests/public-project.test.tsx
+owner: subagent-F-T009-via-opus-4.7-main
+started_at: 2026-04-21T05:00Z
+completed_at: 2026-04-21T05:30Z
 ---
 
 # F-T009 — Port public pages

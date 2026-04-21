@@ -1,17 +1,18 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-21T04:40Z
+**Last updated:** 2026-04-21T05:30Z
 
 ## Plan version
 
-**Plan v2.1** (see `docs/implementation-plan.md`): features-first, time estimates removed. M0 complete → M-fast in progress. M1–M6 postponed. M3 superseded by M-fast.
+**Plan v2.1** (see `docs/implementation-plan.md`): features-first, time estimates removed. M0 complete → **M-fast complete** → M-preview next. M1/M2/M4/M5/M6 still deferred.
 
 ## Summary
 
 | Milestone | TODO | IN_PROGRESS | DONE | BLOCKED | Total | Status |
 |-----------|------|-------------|------|---------|-------|--------|
-| M0 Consolidation        | 0  | 0 | 9  | 0 | 9  | ✅ **complete** |
-| **M-fast Feature port** | 2  | 0 | 12 | 0 | 14 | **active** ⭐ (12/14) |
+| M0 Consolidation        | 0  | 0 | 9  | 0 | 9  | ✅ complete |
+| **M-fast Feature port** | 0  | 0 | 14 | 0 | 14 | ✅ **complete** |
+| M-preview Soft launch   | —  | — | —  | — | —  | **next** ⭐ |
 | M-preview Soft launch   | —  | — | — | — | —  | after M-fast |
 | M1 Supabase & data      | 8  | 0 | 0 | 0 | 8  | ⏸ postponed |
 | M2 Auth & invites       | 10 | 0 | 0 | 0 | 10 | ⏸ postponed |
@@ -20,11 +21,11 @@
 | M5 Observability        | 6  | 0 | 0 | 0 | 6  | ⏸ postponed |
 | M6 Launch               | 9  | 0 | 0 | 0 | 9  | ⏸ postponed |
 
-## Eligible next tasks (TODO with no unmet blockers)
+## Eligible next tasks
 
-- **F-T007** — Vision pipeline (folder upload → GPT-4o describe → auto-create stops). Uses existing ai-provider seam + new server route.
-- **F-T008** — Publish flow (pre-flight checklist + visibility chooser + publish action).
-- **F-T009** — Public project page + atlas page (readers, no auth).
+**M-fast 14/14 complete.** Next milestone is **M-preview** — soft-launch at a password-gated Vercel URL so 3–5 friends can try the app. See `tasks/HANDOFF.md` "The road ahead" section for the post-M-fast roadmap (M-preview → M-iter → M1 Supabase → M2 Auth → M4/M5/M6).
+
+First step for M-preview is an **owner action**: create/link Vercel project, paste env vars. A small `web/middleware.ts` adds the password gate.
 
 ## In progress
 
@@ -36,7 +37,10 @@ _none_
 
 ## Recently completed
 
-- **F-T006** (2026-04-21T04:40Z) — Postcard editor: 3D flip card + 6-style picker + orientation toggle + generate flow via /api/ai/generate + variants carousel + prominent PNG/PDF buttons. Pipeline proven with real OpenAI call ($0.02, watercolour of an SE1 seed photo). Mock mode default; real mode behind AI_PROVIDER_MOCK=false + OPENAI_SPEND_CAP_CENTS=800.
+- **F-T009** (2026-04-21T05:30Z) — Public pages (PublicProjectPage + ChapterPage + PostcardPage) via subagent. 3 new tests; total 51/51.
+- **F-T008** (2026-04-21T05:25Z) — Publish slideover dialog + workspace wire. 4 new tests.
+- **F-T007** (2026-04-21T05:15Z) — Vision pipeline: `describePhoto`, `/api/vision/describe`, `<VisionUpload>`. Real GPT-4o-mini call verified 1¢/7s.
+- **F-T006** (2026-04-21T04:40Z) — Postcard editor with 3D flip card + 6 AI styles + PDF/PNG export. Real OpenAI gpt-image-1 verified 2¢/19s.
 - **F-P003** (2026-04-21T04:30Z) — PDF export via jspdf@4.2.1. 4 tests.
 - **F-P004** (2026-04-21T04:30Z) — PNG export via html-to-image (2× pixel density). 9 tests. Buttons consumed by postcard editor as PROMINENT top-bar actions per task.
 - **F-T005** (2026-04-21T03:50Z) — Stop editor fleshed out.

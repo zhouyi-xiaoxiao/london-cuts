@@ -1,4 +1,4 @@
-import { ChapterPage } from "@/components/public-pages";
+import { ChapterPage } from "@/components/public/chapter-page";
 import { getPublicStopParams } from "@/lib/static-params";
 
 export const dynamicParams = false;

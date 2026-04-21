@@ -3,16 +3,17 @@ id: F-T008
 title: Port publish flow (pre-flight, visibility, publish action)
 milestone: M-fast
 kind: critical
-status: TODO
+status: DONE
 blocked_by: [F-T005]
 blocks: [F-T009]
-parallel_safe: false
+parallel_safe: true
 touches:
   - web/components/studio/publish-dialog.tsx
-  - web/stores/project.ts
-owner: null
-started_at: null
-completed_at: null
+  - web/components/studio/workspace.tsx
+  - web/tests/publish-dialog.test.tsx
+owner: subagent-F-T008-via-opus-4.7-main
+started_at: 2026-04-21T05:00Z
+completed_at: 2026-04-21T05:25Z
 ---
 
 # F-T008 — Port publish flow

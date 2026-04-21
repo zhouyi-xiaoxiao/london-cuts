@@ -8,9 +8,11 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 
+import { VisionUpload } from "@/components/studio/vision-upload";
 import { useAssets } from "@/stores/asset";
 import { useMode } from "@/stores/mode";
 import { useProject, useProjectArchive, useProjectActions } from "@/stores/project";
+import { useRootStore } from "@/stores/root";
 import { useStops } from "@/stores/stop";
 import type { ArchivedProject, Project, Stop } from "@/stores/types";
 import type { Asset } from "@/stores/types";
@@ -55,6 +57,7 @@ export function ProjectsDashboard() {
   } = useProjectActions();
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [visionOpen, setVisionOpen] = useState(false);
 
   const archivedList = useMemo(
     () =>
@@ -119,6 +122,13 @@ export function ProjectsDashboard() {
             Reset data
           </button>
           <button
+            className="btn btn-sm"
+            onClick={() => setVisionOpen((v) => !v)}
+            title="Upload photos → GPT-4o auto-creates stops"
+          >
+            {visionOpen ? "Hide vision upload" : "📁 New from photos"}
+          </button>
+          <button
             className="btn btn-solid"
             onClick={() => setModalOpen(true)}
             title="Archive current project and start a new one"
@@ -132,6 +142,18 @@ export function ProjectsDashboard() {
         className="studio-dash-main"
         style={{ padding: "48px 40px", maxWidth: 1680, margin: "0 auto" }}
       >
+        {visionOpen && (
+          <VisionUpload
+            onComplete={(count) => {
+              setVisionOpen(false);
+              window.location.href = `/studio/${useRootStore.getState().project.id}/editor`;
+              // Avoid unused-var warning
+              void count;
+            }}
+            onClose={() => setVisionOpen(false)}
+          />
+        )}
+
         <div style={{ marginBottom: 32 }}>
           <div className="eyebrow">Studio</div>
           <h1

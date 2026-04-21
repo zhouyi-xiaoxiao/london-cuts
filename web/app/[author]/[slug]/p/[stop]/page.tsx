@@ -1,4 +1,4 @@
-import { PostcardPage } from "@/components/public-pages";
+import { PostcardPage } from "@/components/public/postcard-page";
 import { getPublicStopParams } from "@/lib/static-params";
 
 export const dynamicParams = false;

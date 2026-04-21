@@ -15,7 +15,7 @@ A creator tool for documenting a single-location trip (anywhere in the world) wi
 `docs/implementation-plan.md` is at **v2.1** — features-first ordering:
 M0 consolidation → **M-fast feature port** (active, ~half) → M-preview soft-launch → iterate → M1 Supabase → M2 Auth+invites → M4/M5/M6.
 
-**M-fast progress: 12/14 done.** In order:
+**M-fast: COMPLETE 14/14.** In order:
 - F-T000 POC (style picker)
 - F-T001 shared utilities (exif / image / hash / seed)
 - F-T002 Zustand root store + 6 domain hooks + IndexedDB
@@ -23,21 +23,22 @@ M0 consolidation → **M-fast feature port** (active, ~half) → M-preview soft-
 - F-T004 workspace 3-column shell (spine + canvas + drawers)
 - F-T005 stop editor (HeroSlot with EXIF upload, metadata form, body editor)
 - F-T006 postcard editor (3D flip card + 6 AI styles + generate route + PDF/PNG exports)
+- F-T007 vision pipeline (folder upload → GPT-4o-mini → auto-create project)
+- F-T008 publish flow (pre-flight checklist + visibility + publish action)
+- F-T009 public pages (reader views: project / chapter / postcard + NotFoundCard)
 - F-P001 mode switcher + `<HtmlModeAttr />`
 - F-P002 MapLibre atlas with mode-aware tiles (maplibre-gl 5.23)
 - F-P003 PDF export (jspdf 4.2.1)
 - F-P004 PNG export (html-to-image, 2× pixel density), prominent top-bar buttons
 - F-P005 legacy CSS merged into globals.css
 
-**Next eligible (TODO, no unmet blockers):**
-- **F-T007** — vision pipeline (folder upload → GPT-4o describe → auto-create stops). Uses ai-provider seam + a new `/api/vision/describe` route. Cost ~$0.01/photo.
-- **F-T008** — publish flow (pre-flight checklist + visibility chooser + publish action).
-- **F-T009** — public project page + atlas page for readers (no auth).
+**Next eligible:** M-preview — see "The road ahead" section at the bottom of this file.
 
 **OpenAI pipeline live (don't regress):**
-- `/api/ai/generate` is wired. `lib/ai-provider.ts` has MOCK mode (default, returns tinted SVG) and REAL mode (needs `AI_PROVIDER_MOCK=false` + valid `OPENAI_API_KEY` in `web/.env.local`).
+- `/api/ai/generate` for postcard art (gpt-image-1); `/api/vision/describe` for photo analysis (gpt-4o-mini).
+- `lib/ai-provider.ts` has MOCK mode (default, returns tinted SVG / pseudo-random JSON) and REAL mode (needs `AI_PROVIDER_MOCK=false` + valid `OPENAI_API_KEY` in `web/.env.local`).
 - Spend cap: `OPENAI_SPEND_CAP_CENTS` env (default 800 = $8). Enforced in `ai-provider.ts` before every call; throws `QuotaExceededError` → API returns HTTP 429.
-- Pipeline was end-to-end verified on 2026-04-21 with a real key (now revoked). Watercolour postcard of an SE1 seed photo, $0.02 spent, 19s. If a new session needs to test real gen, ask the owner for a fresh key + flip `AI_PROVIDER_MOCK=false` + **revert to `true` before committing**.
+- Pipeline verified end-to-end on 2026-04-21: 1 postcard (gpt-image-1 watercolour, 2¢/19s) + 1 vision (gpt-4o-mini, 1¢/7s). If a new session needs to test real gen, ask the owner for a fresh key + flip `AI_PROVIDER_MOCK=false` + **revert to `true` before committing**.
 
 **Housekeeping done:** `web/providers/` removed. `web/lib/media-provider.ts` + `web/lib/seed-data.ts` deleted. `web/app/layout.tsx` simplified. Scaffold `studio-pages.tsx` + `public-pages.tsx` now read Zustand via `web/components/studio-pages.adapter.ts`. `web/lib/types.ts` still present (ui.tsx + routes.ts still import it).
 
@@ -90,12 +91,59 @@ preview_screenshot(...)
 - Plan v2.1 features-first (vs v1.0 infra-first). Reason: the scaffold has no real features.
 - One Zustand root store + 6 domain hook files (not 6 separate stores). Reason: cross-store deps between stops / postcards / assets.
 - Seed data stays in `web/lib/seed.ts`, not a CMS. M-fast is browser-only; M1 switches to Supabase.
-- `npm` deps added so far (in addition to scaffold): `zustand`, `exifr`, `vitest`, `@vitest/ui`, `jsdom`, `@testing-library/react`. No more without asking the user.
+- Owner's handle for public URLs is `yx` (hardcoded in PublishDialog). Rewire when real auth lands.
+- `npm` deps added so far (in addition to scaffold): `zustand`, `exifr`, `vitest`, `@vitest/ui`, `jsdom`, `@testing-library/react`, `maplibre-gl`, `jspdf`, `openai`. No more without asking the user.
 - Product name "London Cuts" is a placeholder; owner hasn't picked final yet — keep it for now.
 
 ## Open decisions NOT YET made (watch for these in the next conversation)
 
 - Product rename (just keep placeholder until the user decides)
-- Dead-code deletion timing (migrate scaffold pages first)
 - Seed data: should Reykjavík/SE1 both stay as permanent demos, or should new users start with an empty project? (Currently SE1 is current + Reykjavík is archived.)
 - Bundle-size analyzer run (not needed until M6)
+
+---
+
+## The road ahead (what comes AFTER M-fast)
+
+**Once M-fast is 14/14 the app has:**
+- Create/edit project with photos + stories + postcards
+- Real AI postcard generation (6 styles) + vision analysis of uploaded photos
+- Publish flow with pre-flight checklist
+- Public reader-side pages (project view, chapter view, postcard view, atlas)
+- Three visual modes, MapLibre map, PDF + PNG export
+- Tests, git hooks, responsive CSS, compaction-safe task system
+
+**What's still missing for launch (M-preview → M6):**
+
+### M-preview (short — 1 commit) — soft-launch to friends
+Goal: get the app onto a public URL behind a password gate so 3-5 trusted friends can poke at it and give feedback. Prerequisites:
+1. Vercel project linked to GitHub. Owner needs to: create Vercel account (or use existing), connect `github.com/zhouyi-xiaoxiao/london-cuts` repo, paste env vars (OPENAI_API_KEY, OPENAI_SPEND_CAP_CENTS=800, AI_PROVIDER_MOCK=false for preview, PREVIEW_PASSWORD=some-shared-string, NEXT_PUBLIC_APP_URL=the vercel domain).
+2. Add `web/middleware.ts` that reads `PREVIEW_PASSWORD` + checks a cookie. If missing: serve a simple "enter password" page. If present: pass through. **Not real auth** — just a scrape-blocker until M2.
+3. Copy + share the Vercel URL with 3-5 friends. Watch Sentry... wait, Sentry is M5.
+4. Observation only: what do real users do? Where do they get stuck? This informs M-iter.
+
+### M-iter (open-ended) — fix what friends complain about
+Loop. No scope creep — if an issue is minor, log to a "v2 backlog" doc; only fix things blocking the published flow.
+
+### M1 (bigger — 1-2 weeks of Claude time) — Supabase
+Swap `lib/storage.ts` implementation from localStorage+IDB to Supabase Postgres. This is where the data model in `docs/data-model.md` lands as migrations. Owner needs to: create Supabase project (link via Supabase CLI), get keys, paste to Vercel env. The seam makes this a ~1-file rewrite in `lib/storage.ts` plus schema migrations; UI code doesn't know.
+
+### M2 (medium) — Auth + invites
+Swap `lib/auth.ts` from mock-user to Supabase Auth. Magic-link sign-up requires an invite code (`invites` table). Move OpenAI key from `.env.local` to server env + user-scoped daily quota (50/day).
+
+Replaces the M-preview password gate. Kills the hardcoded `yx` handle — users choose their own.
+
+### M4 (small) — Public page polish
+Real OG share images. Terms of Service page. Privacy Policy page (EU GDPR requires because beta collects email). Feedback form → Supabase `feedback` table → email on new row.
+
+### M5 (small) — Observability + tests
+Sentry, PostHog, more Vitest tests for auth + invite + quota. GitHub Actions: typecheck + test on PR.
+
+### M6 (small) — Launch
+IONOS DNS → Vercel (apex + www). HTTPS via Vercel. Generate 30 invite codes (Supabase Dashboard SQL). Smoke test. Invite first cohort.
+
+**Rough total effort to public launch:** M-preview (hours) → M-iter (open) → M1+M2 (bulk of remaining infra) → M4+M5+M6 (polish + ship).
+
+## The single biggest thing the owner should do next (after M-fast)
+
+Open the app in a real browser, spend 30 minutes pretending to be a user creating their first trip. Note everywhere it felt slow, confusing, or broken. That list — not my architectural opinions — drives the M-iter backlog.
