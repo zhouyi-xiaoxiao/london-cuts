@@ -23,8 +23,24 @@ import type { Stop } from "@/stores/types";
 
 // ─── Constants ─────────────────────────────────────────────────────────
 
-const HANDLE = "yx";
-const PUBLIC_BASE = "https://zhouyixiaoxiao.org";
+const HANDLE = "yx"; // TODO(M2): replace with authenticated user.handle
+
+// Pick the host the public share links should point at.
+//   - Server/static build: NEXT_PUBLIC_APP_URL (set in Vercel env)
+//   - Client runtime: window.location.origin as the safe fallback so the
+//     URL always reaches a live host, even if the env var is missing.
+// Before M2 this will be the Vercel preview domain; from M6 onwards it
+// becomes zhouyixiaoxiao.org. Don't hardcode — the previous hardcoded
+// value linked to an unconfigured domain and every "Open public" click
+// 404'd.
+function resolvePublicBase(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_APP_URL;
+  if (fromEnv && fromEnv.trim() !== "") return fromEnv.replace(/\/+$/, "");
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return window.location.origin;
+  }
+  return "https://london-cuts.vercel.app";
+}
 
 // ─── Utilities ─────────────────────────────────────────────────────────
 
@@ -115,7 +131,15 @@ export function PublishDialog() {
   const needAttention = perStop.length - readyCount;
   const allPass = perStop.length > 0 && needAttention === 0;
 
-  const publicUrl = `${PUBLIC_BASE}/${HANDLE}/${slug}`;
+  const publicBase = resolvePublicBase();
+  // Derive the URL handle. If the project has a human-readable author
+  // ("Ana Ishii") we kebab-case it with an @ prefix so the published URL
+  // matches the seed SSG route (/@ana-ishii/<slug>). Falls back to @yx
+  // for user-created projects (M2 replaces this with a real auth handle).
+  const authorHandle = project.author
+    ? `@${slugify(project.author)}`
+    : `@${HANDLE}`;
+  const publicUrl = `${publicBase}/${authorHandle}/${slug}`;
   const isPublished = project.status === "published";
 
   function handleSlugChange(v: string) {
@@ -250,6 +274,70 @@ export function PublishDialog() {
 
         {/* ─── Body (scrollable) ──────────────────────────────── */}
         <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px 28px" }}>
+          {/* Live banner — shown only when the project is already published. */}
+          {isPublished && (
+            <div
+              data-testid="publish-live-banner"
+              style={{
+                marginBottom: 16,
+                padding: "12px 14px",
+                border: "1px solid var(--status-done, rgba(46, 139, 87, 0.6))",
+                borderRadius: 4,
+                background: "rgba(46, 139, 87, 0.08)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <div
+                className="mono-sm"
+                style={{
+                  fontSize: 10,
+                  letterSpacing: "0.22em",
+                  textTransform: "uppercase",
+                  opacity: 0.75,
+                }}
+              >
+                ● Live now
+              </div>
+              <a
+                href={publicUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontFamily: "var(--f-mono, monospace)",
+                  fontSize: 12,
+                  wordBreak: "break-all",
+                  textDecoration: "underline",
+                  color: "inherit",
+                }}
+                data-testid="publish-live-url"
+              >
+                {publicUrl}
+              </a>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={handleCopyLink}
+                  data-testid="publish-banner-copy-btn"
+                  style={{ flex: 1 }}
+                >
+                  Copy link
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={handleOpenPublic}
+                  data-testid="publish-banner-open-btn"
+                  style={{ flex: 1 }}
+                >
+                  Open ↗
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Pre-flight counter */}
           <div
             className="eyebrow"
@@ -355,7 +443,7 @@ export function PublishDialog() {
             }}
           >
             <span style={{ opacity: 0.65 }}>
-              {PUBLIC_BASE}/{HANDLE}/
+              {publicBase}/{authorHandle}/
             </span>
             <input
               aria-label="Project slug"
