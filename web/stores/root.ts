@@ -53,23 +53,37 @@ const DEFAULT_RECIPIENT = {
 };
 
 function seedStateFromDataModule(): RootState {
+  // Build assetsPool first — stops below reference these by id.
+  const assetsPool: Asset[] = SEED_ASSETS.map((a) => ({
+    ...a,
+    // Inherit any static imageUrl declared on the seed entry (13 London
+    // photos live under /public/seed-images/).
+    imageUrl: a.imageUrl ?? null,
+  }));
+  const assetByStop = new Map<string, Asset>();
+  for (const a of assetsPool) if (a.stop) assetByStop.set(a.stop, a);
+  const coverAsset = assetsPool.find((a) => a.id === "se1-cover") ?? null;
+
   const stops: Stop[] = SEED_STOPS.map((s) => {
     const isStop05 = s.n === "05";
+    const hero = assetByStop.get(s.n) ?? null;
+    const hasHero = Boolean(hero?.imageUrl);
     return {
       ...s,
       body: isStop05 ? SEED_BODY_05 : [],
       postcard: isStop05
         ? { ...SEED_POSTCARD_05 }
         : { message: "", recipient: { ...DEFAULT_RECIPIENT } },
-      heroAssetId: null,
-      assetIds: [],
+      heroAssetId: hero?.id ?? null,
+      assetIds: hero ? [hero.id] : [],
+      // Upgrade the upload + hero status bits if we have a real photo.
+      status: {
+        ...s.status,
+        upload: hasHero || s.status.upload,
+        hero: hasHero || s.status.hero,
+      },
     };
   });
-
-  const assetsPool: Asset[] = SEED_ASSETS.map((a) => ({
-    ...a,
-    imageUrl: null, // populated on the fly by F-T005 uploads
-  }));
 
   const project: Project = {
     // StorageProject fields (matches lib/storage.ts Project interface)
@@ -82,7 +96,7 @@ function seedStateFromDataModule(): RootState {
     defaultMode: SEED_PROJECT.defaultMode,
     status: SEED_PROJECT.status,
     visibility: SEED_PROJECT.visibility,
-    coverAssetId: null,
+    coverAssetId: coverAsset?.id ?? null,
     publishedAt: SEED_PROJECT.published,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

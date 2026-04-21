@@ -93,6 +93,10 @@ export interface SeedAsset {
   id: string;
   stop: string | null;
   tone: StopTone;
+  /** Optional static asset path served from `web/public/`. Extended by the
+   * live `Asset` type (stores/types.ts) which narrows this to
+   * `string | null` (nullable for loaded assets that haven't hydrated yet). */
+  imageUrl?: string | null;
 }
 
 export interface SeedMediaTask {
@@ -204,29 +208,25 @@ export const SEED_POSTCARD_05: SeedPostcard = {
   },
 };
 
+// The 13 "A Year in SE1" seed photos that ship as static assets under
+// `web/public/seed-images/`. 12 are bound 1-per-stop as heroAssetId; the
+// 13th (IMG_9931) is a loose cover photo used on dashboard + atlas.
+// Filenames preserved verbatim from the legacy app/seed-images/ directory
+// so future AI tools can correlate.
 export const SEED_ASSETS: readonly SeedAsset[] = [
-  { id: "a-wb-hero", stop: "05", tone: "warm" },
-  { id: "a-wb-02",   stop: "05", tone: "warm" },
-  { id: "a-wb-03",   stop: "05", tone: "cool" },
-  { id: "a-bm-01",   stop: "01", tone: "warm" },
-  { id: "a-bm-02",   stop: "01", tone: "warm" },
-  { id: "a-sh-01",   stop: "02", tone: "cool" },
-  { id: "a-tt-01",   stop: "03", tone: "punk" },
-  { id: "a-tt-02",   stop: "03", tone: "punk" },
-  { id: "a-nt-01",   stop: "06", tone: "cool" },
-  { id: "a-nt-02",   stop: "06", tone: "cool" },
-  { id: "a-pb-01",   stop: "07", tone: "warm" },
-  { id: "a-bs-01",   stop: "08", tone: "punk" },
-  { id: "a-bs-02",   stop: "08", tone: "punk" },
-  { id: "a-bs-03",   stop: "08", tone: "punk" },
-  { id: "a-tw-01",   stop: "10", tone: "cool" },
-  { id: "a-tw-02",   stop: "10", tone: "cool" },
-  { id: "a-gr-01",   stop: null, tone: "warm" },
-  { id: "a-x-02",    stop: null, tone: "cool" },
-  { id: "a-x-03",    stop: null, tone: "warm" },
-  { id: "a-x-04",    stop: null, tone: "punk" },
-  { id: "a-x-05",    stop: null, tone: "cool" },
-  { id: "a-x-06",    stop: null, tone: "warm" },
+  { id: "se1-01", stop: "01", tone: "warm", imageUrl: "/seed-images/IMG_0294.jpg" },
+  { id: "se1-02", stop: "02", tone: "cool", imageUrl: "/seed-images/IMG_3083.jpg" },
+  { id: "se1-03", stop: "03", tone: "punk", imageUrl: "/seed-images/IMG_3162.jpg" },
+  { id: "se1-04", stop: "04", tone: "warm", imageUrl: "/seed-images/IMG_3837.jpg" },
+  { id: "se1-05", stop: "05", tone: "warm", imageUrl: "/seed-images/IMG_3884.jpg" },
+  { id: "se1-06", stop: "06", tone: "cool", imageUrl: "/seed-images/IMG_4151.jpg" },
+  { id: "se1-07", stop: "07", tone: "warm", imageUrl: "/seed-images/IMG_4566.jpg" },
+  { id: "se1-08", stop: "08", tone: "punk", imageUrl: "/seed-images/IMG_5577.jpg" },
+  { id: "se1-09", stop: "09", tone: "cool", imageUrl: "/seed-images/IMG_7711.jpg" },
+  { id: "se1-10", stop: "10", tone: "cool", imageUrl: "/seed-images/IMG_8469.jpg" },
+  { id: "se1-11", stop: "11", tone: "cool", imageUrl: "/seed-images/IMG_8745.jpg" },
+  { id: "se1-12", stop: "12", tone: "warm", imageUrl: "/seed-images/IMG_8774.jpg" },
+  { id: "se1-cover", stop: null, tone: "warm", imageUrl: "/seed-images/IMG_9931.jpg" },
 ] as const;
 
 export const SEED_TASKS: readonly SeedMediaTask[] = [
