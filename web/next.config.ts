@@ -2,11 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // Pin workspace root — silences Turbopack's warning about the stray
-  // package-lock.json sitting in the user's home directory.
+  // Pin workspace root so (a) Turbopack stops warning about the stray
+  // package-lock.json in the user's home dir locally, and (b) Vercel
+  // stops warning about outputFileTracingRoot !== turbopack.root when
+  // Vercel auto-injects outputFileTracingRoot. We set BOTH to the same
+  // absolute path.
   turbopack: {
     root: __dirname,
   },
+  outputFileTracingRoot: __dirname,
   images: {
     remotePatterns: [
       {
