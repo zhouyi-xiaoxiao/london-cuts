@@ -42,3 +42,9 @@ Keep lines short. Put details in the task's `Trace` section, not here.
 2026-04-21T02:20Z | subagent-deadcode-via-opus-4.7-main | DONE | housekeeping | Scaffold dead-code audit delivered; blocker = studio-pages/public-pages still use DemoStoreProvider
 2026-04-21T02:25Z | subagent-F-P001-via-opus-4.7-main | DONE | F-P001 | Mode switcher + HtmlModeAttr wired into layout.tsx; 1 new test
 2026-04-21T02:30Z | opus-4.7-session-20260421 | DONE | F-T003 | Dashboard ported + useShallow fix across 5 hooks + 4 new tests (18/18)
+2026-04-21T02:50Z | opus-4.7-session-20260421 | CLAIM | F-T004 | Workspace 3-column shell (spine+canvas+drawers)
+2026-04-21T02:50Z | subagent-mobile-via-opus-4.7-main | CLAIM | housekeeping | Mobile responsive audit + CSS fixes
+2026-04-21T02:50Z | subagent-seed-via-opus-4.7-main | CLAIM | housekeeping | Add non-London demo project to seed.ts (Reykjavík)
+2026-04-21T02:55Z | subagent-seed-via-opus-4.7-main | DONE | housekeeping | SEED_PROJECT_REYKJAVIK + 7 stops + PROJECTS_FEED entry added to lib/seed.ts
+2026-04-21T03:00Z | subagent-mobile-via-opus-4.7-main | DONE | housekeeping | globals.css 775→820; studio dashboard overflow fixed at 390px; tap targets ≥44px
+2026-04-21T03:10Z | opus-4.7-session-20260421 | DONE | F-T004 | Workspace shell + Reykjavík seed wired into archive (dashboard shows both projects). 23/23 tests.

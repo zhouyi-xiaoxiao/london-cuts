@@ -149,6 +149,37 @@ export const SEED_STOPS: readonly SeedStop[] = [
   { n: "12", code: "SE1 1AA", title: "Elephant & Castle roundabout", time: "16:45", mood: "Brick",    tone: "warm", lat: 51.4944, lng: -0.1000, label: "ELEPHANT · ROUNDABOUT",   status: { upload: false, hero: false, body: false, media: null } },
 ] as const;
 
+// ─── The "A Week in Reykjavík" seed project ──────────────────────────
+// Second demo project — proves the product scope is "any single-location
+// trip", not London-only. Not wired into the store yet (F-T003 will
+// decide which project to hydrate); this just makes the data available.
+
+export const SEED_PROJECT_REYKJAVIK: SeedProject = {
+  title: "A Week in Reykjavík",
+  author: "Sigrún Jónsdóttir",
+  subtitle: "Seven walks between the harbour and the hot pots, winter 2026",
+  coverLabel: "REYKJAVÍK · AURORA",
+  tags: ["Reykjavík", "Iceland", "Winter"],
+  published: "08 MAR 2026",
+  reads: 1843,
+  saves: 147,
+  duration: "32 min read",
+  slug: "a-week-in-reykjavik",
+  visibility: "public",
+  defaultMode: "cinema",
+  status: "published",
+};
+
+export const SEED_STOPS_REYKJAVIK: readonly SeedStop[] = [
+  { n: "01", code: "101 RVK", title: "Hallgrímskirkja at the top of the hill", time: "09:18", mood: "Stone",    tone: "cool", lat: 64.1417, lng: -21.9266, label: "HALLGRÍMSKIRKJA · BASALT",  status: { upload: true,  hero: true,  body: true,  media: "done" } },
+  { n: "02", code: "101 RVK", title: "Harpa, glass diamond by the harbour",    time: "11:02", mood: "Glacier",  tone: "cool", lat: 64.1504, lng: -21.9326, label: "HARPA · HARBOUR GLASS",    status: { upload: true,  hero: true,  body: true,  media: "done" } },
+  { n: "03", code: "101 RVK", title: "Sólfar, the Sun Voyager at dawn",        time: "07:44", mood: "Steel",    tone: "cool", lat: 64.1476, lng: -21.9224, label: "SÓLFAR · COLD STEEL",     status: { upload: true,  hero: true,  body: false, media: "running" } },
+  { n: "04", code: "101 RVK", title: "Kolaportið on a Saturday",               time: "12:30", mood: "Wool",     tone: "warm", lat: 64.1486, lng: -21.9406, label: "KOLAPORTIÐ · FLEA MKT",   status: { upload: true,  hero: false, body: true,  media: null } },
+  { n: "05", code: "101 RVK", title: "Nauthólsvík geothermal beach",           time: "14:15", mood: "Volcanic", tone: "warm", lat: 64.1239, lng: -21.9619, label: "NAUTHÓLSVÍK · HOT SAND",  status: { upload: true,  hero: true,  body: true,  media: "done" } },
+  { n: "06", code: "101 RVK", title: "Laugavegur after dark",                  time: "22:08", mood: "Neon",     tone: "punk", lat: 64.1438, lng: -21.9230, label: "LAUGAVEGUR · NEON",       status: { upload: true,  hero: true,  body: true,  media: "running" } },
+  { n: "07", code: "107 RVK", title: "Vesturbæjarlaug, blue hour from the hot tub", time: "16:52", mood: "Aurora",   tone: "cool", lat: 64.1463, lng: -21.9534, label: "VESTURBÆJARLAUG · BLUE HOUR", status: { upload: true,  hero: true,  body: false, media: null } },
+] as const;
+
 // Sample body (nodes for stop 05), used as the canvas demo.
 export const SEED_BODY_05: readonly BodyBlock[] = [
   { type: "metaRow",    content: ["17:19", "28 OCT 2025", "8°C · SW", "WATERLOO BR · DUSK"] },
@@ -209,12 +240,13 @@ export const SEED_TASKS: readonly SeedMediaTask[] = [
 ] as const;
 
 export const PROJECTS_FEED: readonly FeedEntry[] = [
-  { id: 1, title: "A Year in SE1",         author: "Ana Ishii",   stops: 12, mode: "fashion", label: "SOUTHWARK · COVER",    reads: "2.4k", updated: "2d" },
-  { id: 2, title: "Mudlark Diaries",       author: "Ty Okafor",   stops: 14, mode: "punk",    label: "THAMES · FORESHORE",   reads: "891",  updated: "5d" },
-  { id: 3, title: "48 Hours in E8",        author: "Priya Shah",  stops: 8,  mode: "cinema",  label: "HACKNEY · NIGHT",      reads: "4.1k", updated: "1w" },
-  { id: 4, title: "The Jubilee Walk",      author: "Lena Park",   stops: 12, mode: "fashion", label: "WESTMINSTER · DAY",    reads: "1.2k", updated: "2w" },
-  { id: 5, title: "Last Trains",           author: "Marco Reed",  stops: 7,  mode: "cinema",  label: "UNDERGROUND · 00:47",  reads: "3.6k", updated: "3w" },
-  { id: 6, title: "Brick Lane after rain", author: "Yui Tanaka",  stops: 9,  mode: "punk",    label: "E1 · WET ASPHALT",     reads: "624",  updated: "1m" },
+  { id: 1, title: "A Year in SE1",         author: "Ana Ishii",     stops: 12, mode: "fashion", label: "SOUTHWARK · COVER",    reads: "2.4k", updated: "2d" },
+  { id: 2, title: "Mudlark Diaries",       author: "Ty Okafor",     stops: 14, mode: "punk",    label: "THAMES · FORESHORE",   reads: "891",  updated: "5d" },
+  { id: 3, title: "48 Hours in E8",        author: "Priya Shah",    stops: 8,  mode: "cinema",  label: "HACKNEY · NIGHT",      reads: "4.1k", updated: "1w" },
+  { id: 4, title: "The Jubilee Walk",      author: "Lena Park",     stops: 12, mode: "fashion", label: "WESTMINSTER · DAY",    reads: "1.2k", updated: "2w" },
+  { id: 5, title: "Last Trains",           author: "Marco Reed",    stops: 7,  mode: "cinema",  label: "UNDERGROUND · 00:47",  reads: "3.6k", updated: "3w" },
+  { id: 6, title: "Brick Lane after rain", author: "Yui Tanaka",    stops: 9,  mode: "punk",    label: "E1 · WET ASPHALT",     reads: "624",  updated: "1m" },
+  { id: 7, title: "A Week in Reykjavík",   author: "Sigrún Jónsdóttir", stops: 7,  mode: "cinema",  label: "REYKJAVÍK · AURORA",   reads: "1.8k", updated: "4d" },
 ] as const;
 
 // Derived summary — used by spine + publish pre-flight (F-T008).

@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-21T02:30Z
+**Last updated:** 2026-04-21T03:10Z
 
 ## Plan version
 
@@ -11,7 +11,7 @@
 | Milestone | TODO | IN_PROGRESS | DONE | BLOCKED | Total | Status |
 |-----------|------|-------------|------|---------|-------|--------|
 | M0 Consolidation        | 0  | 0 | 9 | 0 | 9  | ✅ **complete** |
-| **M-fast Feature port** | 8  | 0 | 6 | 0 | 14 | **active** ⭐ |
+| **M-fast Feature port** | 7  | 0 | 7 | 0 | 14 | **active** ⭐ (halfway) |
 | M-preview Soft launch   | —  | — | — | — | —  | after M-fast |
 | M1 Supabase & data      | 8  | 0 | 0 | 0 | 8  | ⏸ postponed |
 | M2 Auth & invites       | 10 | 0 | 0 | 0 | 10 | ⏸ postponed |
@@ -22,8 +22,10 @@
 
 ## Eligible next tasks (TODO with no unmet blockers)
 
-- **F-T004** — Port workspace three-column layout — critical, blocks F-T005/T006/P002
-- Dead-code cleanup (not a numbered F-task but high value): migrate `studio-pages.tsx` + `public-pages.tsx` off `DemoStoreProvider`, then delete scaffold providers + lib dupes. See audit map in `project_london_cuts.md` memory.
+- **F-T005** — Stop editor (metadata form + body blocks editor + hero image upload with EXIF) — critical, unlocks F-T006
+- **F-P002** — MapLibre atlas with mode-aware tiles — parallel-safe
+- **F-P003** — PDF export (jspdf) — parallel-safe (depends on F-T006 for postcard component, but scaffolding can start)
+- Dead-code migration (housekeeping): migrate scaffold `studio-pages.tsx` + `public-pages.tsx` off `DemoStoreProvider`, then delete scaffold providers. See audit map in project memory.
 
 ## In progress
 
@@ -35,14 +37,16 @@ _none_
 
 ## Recently completed
 
-- **F-T003** (2026-04-21T02:30Z) — Dashboard "Your work." screen ported. Found + fixed Zustand `useShallow` infinite-loop across 5 hook files. 4 new tests (18/18 total).
-- **F-P001** (2026-04-21T02:25Z) — Mode switcher + `<HtmlModeAttr>` wired into `<html data-mode>`. Subagent delivered.
-- **dead-code audit** (2026-04-21T02:20Z) — Subagent mapped scaffold deletion graph. Report in project memory. Not yet acted on.
-- **F-T002** (2026-04-21T01:45Z) — Split legacy store.jsx into Zustand + 6 domain hooks. Seam storage.ts fully impl'd.
+- **F-T004** (2026-04-21T03:10Z) — Workspace 3-column shell + spine (keyboard-nav) + canvas + drawers; Reykjavík seed demo wired into archive. 5 new tests (23/23). Mobile subagent fixed dashboard + CSS at 390px.
+- **housekeeping: mobile responsive** (2026-04-21T03:00Z) — Subagent added 45 lines of @media rules to globals.css, fixed studio dashboard overflow at 390px, bumped tap targets to 44px.
+- **housekeeping: Reykjavík seed** (2026-04-21T02:55Z) — Subagent added `SEED_PROJECT_REYKJAVIK` + 7 stops + PROJECTS_FEED entry.
+- **F-T003** (2026-04-21T02:30Z) — Dashboard "Your work." ported. Fixed Zustand `useShallow` infinite-loop across 5 hooks.
+- **F-P001** (2026-04-21T02:25Z) — Mode switcher + `<HtmlModeAttr>` wired into `<html data-mode>`.
+- **dead-code audit** (2026-04-21T02:20Z) — Scaffold deletion graph in project memory.
+- **F-T002** (2026-04-21T01:45Z) — Split legacy store.jsx into Zustand + 6 domain hooks.
 - **F-P005** (2026-04-21T00:30Z) — Legacy CSS merged into globals.css
 - **F-T001** (2026-04-21T00:30Z) — Shared utilities + seed
 - **F-T000** (2026-04-20T03:10Z) — POC StylePicker
-- **housekeeping** (2026-04-21T01:30Z) — Vitest + pre-commit hook
 - **M0-P005** (2026-04-20T02:05Z) — Rewrote README.md + INDEX.md for plan v2.0
 - **M0-P004** (2026-04-20T02:05Z) — CLAUDE.md (root) updated to v2 content; web/CLAUDE.md replaced with pointer to root
 - **M0-P006** (2026-04-20T01:58Z) — Created web/supabase/ dir scaffold

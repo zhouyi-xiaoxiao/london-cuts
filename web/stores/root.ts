@@ -31,7 +31,9 @@ import {
   SEED_BODY_05,
   SEED_POSTCARD_05,
   SEED_PROJECT,
+  SEED_PROJECT_REYKJAVIK,
   SEED_STOPS,
+  SEED_STOPS_REYKJAVIK,
   SEED_TASKS,
 } from "@/lib/seed";
 import {
@@ -94,12 +96,54 @@ function seedStateFromDataModule(): RootState {
     coverLabel: SEED_PROJECT.coverLabel,
   };
 
+  // Pre-seed archive with the Reykjavík demo so the dashboard shows
+  // product scope = "any location" from the first load. Archived,
+  // not current, so the SE1 project stays the editing default.
+  const reykjavikStops: Stop[] = SEED_STOPS_REYKJAVIK.map((s) => ({
+    ...s,
+    body: [],
+    postcard: { message: "", recipient: { ...DEFAULT_RECIPIENT } },
+    heroAssetId: null,
+    assetIds: [],
+  }));
+  const reykjavikProject: Project = {
+    id: "seed-a-week-in-reykjavik",
+    ownerId: "seed-owner",
+    slug: SEED_PROJECT_REYKJAVIK.slug,
+    title: SEED_PROJECT_REYKJAVIK.title,
+    subtitle: SEED_PROJECT_REYKJAVIK.subtitle,
+    locationName: "Reykjavík, Iceland",
+    defaultMode: SEED_PROJECT_REYKJAVIK.defaultMode,
+    status: SEED_PROJECT_REYKJAVIK.status,
+    visibility: SEED_PROJECT_REYKJAVIK.visibility,
+    coverAssetId: null,
+    publishedAt: SEED_PROJECT_REYKJAVIK.published,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    author: SEED_PROJECT_REYKJAVIK.author,
+    tags: SEED_PROJECT_REYKJAVIK.tags,
+    published: SEED_PROJECT_REYKJAVIK.published,
+    reads: SEED_PROJECT_REYKJAVIK.reads,
+    saves: SEED_PROJECT_REYKJAVIK.saves,
+    duration: SEED_PROJECT_REYKJAVIK.duration,
+    coverLabel: SEED_PROJECT_REYKJAVIK.coverLabel,
+  };
+
   return {
     project,
     stops,
     assetsPool,
     mediaTasks: SEED_TASKS.map((t) => ({ ...t }) as MediaTask),
-    projectsArchive: {},
+    projectsArchive: {
+      "seed-a-week-in-reykjavik": {
+        id: "seed-a-week-in-reykjavik",
+        createdAt: Date.now() - 7 * 24 * 60 * 60 * 1000, // a week ago
+        project: reykjavikProject,
+        stops: reykjavikStops,
+        assetsPool: [],
+        mediaTasks: [],
+      },
+    },
     projectsFeed: [...PROJECTS_FEED],
     mode: SEED_PROJECT.defaultMode,
     ui: {

@@ -81,6 +81,7 @@ export function ProjectsDashboard() {
   return (
     <div className="page" style={{ overflow: "auto", minHeight: "100vh" }}>
       <header
+        className="studio-dash-header"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -128,6 +129,7 @@ export function ProjectsDashboard() {
       </header>
 
       <main
+        className="studio-dash-main"
         style={{ padding: "48px 40px", maxWidth: 1680, margin: "0 auto" }}
       >
         <div style={{ marginBottom: 32 }}>
@@ -156,6 +158,7 @@ export function ProjectsDashboard() {
         </div>
 
         <div
+          className="studio-dash-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",

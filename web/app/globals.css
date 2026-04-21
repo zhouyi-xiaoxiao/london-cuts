@@ -773,3 +773,48 @@ body[data-mode="cinema"] {
     flex-wrap: wrap;
   }
 }
+
+
+/* =========================================================================
+   10. PHONE BREAKPOINT — 390px (iPhone 14) safety net
+   Prevents horizontal scroll and keeps tap targets usable on narrow viewports.
+   Kept scoped to 600px so iPad portrait (768px) is unaffected.
+   ========================================================================= */
+
+@media (max-width: 600px) {
+  /* Tighten page edge padding so 40px gutters don't eat the viewport. */
+  :root { --edge: 20px; }
+
+  /* Public-nav buttons — bump height to 44px minimum tap target. */
+  .lc-public-nav button,
+  .lc-mode-switcher button,
+  .mode-pill button {
+    min-height: 44px;
+    padding-inline: 12px;
+  }
+
+  /* Legacy button — raise tap target without widening visually. */
+  .btn, .btn-sm { min-height: 44px; }
+  .btn-sm { padding: 10px 14px; }
+
+  /* Studio projects dashboard — its header has inline padding/layout.
+     Target by class added in projects-dashboard.tsx to tame the overflow. */
+  .studio-dash-header {
+    padding: 14px 20px !important;
+    flex-wrap: wrap;
+  }
+  .studio-dash-header > div { gap: 10px !important; }
+
+  /* Studio main has inline padding: 48px 40px — shrink on phones. */
+  .studio-dash-main { padding: 32px 20px !important; }
+
+  /* Studio card grid uses minmax(320px, 1fr) inline — override. */
+  .studio-dash-grid { grid-template-columns: 1fr !important; }
+
+  /* Atlas/landing lc-row with inline space-between often has two children
+     that don't fit at phone width — allow wrapping. */
+  .lc-container .lc-row { flex-wrap: wrap; }
+
+  /* New-project modal — shrink padding, loosen width cap. */
+  [role="dialog"] { padding: 20px !important; }
+}

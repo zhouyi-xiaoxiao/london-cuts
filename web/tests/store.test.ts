@@ -54,19 +54,31 @@ describe("F-T002 root store", () => {
   });
 
   it("archives and restores a project", () => {
+    // Seed state pre-archives "A Week in Reykjavík" to demonstrate product
+    // scope ("any location"). Baseline archive count is 1; after archiving
+    // the current SE1 project we expect 2.
+    const baseline = Object.keys(useRootStore.getState().projectsArchive).length;
     const original = useRootStore.getState().project.title;
+
     useRootStore.getState().archiveCurrentProject();
-    const archiveKeys = Object.keys(useRootStore.getState().projectsArchive);
-    expect(archiveKeys).toHaveLength(1);
+    const afterArchive = Object.keys(
+      useRootStore.getState().projectsArchive,
+    );
+    expect(afterArchive).toHaveLength(baseline + 1);
+    // The newly archived key is the one NOT in the baseline set.
+    const newlyArchivedId = afterArchive.find(
+      (k) => k !== "seed-a-week-in-reykjavik",
+    );
+    expect(newlyArchivedId).toBeDefined();
 
     // mutate current, then restore
     useRootStore.getState().setProject({ title: "overwritten" });
     expect(useRootStore.getState().project.title).toBe("overwritten");
 
-    useRootStore.getState().restoreProject(archiveKeys[0]);
+    useRootStore.getState().restoreProject(newlyArchivedId!);
     expect(useRootStore.getState().project.title).toBe(original);
     expect(Object.keys(useRootStore.getState().projectsArchive)).toHaveLength(
-      0,
+      baseline,
     );
   });
 
