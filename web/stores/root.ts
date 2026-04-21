@@ -237,7 +237,11 @@ export type RootStore = RootState & RootActions;
 
 // ─── The store ─────────────────────────────────────────────────────────
 
-const PERSIST_KEY = "lc_store_v4";
+// Bumped v4 → v5 on 2026-04-22 when SEED_ASSETS switched from legacy
+// `a-wb-*` ids to `se1-*` ids + real imageUrls (13 London photos in
+// public/seed-images/). Pre-v5 state has null imageUrls that would
+// keep the dashboard showing diagonal-stripe placeholders forever.
+const PERSIST_KEY = "lc_store_v5";
 
 // Lean a single asset so we don't put data URLs in localStorage.
 function leanAsset(a: Asset): Asset {
@@ -412,7 +416,7 @@ export const useRootStore = create<RootStore>()(
         ),
         mode: state.mode,
       }),
-      version: 4,
+      version: 5,
     },
   ),
 );
