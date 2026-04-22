@@ -1,19 +1,22 @@
-// Studio → Supabase sync endpoint (M1 Phase 3 minimal).
+// Studio → Supabase sync endpoint (M1 Phase 3 full).
 //
-// The dashboard ships a "Sync to cloud" button. On click, the client POSTs
+// The dashboard ships a "☁️ Sync to cloud" button. On click, the client POSTs
 // the current Zustand state here. We upsert it into Supabase using the
 // service_role key (M2 flips to owner-scoped RLS writes).
 //
-// Intentionally limited for Phase 3 minimal:
+// What syncs:
 //   ✓ Project row (title, subtitle, default_mode, etc.)
 //   ✓ Stops (ordered, body_blocks, status_json)
 //   ✓ Postcard back_message + recipient per stop
-//   ✗ Asset BINARIES — base64 data URLs are not pushed to Supabase Storage
-//     in this cut. Only asset METADATA is upserted with the existing
-//     storage_path unchanged. Phase 3 full will add the Storage upload.
+//   ✓ Assets — metadata AND binaries. For assets with a data: URL the
+//     server uploads the bytes to Supabase Storage bucket `assets` at
+//     path `{owner_id}/{project_id}/{legacyId}.{ext}` and stores the
+//     resulting public URL. Assets with a publicUrl (seed /seed-images/*
+//     or previously-synced Storage URL) pass through unchanged.
+//   ✓ hero_asset_id wiring — resolved via legacy_id → uuid map built
+//     during the asset insert pass.
 //
-// Idempotent via legacy_id on projects/stops: re-clicking Sync overwrites
-// the same rows (no duplicate).
+// Idempotent: every table is delete-then-insert scoped to the project.
 
 import { NextResponse } from "next/server";
 
@@ -21,6 +24,18 @@ import { getServerClient } from "@/lib/supabase";
 
 // Same seeded owner UUID as migrate/seed/route.ts. M2 replaces with auth.uid().
 const OWNER_ID = "00000000-0000-4000-8000-000000000001";
+const ASSETS_BUCKET = "assets";
+
+interface SyncAsset {
+  legacyId: string;
+  tone?: string | null;
+  /** Base64 data URL for user-uploaded binaries; server uploads to Storage. */
+  dataUrl?: string | null;
+  /** Pre-existing public URL (e.g. `/seed-images/*.jpg` or a prior Storage URL). */
+  publicUrl?: string | null;
+  styleId?: string | null;
+  prompt?: string | null;
+}
 
 interface SyncStop {
   n: string;
@@ -63,8 +78,10 @@ interface SyncPayload {
     publishedAt?: string | null;
     author?: string;
     tags?: readonly string[];
+    coverAssetLegacyId?: string | null;
   };
   stops: readonly SyncStop[];
+  assets?: readonly SyncAsset[];
 }
 
 export async function POST(req: Request) {
@@ -95,7 +112,6 @@ export async function POST(req: Request) {
 
   try {
     // ─── Ensure owner user row exists ──────────────────────────────
-    // Idempotent — same UUID + handle as the seed migration.
     await db.from("users").upsert(
       {
         id: OWNER_ID,
@@ -105,22 +121,20 @@ export async function POST(req: Request) {
       { onConflict: "id" },
     );
 
-    // ─── Upsert project by (owner_id, slug) ────────────────────────
-    const legacyId = payload.project.id ?? `lc-${payload.project.slug}`;
+    // ─── Upsert project by legacy_id ───────────────────────────────
+    const projectLegacyId = payload.project.id ?? `lc-${payload.project.slug}`;
     const { data: projUpsert, error: projErr } = await db
       .from("projects")
       .upsert(
         {
-          legacy_id: legacyId,
+          legacy_id: projectLegacyId,
           owner_id: OWNER_ID,
           slug: payload.project.slug,
           title: payload.project.title,
           subtitle: payload.project.subtitle ?? null,
           cover_label: payload.project.coverLabel ?? null,
           location_name: payload.project.locationName ?? null,
-          tags: payload.project.tags
-            ? Array.from(payload.project.tags)
-            : [],
+          tags: payload.project.tags ? Array.from(payload.project.tags) : [],
           default_mode: payload.project.defaultMode ?? "fashion",
           status: payload.project.status ?? "draft",
           visibility: payload.project.visibility ?? "public",
@@ -139,15 +153,88 @@ export async function POST(req: Request) {
     const projectId = projUpsert.id as string;
     log.push(`✓ project ${projectId} (${projUpsert.slug}) upserted`);
 
-    // ─── Upsert stops (delete-then-insert for idempotency) ─────────
-    // Wipe ALL stops for this project — safer than a legacy_id prefix
-    // match (different codepaths use different prefixes — migration uses
-    // `se1-stop-*`, live sync uses `${slug}-stop-*`). Since the client
-    // sends the full stop list each sync, total wipe + re-insert is the
-    // simplest way to also drop stops the user removed.
-    const stopLegacyPrefix = `${payload.project.slug}-stop-`;
+    // ─── Assets: wipe + re-insert (binaries uploaded to Storage) ───
+    // Delete first so re-syncs stay clean. This removes any prior
+    // asset rows for this project (including seed-migrated ones if
+    // client is resyncing the seed project). Client is responsible
+    // for sending ALL assets referenced by this project every time.
+    await db.from("assets").delete().eq("project_id", projectId);
+
+    const assetByLegacy = new Map<string, string>(); // legacy_id → uuid
+    let uploadedCount = 0;
+    let passedThroughCount = 0;
+
+    if (payload.assets && payload.assets.length > 0) {
+      const assetRows: Array<Record<string, unknown>> = [];
+      for (const a of payload.assets) {
+        let storagePath = a.publicUrl ?? null;
+
+        // Upload binary if client sent a data URL.
+        if (a.dataUrl && a.dataUrl.startsWith("data:")) {
+          const uploaded = await uploadDataUrlToStorage(
+            db,
+            a.dataUrl,
+            `${OWNER_ID}/${projectId}/${a.legacyId}`,
+          );
+          if (uploaded.ok) {
+            storagePath = uploaded.publicUrl;
+            uploadedCount += 1;
+          } else {
+            log.push(`⚠ asset ${a.legacyId} upload failed: ${uploaded.error}`);
+            continue;
+          }
+        } else if (a.publicUrl) {
+          passedThroughCount += 1;
+        } else {
+          // No data URL + no public URL — skip; can't store nothing.
+          continue;
+        }
+
+        assetRows.push({
+          legacy_id: a.legacyId,
+          owner_id: OWNER_ID,
+          project_id: projectId,
+          kind: "photo",
+          tone:
+            a.tone === "punk" ? "punk" : a.tone === "cool" ? "cool" : "warm",
+          storage_path: storagePath ?? `missing/${a.legacyId}`,
+          label: a.legacyId,
+          style_id: a.styleId ?? null,
+          prompt: a.prompt ?? null,
+        });
+      }
+
+      if (assetRows.length > 0) {
+        const { data: insertedAssets, error: assetErr } = await db
+          .from("assets")
+          .insert(assetRows)
+          .select("id, legacy_id");
+        if (assetErr) throw new Error(`assets.insert: ${assetErr.message}`);
+        for (const r of insertedAssets ?? []) {
+          if (r.legacy_id) assetByLegacy.set(r.legacy_id as string, r.id as string);
+        }
+        log.push(
+          `✓ ${assetRows.length} assets (${uploadedCount} uploaded to Storage, ${passedThroughCount} passed through)`,
+        );
+      }
+
+      // Resolve project cover asset if the client named one.
+      if (payload.project.coverAssetLegacyId) {
+        const coverUuid = assetByLegacy.get(payload.project.coverAssetLegacyId);
+        if (coverUuid) {
+          await db
+            .from("projects")
+            .update({ cover_asset_id: coverUuid })
+            .eq("id", projectId);
+          log.push(`✓ cover asset wired (${coverUuid})`);
+        }
+      }
+    }
+
+    // ─── Stops (delete-then-insert with hero_asset_id resolution) ──
     await db.from("stops").delete().eq("project_id", projectId);
 
+    const stopLegacyPrefix = `${payload.project.slug}-stop-`;
     const stopRows = payload.stops.map((s, i) => ({
       legacy_id: `${stopLegacyPrefix}${s.n}`,
       project_id: projectId,
@@ -165,10 +252,9 @@ export async function POST(req: Request) {
       status_json: s.status ?? {},
       lat: s.lat ?? null,
       lng: s.lng ?? null,
-      // Hero asset wiring — only set if we already have a matching asset.
-      // Phase 3 full will sync asset binaries; for now we leave null when
-      // the client-side id isn't already known to Supabase.
-      hero_asset_id: null,
+      hero_asset_id: s.heroAssetId
+        ? (assetByLegacy.get(s.heroAssetId) ?? null)
+        : null,
     }));
 
     if (stopRows.length > 0) {
@@ -180,18 +266,11 @@ export async function POST(req: Request) {
       log.push(`✓ ${insertedStops?.length ?? 0} stops upserted`);
 
       // ─── Postcards ──────────────────────────────────────────────
-      const postcardRows: Array<{
-        stop_id: string;
-        back_message: string | null;
-        recipient_name: string | null;
-        recipient_line1: string | null;
-        recipient_line2: string | null;
-        recipient_country: string | null;
-      }> = [];
       const stopByLegacy = new Map<string, string>();
       for (const s of insertedStops ?? []) {
         if (s.legacy_id) stopByLegacy.set(s.legacy_id as string, s.id as string);
       }
+      const postcardRows: Array<Record<string, unknown>> = [];
       for (const s of payload.stops) {
         const stopId = stopByLegacy.get(`${stopLegacyPrefix}${s.n}`);
         if (!stopId) continue;
@@ -215,7 +294,13 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ ok: true, projectId, log });
+    return NextResponse.json({
+      ok: true,
+      projectId,
+      assetsUploaded: uploadedCount,
+      assetsPassedThrough: passedThroughCount,
+      log,
+    });
   } catch (err) {
     return NextResponse.json(
       {
@@ -226,6 +311,43 @@ export async function POST(req: Request) {
       { status: 500 },
     );
   }
+}
+
+// ─── Storage upload helper ─────────────────────────────────────────────
+
+async function uploadDataUrlToStorage(
+  db: ReturnType<typeof getServerClient>,
+  dataUrl: string,
+  pathPrefix: string,
+): Promise<{ ok: true; publicUrl: string } | { ok: false; error: string }> {
+  // Parse data:<mime>;base64,<payload>
+  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) return { ok: false, error: "not a base64 data URL" };
+  const mime = match[1];
+  const payload = match[2];
+  const ext = extFromMime(mime);
+  const path = `${pathPrefix}.${ext}`;
+  const bytes = Buffer.from(payload, "base64");
+
+  const { error: upErr } = await db.storage
+    .from(ASSETS_BUCKET)
+    .upload(path, bytes, {
+      contentType: mime,
+      upsert: true,
+    });
+  if (upErr) return { ok: false, error: upErr.message };
+
+  const { data: pub } = db.storage.from(ASSETS_BUCKET).getPublicUrl(path);
+  return { ok: true, publicUrl: pub.publicUrl };
+}
+
+function extFromMime(mime: string): string {
+  if (mime.includes("jpeg") || mime.includes("jpg")) return "jpg";
+  if (mime.includes("png")) return "png";
+  if (mime.includes("webp")) return "webp";
+  if (mime.includes("gif")) return "gif";
+  if (mime.includes("svg")) return "svg";
+  return "bin";
 }
 
 // ─── helpers ───────────────────────────────────────────────────────────

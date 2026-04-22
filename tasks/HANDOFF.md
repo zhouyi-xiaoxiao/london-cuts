@@ -18,13 +18,13 @@ M0 consolidation → M-fast feature port → M-preview soft-launch → M-iter (h
 **As of 2026-04-22**:
 - **M-preview LIVE**: `https://london-cuts.vercel.app` serving commits on `main`. `/` redirects to `/studio`. 13 seed photos (SE1) + 1 cover render from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired. Preview gate via `web/proxy.ts` (set `PREVIEW_PASSWORD` in Vercel env to activate).
 - **M-iter**: half-done. F-I001..F-I011 shipped (font swap, cinema letterbox, postcard flip, publish URL, atlas brightness, spine add/remove/move, per-mode postcard front + chapter grammars, variant cache). Still missing per `tasks/AUDIT-WORKSPACE.md` + `tasks/AUDIT-PUBLIC-PAGES.md`: VariantsRow, HeroDraggable, AssetPicker, 3 body block types, atlas pin hover, heroFocus integration, cover-asset fallback bug.
-- **M1 LIVE**: Supabase backend is real.
+- **M1 LIVE (Phases 1+2+3 full)**: Supabase backend is real, complete.
   - Project ref: `acymyvefnvydksxzzegw`, region Central EU (Frankfurt), Free tier, org "55".
   - Schema: 5 tables (`users` / `projects` / `stops` / `postcards` / `assets`) + RLS + storage bucket `assets`. Applied via Supabase SQL Editor; source of truth = `web/supabase/migrations/0001_initial.sql`.
   - Env vars set in BOTH `web/.env.local` AND Vercel (production + development): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Preview env skipped (we don't use preview branches).
   - Seed data pushed via `/api/migrate/seed` → 1 user + 2 projects + 13 assets + 19 stops + 1 postcard.
   - Public pages (project / chapter / postcard) fetch from Supabase server-side via `web/lib/public-lookup.ts` + pass `initialData` prop to client components (client components still fall back to local Zustand via `usePublicProjectLookup` if no server data).
-  - Studio dashboard has a "☁️ Sync to cloud" button that POSTs current Zustand state → `/api/sync/upsert` → service_role upserts into Supabase. Metadata only (project + stops + postcards). Asset binaries NOT synced yet.
+  - **"☁️ Sync to cloud"** dashboard button POSTs current Zustand state → `/api/sync/upsert` → service_role upserts into Supabase. Phase 3 **full** now — binaries included. Assets with `data:` URLs get uploaded to Supabase Storage bucket `assets` at path `{ownerId}/{projectId}/{legacyId}.{ext}`; the returned public URL lands in `assets.storage_path`. Assets with a `/seed-images/*` URL pass through as-is. Response includes `assetsUploaded` + `assetsPassedThrough` counts; dashboard banner surfaces the uploaded count.
 - **Dep added**: `@supabase/supabase-js@2.104.0` (owner-approved).
 
 **M-fast: COMPLETE 14/14.** In order:
@@ -124,7 +124,8 @@ Seeded fixed UUIDs (idempotent across re-migrations):
 - **`next.config.ts` must NOT set `outputFileTracingRoot`** — repeat, same trap as M0. It breaks Vercel.
 - **Anon key and service_role key live in `.env.local`** (gitignored) AND Vercel (production + development environments). **Preview env has no Supabase vars** intentionally — we don't ship preview branches, only `main`.
 - **Sync upload wipes and re-inserts stops per click.** If the client sends a partial stops list (race condition, bug, etc.), stops get deleted. Always send the full list. M2 will add per-stop upsert via auth scoping.
-- **Asset binaries still client-only.** Photos uploaded by the user live in IndexedDB. The sync endpoint does NOT push them to Supabase Storage. Phase 3 full will add this. Consequence: readers on another device see the owner's TEXT but not their UPLOADED photos (seed photos work because they're in `web/public/seed-images/`).
+- **Asset binaries now upload in sync (Phase 3 full).** data: URLs are base64-decoded + pushed to Storage bucket `assets` via `db.storage.from(...).upload()` with `upsert:true`. Storage path follows `{ownerId}/{projectId}/{legacyId}.{ext}`; mime is guessed via `extFromMime()`. The returned public URL goes into `assets.storage_path`. Consequence: user uploads a photo → clicks Sync → friend on another device fetches it straight from Supabase Storage CDN.
+- **Asset sync is delete-then-insert per project.** `/api/sync/upsert` wipes all `assets` rows with `project_id = X` before inserting. Client MUST send every asset referenced by the project each sync — partial lists lose rows. (Seed-migrated rows have `project_id = SE1` so they do get wiped on a client sync; client is responsible for re-sending the seed `/seed-images/*` pass-throughs.)
 
 ## M-iter backlog — known UX/feature gaps from owner dogfooding (2026-04-21)
 

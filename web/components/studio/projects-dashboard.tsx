@@ -81,10 +81,12 @@ export function ProjectsDashboard() {
     }
   };
 
-  // ─── M1 Phase 3 minimal: Sync to cloud ─────────────────────────────
-  // Pushes current project + stops (+ postcard text) to Supabase via
-  // /api/sync/upsert. Metadata only — asset binaries stay client-only
-  // until Phase 3 full adds the Storage upload.
+  // ─── M1 Phase 3 full: Sync to cloud (text + binaries) ───────────────
+  // Pushes current project + stops + postcards + ASSET BINARIES to
+  // Supabase via /api/sync/upsert. Assets with data: URLs are uploaded
+  // to Supabase Storage; assets with /seed-images/* URLs pass through
+  // as-is. Cross-device readers get the real content, including the
+  // owner's uploaded photos.
   type SyncState = "idle" | "syncing" | "ok" | "error";
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
@@ -93,6 +95,36 @@ export function ProjectsDashboard() {
     setSyncState("syncing");
     setSyncMsg(null);
     try {
+      // Collect assets referenced by this project (hero per stop + cover).
+      // assets without an imageUrl are skipped — nothing to sync.
+      const referencedAssetIds = new Set<string>();
+      for (const s of stops) {
+        if (s.heroAssetId) referencedAssetIds.add(s.heroAssetId);
+      }
+      if (project.coverAssetId) referencedAssetIds.add(project.coverAssetId);
+
+      const assetPayload: Array<{
+        legacyId: string;
+        tone: string;
+        dataUrl: string | null;
+        publicUrl: string | null;
+        styleId: string | null;
+        prompt: string | null;
+      }> = [];
+      for (const id of referencedAssetIds) {
+        const a = assets.find((x) => x.id === id);
+        if (!a || !a.imageUrl) continue;
+        const isDataUrl = a.imageUrl.startsWith("data:");
+        assetPayload.push({
+          legacyId: a.id,
+          tone: a.tone ?? "warm",
+          dataUrl: isDataUrl ? a.imageUrl : null,
+          publicUrl: isDataUrl ? null : a.imageUrl,
+          styleId: a.styleId ?? null,
+          prompt: a.prompt ?? null,
+        });
+      }
+
       const res = await fetch("/api/sync/upsert", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -113,6 +145,7 @@ export function ProjectsDashboard() {
             publishedAt: project.publishedAt,
             author: project.author,
             tags: project.tags,
+            coverAssetLegacyId: project.coverAssetId,
           },
           stops: stops.map((s) => ({
             n: s.n,
@@ -129,10 +162,17 @@ export function ProjectsDashboard() {
             heroAssetId: s.heroAssetId,
             postcard: s.postcard,
           })),
+          assets: assetPayload,
         }),
       });
       const json = (await res.json()) as
-        | { ok: true; projectId: string; log: string[] }
+        | {
+            ok: true;
+            projectId: string;
+            assetsUploaded: number;
+            assetsPassedThrough: number;
+            log: string[];
+          }
         | { ok: false; error: string; log?: string[] };
       if (!res.ok || !("projectId" in json)) {
         const err = "error" in json ? json.error : "sync failed";
@@ -141,8 +181,12 @@ export function ProjectsDashboard() {
         return;
       }
       setSyncState("ok");
+      const uploadedPart =
+        json.assetsUploaded > 0
+          ? ` · ${json.assetsUploaded} photo${json.assetsUploaded === 1 ? "" : "s"} uploaded`
+          : "";
       setSyncMsg(
-        `${stops.length} stops synced · readers on other devices see this now`,
+        `${stops.length} stops synced${uploadedPart} · readers on other devices see this now`,
       );
       // Auto-fade the toast back to idle so the button doesn't keep saying "✓".
       window.setTimeout(() => {
