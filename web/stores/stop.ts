@@ -29,6 +29,9 @@ export function useStopActions() {
       updateStop: s.updateStop,
       reorderStops: s.reorderStops,
       setActiveStop: s.setActiveStop,
+      addStop: s.addStop,
+      removeStop: s.removeStop,
+      moveStop: s.moveStop,
     })),
   );
 }

@@ -211,6 +211,12 @@ export interface RootActions {
   updateStop: (stopId: string, patch: Partial<Stop>) => void;
   reorderStops: (orderedIds: string[]) => void;
   setActiveStop: (stopId: string) => void;
+  /** Append a new blank stop after `afterStopId` (or at end if omitted). Returns the new stop's `n`. */
+  addStop: (afterStopId?: string) => string;
+  /** Remove a stop. If it was active, falls back to the next/prev stop. No-op if it's the last stop. */
+  removeStop: (stopId: string) => void;
+  /** Move a stop one position in the given direction. No-op if at edge. */
+  moveStop: (stopId: string, direction: "up" | "down") => void;
 
   // Postcard (scoped to a stop)
   updatePostcard: (stopId: string, patch: Partial<Stop["postcard"]>) => void;
@@ -282,7 +288,7 @@ function safeLocalStorage(): Storage {
 
 export const useRootStore = create<RootStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...seedStateFromDataModule(),
 
       // ─ Project ─
@@ -350,6 +356,81 @@ export const useRootStore = create<RootStore>()(
         }),
       setActiveStop: (stopId) =>
         set((s) => ({ ui: { ...s.ui, activeStopId: stopId } })),
+
+      addStop: (afterStopId) => {
+        // Pick the next available n (highest int + 1, padded to 2 digits).
+        // Sequential is enough for M-fast — no real chronology yet.
+        // We use Zustand's `get()` (not `useRootStore.getState()`) to avoid
+        // the circular type-inference problem of referencing the store
+        // we're in the middle of defining.
+        const maxN = get().stops.reduce((m, st) => {
+          const n = parseInt(st.n, 10);
+          return Number.isFinite(n) && n > m ? n : m;
+        }, 0);
+        const newN = String(maxN + 1).padStart(2, "0");
+        const blank: Stop = {
+          n: newN,
+          code: "",
+          title: "Untitled stop",
+          time: "",
+          mood: "",
+          tone: "warm",
+          // Default to central London — owner repositions on the atlas.
+          lat: 51.505,
+          lng: -0.09,
+          label: "",
+          body: [],
+          assetIds: [],
+          heroAssetId: null,
+          status: { upload: false, hero: false, body: false, media: null },
+          postcard: {
+            message: "",
+            recipient: { name: "", line1: "", line2: "", country: "" },
+          },
+        };
+        set((s) => {
+          const stops = [...s.stops];
+          if (afterStopId) {
+            const idx = stops.findIndex((st) => st.n === afterStopId);
+            if (idx >= 0) stops.splice(idx + 1, 0, blank);
+            else stops.push(blank);
+          } else {
+            stops.push(blank);
+          }
+          return {
+            stops,
+            // Auto-select the new stop so the canvas focuses on it.
+            ui: { ...s.ui, activeStopId: newN },
+          };
+        });
+        return newN;
+      },
+
+      removeStop: (stopId) =>
+        set((s) => {
+          if (s.stops.length <= 1) return {}; // never delete the last stop
+          const idx = s.stops.findIndex((st) => st.n === stopId);
+          if (idx < 0) return {};
+          const next = s.stops.filter((st) => st.n !== stopId);
+          // Pick a sensible new active stop if we just removed it.
+          let activeStopId = s.ui.activeStopId;
+          if (activeStopId === stopId) {
+            const fallback = next[Math.max(0, idx - 1)] ?? next[0];
+            activeStopId = fallback?.n ?? "";
+          }
+          return { stops: next, ui: { ...s.ui, activeStopId } };
+        }),
+
+      moveStop: (stopId, direction) =>
+        set((s) => {
+          const idx = s.stops.findIndex((st) => st.n === stopId);
+          if (idx < 0) return {};
+          const swapWith = direction === "up" ? idx - 1 : idx + 1;
+          if (swapWith < 0 || swapWith >= s.stops.length) return {};
+          const next = [...s.stops];
+          [next[idx], next[swapWith]] = [next[swapWith]!, next[idx]!];
+          return { stops: next };
+        }),
 
       // ─ Postcard ─
       updatePostcard: (stopId, patch) =>

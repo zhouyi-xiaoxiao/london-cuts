@@ -95,4 +95,54 @@ describe("F-T002 root store", () => {
     );
     expect(p?.slug).toBe("a-year-in-se1");
   });
+
+  // ─── F-I009 — spine add/remove/move actions ────────────────────────
+
+  it("addStop appends a blank stop after the given id and selects it", () => {
+    const before = useRootStore.getState().stops;
+    const lastN = before[before.length - 1].n;
+    const newN = useRootStore.getState().addStop(lastN);
+    const after = useRootStore.getState().stops;
+    expect(after.length).toBe(before.length + 1);
+    expect(after[after.length - 1].n).toBe(newN);
+    expect(after[after.length - 1].title).toBe("Untitled stop");
+    expect(useRootStore.getState().ui.activeStopId).toBe(newN);
+  });
+
+  it("removeStop drops the stop and falls back to a sibling if active", () => {
+    const before = useRootStore.getState().stops;
+    const target = before[2]; // some middle stop
+    useRootStore.getState().setActiveStop(target.n);
+    useRootStore.getState().removeStop(target.n);
+    const after = useRootStore.getState().stops;
+    expect(after.length).toBe(before.length - 1);
+    expect(after.find((s) => s.n === target.n)).toBeUndefined();
+    // active stop should be the one that was at index-1 (or 0 if first removed)
+    expect(useRootStore.getState().ui.activeStopId).not.toBe(target.n);
+  });
+
+  it("removeStop is a no-op when only one stop remains", () => {
+    // Drain the seed down to one stop.
+    let stops = useRootStore.getState().stops;
+    while (stops.length > 1) {
+      useRootStore.getState().removeStop(stops[stops.length - 1].n);
+      stops = useRootStore.getState().stops;
+    }
+    expect(useRootStore.getState().stops.length).toBe(1);
+    const lone = useRootStore.getState().stops[0];
+    useRootStore.getState().removeStop(lone.n);
+    expect(useRootStore.getState().stops.length).toBe(1);
+  });
+
+  it("moveStop swaps with neighbour and is a no-op at edges", () => {
+    const initial = useRootStore.getState().stops.map((s) => s.n);
+    const second = initial[1];
+    // Move second up — it should swap with first.
+    useRootStore.getState().moveStop(second, "up");
+    const afterUp = useRootStore.getState().stops.map((s) => s.n);
+    expect(afterUp[0]).toBe(second);
+    // Move first up at the edge — no-op.
+    useRootStore.getState().moveStop(afterUp[0], "up");
+    expect(useRootStore.getState().stops.map((s) => s.n)).toEqual(afterUp);
+  });
 });
