@@ -36,6 +36,7 @@ import {
   findStopBySlug,
   stopSlugFrom,
   usePublicProjectLookup,
+  type PublicProjectLookup,
 } from "./use-public-project";
 import type { Asset, BodyBlock, NarrativeMode, Stop } from "@/stores/types";
 
@@ -264,8 +265,11 @@ export function ChapterPage({
   authorHandle,
   slug,
   stopSlug,
-}: ChapterPageProps) {
-  const lookup = usePublicProjectLookup(authorHandle, slug);
+  initialData,
+}: ChapterPageProps & { initialData?: PublicProjectLookup | null }) {
+  // M1 Phase 2: prefer server-fetched initialData; local Zustand as fallback.
+  const localLookup = usePublicProjectLookup(authorHandle, slug);
+  const lookup = initialData ?? localLookup;
   const mode = useMode();
 
   if (!lookup) {

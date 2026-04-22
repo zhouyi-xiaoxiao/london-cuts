@@ -13,9 +13,19 @@ A creator tool for documenting a single-location trip (anywhere in the world) wi
 ## Plan version + where we are
 
 `docs/implementation-plan.md` is at **v2.1** — features-first ordering:
-M0 consolidation → M-fast feature port → **M-preview soft-launch (LIVE)** → M-iter (active — see backlog below) → M1 Supabase → M2 Auth+invites → M4/M5/M6.
+M0 consolidation → M-fast feature port → M-preview soft-launch → M-iter (half-done) → **M1 Supabase (Phases 1+2+3-minimal LIVE)** → M2 Auth+invites → M4/M5/M6.
 
-**M-preview LIVE**: `https://london-cuts.vercel.app` serving commits on `main`. `/` redirects to `/studio`. 13 seed photos (SE1) + 1 cover render from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired (IONOS CNAME + Vercel custom domain still pending). Preview gate via `web/proxy.ts` (set `PREVIEW_PASSWORD` in Vercel env to activate).
+**As of 2026-04-22**:
+- **M-preview LIVE**: `https://london-cuts.vercel.app` serving commits on `main`. `/` redirects to `/studio`. 13 seed photos (SE1) + 1 cover render from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired. Preview gate via `web/proxy.ts` (set `PREVIEW_PASSWORD` in Vercel env to activate).
+- **M-iter**: half-done. F-I001..F-I011 shipped (font swap, cinema letterbox, postcard flip, publish URL, atlas brightness, spine add/remove/move, per-mode postcard front + chapter grammars, variant cache). Still missing per `tasks/AUDIT-WORKSPACE.md` + `tasks/AUDIT-PUBLIC-PAGES.md`: VariantsRow, HeroDraggable, AssetPicker, 3 body block types, atlas pin hover, heroFocus integration, cover-asset fallback bug.
+- **M1 LIVE**: Supabase backend is real.
+  - Project ref: `acymyvefnvydksxzzegw`, region Central EU (Frankfurt), Free tier, org "55".
+  - Schema: 5 tables (`users` / `projects` / `stops` / `postcards` / `assets`) + RLS + storage bucket `assets`. Applied via Supabase SQL Editor; source of truth = `web/supabase/migrations/0001_initial.sql`.
+  - Env vars set in BOTH `web/.env.local` AND Vercel (production + development): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Preview env skipped (we don't use preview branches).
+  - Seed data pushed via `/api/migrate/seed` → 1 user + 2 projects + 13 assets + 19 stops + 1 postcard.
+  - Public pages (project / chapter / postcard) fetch from Supabase server-side via `web/lib/public-lookup.ts` + pass `initialData` prop to client components (client components still fall back to local Zustand via `usePublicProjectLookup` if no server data).
+  - Studio dashboard has a "☁️ Sync to cloud" button that POSTs current Zustand state → `/api/sync/upsert` → service_role upserts into Supabase. Metadata only (project + stops + postcards). Asset binaries NOT synced yet.
+- **Dep added**: `@supabase/supabase-js@2.104.0` (owner-approved).
 
 **M-fast: COMPLETE 14/14.** In order:
 - F-T000 POC (style picker)
@@ -68,6 +78,53 @@ M0 consolidation → M-fast feature port → **M-preview soft-launch (LIVE)** �
 - **Build success ≠ deploy success.** Vercel's build logs can say "Build Completed in /vercel/output" and still `status ● Error` because the deploy-phase check fails. Look at `npx vercel --prod --yes` output (or `vercel logs`) for the real error — the build-log tail alone will lie to you.
 - **5 environment variables live in Vercel prod env**: `OPENAI_API_KEY`, `OPENAI_SPEND_CAP_CENTS=800`, `AI_PROVIDER_MOCK=true` (flip to `false` when running real AI), `PREVIEW_PASSWORD` (the shared gate password), `NEXT_PUBLIC_APP_URL`. To inspect: `npx vercel env ls production`.
 - **Custom domain `zhouyixiaoxiao.org` not yet wired.** When ready: IONOS DNS panel → CNAME `@` and `www` → `cname.vercel-dns.com`, then Vercel → Settings → Domains → Add. HTTPS is auto.
+
+## M1 architecture (2026-04-22) — data flow
+
+```
+              ┌──────── Zustand store (client, "source of truth" for edits) ────────┐
+              │                                                                     │
+Studio UI ───▶│ useProject / useStops / etc. → optimistic local updates to          │
+              │ localStorage + IndexedDB (binary)                                   │
+              └─────────┬─── "☁️ Sync to cloud" button in dashboard ────────────────┘
+                        │
+                        ▼
+              POST /api/sync/upsert   (service_role, bypasses RLS)
+                        │
+                        ▼
+                   ┌──────────┐
+                   │ Supabase │  ── 5 tables, RLS enforced
+                   └────┬─────┘
+                        │  SELECT via anon key (published+public RLS policy)
+                        ▼
+              web/lib/public-lookup.ts   (server-side fetch)
+                        │
+                        ▼
+              app/[author]/[slug]/page.tsx   (SSR — passes `initialData` prop)
+                        │
+                        ▼
+              <PublicProjectPage initialData={...}>   (falls back to Zustand hook if initialData=null)
+```
+
+Key seam files (don't import `@supabase/supabase-js` anywhere else):
+- `web/lib/supabase.ts` — `getServerClient()` / `getBrowserClient()` / `hasSupabaseConfig()`
+- `web/lib/public-lookup.ts` — server-side `fetchPublicProjectByHandleAndSlug(handle, slug)` — used by the three `app/[author]/[slug]/*/page.tsx` files to hand `initialData` to the client components
+- `web/app/api/migrate/seed/route.ts` — one-shot seed → Supabase migration. Idempotent; POST to it after any schema change that rebuilds the tables
+- `web/app/api/sync/upsert/route.ts` — studio → Supabase write endpoint. Delete-then-insert stops (safe because the client always sends the full list). Wiped of asset binaries — only metadata syncs in Phase 3 minimal
+- `web/supabase/migrations/0001_initial.sql` — the schema (447 lines). Apply via Supabase SQL Editor → paste → Run. Safe to re-run? **NO** — has `create type` / `create table` without `if not exists` for some. If you need to re-apply, drop the public schema first
+
+Seeded fixed UUIDs (idempotent across re-migrations):
+- Owner: `00000000-0000-4000-8000-000000000001` (handle `ana-ishii`)
+- SE1 project: `00000000-0000-4000-8000-000000000101`
+- Reykjavík project: `00000000-0000-4000-8000-000000000102`
+
+## M1 gotchas (don't re-learn)
+
+- **`/api/migrate/seed` is dev-gated.** In production it returns 403 unless `x-migrate-secret` header is present (any non-empty value passes). The preview password gate via `web/proxy.ts` ALSO applies to `/api/*` routes — so curl from outside needs the `lc_preview_auth` cookie. Easiest: open the dashboard in a logged-in browser, grab the cookie via DevTools, then curl with `Cookie: lc_preview_auth=<password>`.
+- **`next.config.ts` must NOT set `outputFileTracingRoot`** — repeat, same trap as M0. It breaks Vercel.
+- **Anon key and service_role key live in `.env.local`** (gitignored) AND Vercel (production + development environments). **Preview env has no Supabase vars** intentionally — we don't ship preview branches, only `main`.
+- **Sync upload wipes and re-inserts stops per click.** If the client sends a partial stops list (race condition, bug, etc.), stops get deleted. Always send the full list. M2 will add per-stop upsert via auth scoping.
+- **Asset binaries still client-only.** Photos uploaded by the user live in IndexedDB. The sync endpoint does NOT push them to Supabase Storage. Phase 3 full will add this. Consequence: readers on another device see the owner's TEXT but not their UPLOADED photos (seed photos work because they're in `web/public/seed-images/`).
 
 ## M-iter backlog — known UX/feature gaps from owner dogfooding (2026-04-21)
 

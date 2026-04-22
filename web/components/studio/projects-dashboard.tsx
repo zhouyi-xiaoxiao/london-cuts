@@ -81,6 +81,80 @@ export function ProjectsDashboard() {
     }
   };
 
+  // ─── M1 Phase 3 minimal: Sync to cloud ─────────────────────────────
+  // Pushes current project + stops (+ postcard text) to Supabase via
+  // /api/sync/upsert. Metadata only — asset binaries stay client-only
+  // until Phase 3 full adds the Storage upload.
+  type SyncState = "idle" | "syncing" | "ok" | "error";
+  const [syncState, setSyncState] = useState<SyncState>("idle");
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+
+  async function handleSyncToCloud() {
+    setSyncState("syncing");
+    setSyncMsg(null);
+    try {
+      const res = await fetch("/api/sync/upsert", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          project: {
+            id: project.id,
+            slug: project.slug,
+            title: project.title,
+            subtitle: project.subtitle,
+            coverLabel: project.coverLabel,
+            locationName: project.locationName,
+            defaultMode: project.defaultMode,
+            status: project.status,
+            visibility: project.visibility,
+            duration: project.duration,
+            reads: project.reads,
+            saves: project.saves,
+            publishedAt: project.publishedAt,
+            author: project.author,
+            tags: project.tags,
+          },
+          stops: stops.map((s) => ({
+            n: s.n,
+            code: s.code,
+            title: s.title,
+            time: s.time,
+            mood: s.mood,
+            tone: s.tone,
+            label: s.label,
+            lat: s.lat,
+            lng: s.lng,
+            body: s.body,
+            status: s.status,
+            heroAssetId: s.heroAssetId,
+            postcard: s.postcard,
+          })),
+        }),
+      });
+      const json = (await res.json()) as
+        | { ok: true; projectId: string; log: string[] }
+        | { ok: false; error: string; log?: string[] };
+      if (!res.ok || !("projectId" in json)) {
+        const err = "error" in json ? json.error : "sync failed";
+        setSyncState("error");
+        setSyncMsg(err);
+        return;
+      }
+      setSyncState("ok");
+      setSyncMsg(
+        `${stops.length} stops synced · readers on other devices see this now`,
+      );
+      // Auto-fade the toast back to idle so the button doesn't keep saying "✓".
+      window.setTimeout(() => {
+        setSyncState("idle");
+        setSyncMsg(null);
+      }, 4000);
+    } catch (err) {
+      setSyncState("error");
+      setSyncMsg(err instanceof Error ? err.message : String(err));
+    }
+  }
+
   return (
     <div className="page" style={{ overflow: "auto", minHeight: "100vh" }}>
       <header
@@ -123,6 +197,28 @@ export function ProjectsDashboard() {
           </button>
           <button
             className="btn btn-sm"
+            onClick={handleSyncToCloud}
+            disabled={syncState === "syncing"}
+            title="Push current project metadata to Supabase. Readers on other devices will see this version."
+            style={{
+              color:
+                syncState === "error"
+                  ? "var(--mode-accent)"
+                  : syncState === "ok"
+                    ? "var(--status-done, #4a7)"
+                    : "inherit",
+            }}
+          >
+            {syncState === "syncing"
+              ? "☁️ Syncing…"
+              : syncState === "ok"
+                ? "☁️ ✓ Synced"
+                : syncState === "error"
+                  ? "☁️ ✗ Retry"
+                  : "☁️ Sync to cloud"}
+          </button>
+          <button
+            className="btn btn-sm"
             onClick={() => setVisionOpen((v) => !v)}
             title="Upload photos → GPT-4o auto-creates stops"
           >
@@ -137,6 +233,23 @@ export function ProjectsDashboard() {
           </button>
         </div>
       </header>
+      {syncMsg && (
+        <div
+          className="mono-sm"
+          role="status"
+          style={{
+            padding: "6px 40px",
+            fontSize: 11,
+            background:
+              syncState === "error"
+                ? "color-mix(in oklab, var(--mode-accent) 15%, transparent)"
+                : "color-mix(in oklab, var(--status-done, #4a7) 12%, transparent)",
+            borderBottom: "1px solid var(--rule)",
+          }}
+        >
+          {syncMsg}
+        </div>
+      )}
 
       <main
         className="studio-dash-main"

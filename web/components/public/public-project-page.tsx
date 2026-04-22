@@ -26,20 +26,34 @@ import { NotFoundCard } from "./not-found-card";
 import {
   stopSlugFrom,
   usePublicProjectLookup,
+  type PublicProjectLookup,
 } from "./use-public-project";
 import type { Asset, Stop } from "@/stores/types";
 
 export interface PublicProjectPageProps {
   authorHandle: string;
   slug: string;
+  /**
+   * Server-fetched data (M1 Phase 2). When provided, we skip the
+   * client-side Zustand lookup entirely — this lets fresh browsers /
+   * cross-device readers see the canonical Supabase state instead of
+   * whatever happens to be in localStorage. Omit to fall back to the
+   * legacy single-device behaviour.
+   */
+  initialData?: PublicProjectLookup | null;
 }
 
 export function PublicProjectPage({
   authorHandle,
   slug,
+  initialData,
 }: PublicProjectPageProps) {
-  const lookup = usePublicProjectLookup(authorHandle, slug);
+  // Always call both hooks (React rule-of-hooks). Prefer server data
+  // when present; otherwise the client store is the fallback.
+  const localLookup = usePublicProjectLookup(authorHandle, slug);
+  const lookup = initialData ?? localLookup;
   const router = useRouter();
+  const mode = useMode();
 
   if (!lookup) {
     return (
@@ -51,7 +65,6 @@ export function PublicProjectPage({
   }
 
   const { project, stops, assets } = lookup;
-  const mode = useMode();
 
   // Cover photo: first stop with a heroAssetId wins. Falls back to first
   // stop, then null. Mirrors the dashboard's coverUrlFor() logic so the

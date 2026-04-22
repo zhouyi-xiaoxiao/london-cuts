@@ -33,20 +33,25 @@ import {
   findStopBySlug,
   stopSlugFrom,
   usePublicProjectLookup,
+  type PublicProjectLookup,
 } from "./use-public-project";
 
 export interface PostcardPageProps {
   authorHandle: string;
   slug: string;
   stopSlug: string;
+  initialData?: PublicProjectLookup | null;
 }
 
 export function PostcardPage({
   authorHandle,
   slug,
   stopSlug,
+  initialData,
 }: PostcardPageProps) {
-  const lookup = usePublicProjectLookup(authorHandle, slug);
+  // M1 Phase 2: prefer server-fetched initialData; local Zustand as fallback.
+  const localLookup = usePublicProjectLookup(authorHandle, slug);
+  const lookup = initialData ?? localLookup;
   const cardRef = useRef<PostcardCardHandle>(null);
   const [busy, setBusy] = useState<"png-front" | "png-back" | "pdf" | null>(
     null,
