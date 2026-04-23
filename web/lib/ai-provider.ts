@@ -540,3 +540,303 @@ export async function composeProject(
   spendToDateCents += COMPOSE_COST_CENTS;
   return result;
 }
+
+// ─── Variant batch (VariantsRow) ───────────────────────────────────────
+//
+// Pre-generates N style variants for the same source image. Key difference
+// from calling `generatePostcardArt` in a loop: the spend-cap check is
+// atomic — we compute the full batch cost up front and fail fast if it
+// would blow the cap, BEFORE paying for any image. This avoids the race
+// where 6 parallel calls each pass the cap check individually because
+// `spendToDateCents` hadn't been credited yet.
+//
+// Execution is sequential (not parallel) for the same reason: even after
+// we pass the atomic check, serialising the calls keeps `spendToDateCents`
+// consistent with the actual total paid, so any other consumer reading it
+// mid-batch sees a correct running total.
+//
+// Per-style cache lookups live on the client (VariantsRow checks IDB
+// before calling this endpoint) — we don't replicate that here because
+// the IDB cache is per-browser and this function runs server-side. If a
+// style's variant is cached client-side, the client simply omits it from
+// the `styles` array.
+
+export interface GenerateVariantSetInput {
+  userId: string;
+  sourceImageDataUrl: string;
+  styles: readonly PostcardStyle[];
+  /** Quality tier. VariantsRow hardcodes "low"; keep the knob for future. */
+  quality?: "low" | "medium" | "high";
+}
+
+export interface VariantSetItem {
+  style: PostcardStyle;
+  imageDataUrl: string;
+  prompt: string;
+  costCents: number;
+  /** Always false on the server — the client layer flags cache hits. */
+  cached: boolean;
+  /** Per-style failure marker. If true, imageDataUrl is "". */
+  failed?: boolean;
+  error?: string;
+}
+
+export interface GenerateVariantSetResult {
+  variants: VariantSetItem[];
+  totalCostCents: number;
+  spendToDateCents: number;
+  mock: boolean;
+}
+
+export async function generateVariantSet(
+  input: GenerateVariantSetInput,
+): Promise<GenerateVariantSetResult> {
+  const quality = input.quality ?? "low";
+  const perCallCost = COST_CENTS[quality];
+  const styles = input.styles;
+
+  const mockMode = env.AI_PROVIDER_MOCK === "true" || !env.OPENAI_API_KEY;
+
+  if (mockMode) {
+    const variants: VariantSetItem[] = styles.map((id) => {
+      const meta = getStyleMeta(id);
+      return {
+        style: id,
+        imageDataUrl: mockImage(meta),
+        prompt: meta.prompt,
+        costCents: 0,
+        cached: false,
+      };
+    });
+    return {
+      variants,
+      totalCostCents: 0,
+      spendToDateCents,
+      mock: true,
+    };
+  }
+
+  // Atomic cap check — charges the full batch against the budget before
+  // any image call. If this throws, no money is spent.
+  const totalEstimate = perCallCost * styles.length;
+  assertWithinBudget(totalEstimate);
+
+  const variants: VariantSetItem[] = [];
+  let realSpent = 0;
+  for (const id of styles) {
+    const meta = getStyleMeta(id);
+    try {
+      const imageDataUrl = await realGenerate(meta, input.sourceImageDataUrl, quality);
+      spendToDateCents += perCallCost;
+      realSpent += perCallCost;
+      variants.push({
+        style: id,
+        imageDataUrl,
+        prompt: meta.prompt,
+        costCents: perCallCost,
+        cached: false,
+      });
+    } catch (err) {
+      // A single-style failure shouldn't tank the whole batch — mark it
+      // failed and let the client show a Retry button per the UI spec.
+      variants.push({
+        style: id,
+        imageDataUrl: "",
+        prompt: meta.prompt,
+        costCents: 0,
+        cached: false,
+        failed: true,
+        error: err instanceof Error ? err.message : "generation failed",
+      });
+    }
+  }
+
+  return {
+    variants,
+    totalCostCents: realSpent,
+    spendToDateCents,
+    mock: false,
+  };
+}
+
+// ─── Polish-prose: LLM layer atop the rule-based auto-layout ───────────
+//
+// Feature F-I029. Owner's idea: user writes raw paragraphs, clicks
+// ✨ AUTO-LAYOUT (rule-based skeleton, free, instant), AND can then
+// optionally click ✨ POLISH PROSE which calls this function to smooth
+// transitions between paragraphs without rewriting their meaning. The
+// pull-quote + metaRow content also get a light polish if present.
+//
+// Only paragraph / pullQuote content is sent to the LLM. Image / media
+// / metaRow blocks keep their full structure. The returned block array
+// has the SAME length and SAME block types in the SAME order — only the
+// `content` strings change. This is the key safety property: the owner
+// can always diff before/after and see line-by-line what changed.
+
+/** Matches the `BodyBlock` union shape that lives in web/lib/seed.ts but
+ *  we avoid the import to keep this file client/server-agnostic and stop
+ *  the ai-provider module from pulling seed.ts into its dependency graph.
+ *  Callers (the API route) should accept a readonly BodyBlock[] and pass
+ *  it through unchanged. */
+interface PolishableBlock {
+  type: string;
+  content?: string | readonly string[];
+  [k: string]: unknown;
+}
+
+export interface PolishStopInput {
+  userId: string;
+  blocks: readonly PolishableBlock[];
+  context: {
+    title?: string | null;
+    mood?: string | null;
+    tone?: "warm" | "cool" | "punk" | null;
+  };
+}
+
+export interface PolishStopResult {
+  blocks: PolishableBlock[];
+  rationale: string;
+  costCents: number;
+  mock: boolean;
+}
+
+// Conservative upper bound — one gpt-4o-mini text call with ≤ 2k output.
+const POLISH_COST_CENTS = 2;
+
+function mockPolish(blocks: readonly PolishableBlock[]): PolishableBlock[] {
+  // Deterministic mock: prepend "[POLISHED MOCK] " to paragraphs + pullQuote.
+  // Leaves image / media / metaRow blocks untouched so the owner can see
+  // which blocks the LLM will actually modify in REAL mode.
+  return blocks.map((b) => {
+    if (b.type === "paragraph" && typeof b.content === "string") {
+      return { ...b, content: `[POLISHED MOCK] ${b.content}` };
+    }
+    if (b.type === "pullQuote" && typeof b.content === "string") {
+      return { ...b, content: `${b.content} — mock` };
+    }
+    return b;
+  });
+}
+
+async function realPolish(
+  input: PolishStopInput,
+): Promise<PolishStopResult> {
+  if (!env.OPENAI_API_KEY) throw new AuthRequiredError();
+  const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+
+  // Build a digest of just the blocks whose content the LLM is allowed to
+  // touch. Preserves original array indexes so we can splice results back.
+  const editable = input.blocks
+    .map((b, index) => {
+      if (b.type === "paragraph" && typeof b.content === "string") {
+        return { index, type: "paragraph" as const, content: b.content };
+      }
+      if (b.type === "pullQuote" && typeof b.content === "string") {
+        return { index, type: "pullQuote" as const, content: b.content };
+      }
+      return null;
+    })
+    .filter((x): x is { index: number; type: "paragraph" | "pullQuote"; content: string } => x !== null);
+
+  if (editable.length === 0) {
+    return {
+      blocks: input.blocks.map((b) => ({ ...b })),
+      rationale: "No paragraphs or pull-quotes to polish.",
+      costCents: 0,
+      mock: false,
+    };
+  }
+
+  const system = [
+    "You polish travel-memoir prose for a creator tool.",
+    "INPUT: an array of {index, type, content} items.",
+    "OUTPUT: JSON only, the same array shape but with `content` strings polished.",
+    "HARD CONSTRAINTS:",
+    "1) Return the SAME number of items with the SAME indexes. Never drop or add items.",
+    "2) Preserve the author's voice, point of view (first-person stays first-person), specific proper nouns, and meaning. Do NOT introduce new facts.",
+    "3) Do NOT make paragraphs significantly longer. Under 10% length change.",
+    "4) Smooth transitions between adjacent paragraphs. Vary sentence length.",
+    "5) pullQuote items stay ≤ 15 words, evocative, standalone.",
+    "6) If an item is already good, return it verbatim rather than paraphrase for its own sake.",
+    "Also return a one-sentence rationale naming the 1-3 changes that matter most.",
+    "Response schema: { items: [{ index, content }], rationale: string }",
+  ].join(" ");
+
+  const userPayload = {
+    title: input.context.title ?? null,
+    mood: input.context.mood ?? null,
+    tone: input.context.tone ?? null,
+    items: editable,
+  };
+
+  const response = await client.chat.completions.create({
+    model: "gpt-4o-mini",
+    max_tokens: 2000,
+    temperature: 0.3,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: JSON.stringify(userPayload) },
+    ],
+  });
+
+  const raw = response.choices[0]?.message?.content;
+  if (!raw) throw new Error("polish response empty");
+  const parsed = JSON.parse(raw) as {
+    items?: Array<{ index?: number; content?: string }>;
+    rationale?: string;
+  };
+
+  const polishedByIndex = new Map<number, string>();
+  if (Array.isArray(parsed.items)) {
+    for (const it of parsed.items) {
+      if (typeof it.index === "number" && typeof it.content === "string") {
+        polishedByIndex.set(it.index, it.content);
+      }
+    }
+  }
+
+  // Splice polished strings back into the original blocks; untouched
+  // blocks pass through unchanged.
+  const outBlocks: PolishableBlock[] = input.blocks.map((b, i) => {
+    const polished = polishedByIndex.get(i);
+    if (typeof polished === "string" && (b.type === "paragraph" || b.type === "pullQuote")) {
+      return { ...b, content: polished };
+    }
+    return { ...b };
+  });
+
+  return {
+    blocks: outBlocks,
+    rationale: parsed.rationale?.trim() || "Smoothed transitions; preserved voice.",
+    costCents: POLISH_COST_CENTS,
+    mock: false,
+  };
+}
+
+export async function polishStopBlocks(
+  input: PolishStopInput,
+): Promise<PolishStopResult> {
+  if (!input.blocks || input.blocks.length === 0) {
+    return {
+      blocks: [],
+      rationale: "No blocks to polish.",
+      costCents: 0,
+      mock: true,
+    };
+  }
+  const mockMode = env.AI_PROVIDER_MOCK === "true" || !env.OPENAI_API_KEY;
+  if (mockMode) {
+    return {
+      blocks: mockPolish(input.blocks),
+      rationale: "MOCK — prepended marker to paragraphs. Flip AI_PROVIDER_MOCK=false for a real polish.",
+      costCents: 0,
+      mock: true,
+    };
+  }
+  assertWithinBudget(POLISH_COST_CENTS);
+  const result = await realPolish(input);
+  if (!result.mock) spendToDateCents += POLISH_COST_CENTS;
+  return result;
+}

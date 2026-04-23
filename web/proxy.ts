@@ -20,14 +20,34 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const COOKIE_NAME = "lc_preview_auth";
 
-// Paths the proxy must NOT block (otherwise the gate itself can't render).
+// Exact paths the proxy must NOT block (so the gate itself can render).
 const PUBLIC_PATHS = new Set<string>([
   "/gate",
   "/api/gate",
-  // Health / OG / robots / sitemap stay public if/when we add them.
   "/robots.txt",
   "/sitemap.xml",
+  "/atlas",
 ]);
+
+// Path prefixes that are genuinely public — reader-side views of
+// published projects. Friends / strangers can follow a share link
+// without a password; the only thing they can do is READ a project
+// that the owner already marked published + visibility=public.
+// Write-side routes (studio + /api/ai + /api/sync + /api/migrate)
+// stay gated — they're where money is spent and where data gets
+// mutated via the M1 service_role workaround. The full gate goes
+// away once M2 auth lands.
+const PUBLIC_PREFIXES: readonly string[] = [
+  "/@", // public project / chapter / postcard pages — /@handle/slug, /@handle/slug/chapter/*, /@handle/slug/p/*
+];
+
+function isPublicPath(pathname: string): boolean {
+  if (PUBLIC_PATHS.has(pathname)) return true;
+  for (const prefix of PUBLIC_PREFIXES) {
+    if (pathname.startsWith(prefix)) return true;
+  }
+  return false;
+}
 
 export function proxy(req: NextRequest) {
   const password = process.env.PREVIEW_PASSWORD;
@@ -36,7 +56,7 @@ export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Allow the gate routes + known public paths through.
-  if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
+  if (isPublicPath(pathname)) return NextResponse.next();
 
   // Already authenticated? Let through.
   const cookie = req.cookies.get(COOKIE_NAME);

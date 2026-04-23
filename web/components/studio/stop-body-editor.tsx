@@ -41,9 +41,18 @@ export function StopBodyEditor({ stop }: StopBodyEditorProps) {
   // `null` when no message is active. Auto-dismisses after 4s.
   const [autoLayoutMsg, setAutoLayoutMsg] = useState<string | null>(null);
   const autoLayoutTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Polish-prose state — separate timer so the two rationale strings can
+  // coexist (AUTO-LAYOUT rearranges; POLISH PROSE rewrites text). F-I029.
+  const [polishing, setPolishing] = useState(false);
+  const [polishMsg, setPolishMsg] = useState<string | null>(null);
+  const [polishError, setPolishError] = useState<string | null>(null);
+  const polishTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(
     () => () => {
       if (autoLayoutTimer.current) clearTimeout(autoLayoutTimer.current);
+      if (polishTimer.current) clearTimeout(polishTimer.current);
     },
     [],
   );
@@ -107,6 +116,54 @@ export function StopBodyEditor({ stop }: StopBodyEditorProps) {
     autoLayoutTimer.current = setTimeout(() => setAutoLayoutMsg(null), 4000);
   };
 
+  const onPolishProse = async () => {
+    if (polishing || stop.body.length === 0) return;
+    setPolishing(true);
+    setPolishError(null);
+    try {
+      const res = await fetch("/api/ai/layout-stop", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          userId: "local",
+          blocks: stop.body,
+          context: {
+            title: stop.title,
+            mood: stop.mood,
+            tone: stop.tone,
+          },
+        }),
+      });
+      const body = (await res.json()) as
+        | {
+            blocks: BodyBlock[];
+            rationale: string;
+            costCents: number;
+            mock: boolean;
+          }
+        | { error: string };
+      if (!res.ok || !("blocks" in body)) {
+        const msg = "error" in body ? body.error : "polish failed";
+        setPolishError(msg);
+        return;
+      }
+      // Safety: only accept an array with the SAME length as input. If the
+      // LLM drops blocks we refuse to replace (see ai-provider.ts guards).
+      if (!Array.isArray(body.blocks) || body.blocks.length !== stop.body.length) {
+        setPolishError("polish returned wrong block count; ignoring");
+        return;
+      }
+      mutate(body.blocks);
+      setPolishMsg(body.rationale || "Prose polished.");
+      if (polishTimer.current) clearTimeout(polishTimer.current);
+      polishTimer.current = setTimeout(() => setPolishMsg(null), 4500);
+    } catch (err) {
+      setPolishError(err instanceof Error ? err.message : "polish failed");
+    } finally {
+      setPolishing(false);
+    }
+  };
+
   const activePickerBlock =
     pickerForIndex != null ? stop.body[pickerForIndex] : null;
   const pickerCurrentAssetId =
@@ -151,6 +208,15 @@ export function StopBodyEditor({ stop }: StopBodyEditorProps) {
         onClick={onAutoLayout}
         rationale={autoLayoutMsg}
         onDismiss={() => setAutoLayoutMsg(null)}
+        polishing={polishing}
+        polishDisabled={stop.body.length === 0 || polishing}
+        onPolish={onPolishProse}
+        polishMsg={polishMsg}
+        polishError={polishError}
+        onDismissPolish={() => {
+          setPolishMsg(null);
+          setPolishError(null);
+        }}
       />
 
       <AddBlockBar onAdd={(k) => add(k, stop.body.length)} />
@@ -716,11 +782,23 @@ function AutoLayoutBar({
   onClick,
   rationale,
   onDismiss,
+  polishing,
+  polishDisabled,
+  onPolish,
+  polishMsg,
+  polishError,
+  onDismissPolish,
 }: {
   disabled: boolean;
   onClick: () => void;
   rationale: string | null;
   onDismiss: () => void;
+  polishing: boolean;
+  polishDisabled: boolean;
+  onPolish: () => void;
+  polishMsg: string | null;
+  polishError: string | null;
+  onDismissPolish: () => void;
 }) {
   const title = disabled
     ? "Add a block first — AUTO-LAYOUT rearranges what you've written"
@@ -735,7 +813,7 @@ function AutoLayoutBar({
         maxWidth: 720,
       }}
     >
-      <div>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <button
           type="button"
           onClick={onClick}
@@ -756,6 +834,35 @@ function AutoLayoutBar({
           }}
         >
           ✨ Auto-layout
+        </button>
+        <button
+          type="button"
+          onClick={onPolish}
+          disabled={polishDisabled}
+          title={
+            polishDisabled && !polishing
+              ? "Add a block first — POLISH PROSE rewrites paragraphs"
+              : polishing
+                ? "Polishing…"
+                : "AI smooths transitions between paragraphs. Preserves voice. ~2¢."
+          }
+          aria-label="Polish paragraph prose with AI"
+          className="mono-sm"
+          style={{
+            padding: "10px 18px",
+            border: "1px solid var(--mode-accent, var(--accent))",
+            background: polishDisabled
+              ? "var(--paper-2)"
+              : "var(--mode-accent, var(--accent))",
+            color: polishDisabled ? "var(--ink)" : "var(--paper)",
+            fontSize: 12,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            cursor: polishDisabled ? "not-allowed" : "pointer",
+            opacity: polishDisabled ? 0.55 : 1,
+          }}
+        >
+          {polishing ? "✨ polishing…" : "✨ Polish prose"}
         </button>
       </div>
       {rationale && (
@@ -786,6 +893,79 @@ function AutoLayoutBar({
             style={{
               border: "none",
               background: "transparent",
+              cursor: "pointer",
+              fontSize: 14,
+              lineHeight: 1,
+              padding: 2,
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+      {polishMsg && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mono-sm"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "8px 12px",
+            background: "var(--paper-2)",
+            border: "1px solid var(--mode-accent, var(--accent))",
+            fontFamily: "var(--f-mono)",
+            fontSize: 11,
+            lineHeight: 1.5,
+            opacity: 0.9,
+          }}
+        >
+          <span style={{ flex: 1 }}>✨ {polishMsg}</span>
+          <button
+            type="button"
+            onClick={onDismissPolish}
+            aria-label="Dismiss polish message"
+            title="Dismiss"
+            style={{
+              border: "none",
+              background: "transparent",
+              cursor: "pointer",
+              fontSize: 14,
+              lineHeight: 1,
+              padding: 2,
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+      {polishError && (
+        <div
+          role="alert"
+          className="mono-sm"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "8px 12px",
+            background: "var(--mode-accent, #b8360a)",
+            color: "var(--paper)",
+            fontFamily: "var(--f-mono)",
+            fontSize: 11,
+            lineHeight: 1.5,
+          }}
+        >
+          <span style={{ flex: 1 }}>{polishError}</span>
+          <button
+            type="button"
+            onClick={onDismissPolish}
+            aria-label="Dismiss polish error"
+            title="Dismiss"
+            style={{
+              border: "none",
+              background: "transparent",
+              color: "var(--paper)",
               cursor: "pointer",
               fontSize: 14,
               lineHeight: 1,

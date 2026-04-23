@@ -18,6 +18,7 @@ import { MIME_ASSET_ID } from "@/lib/constants";
 import { HeroSlot } from "./hero-slot";
 import { StopBodyEditor } from "./stop-body-editor";
 import { StopMetadataForm } from "./stop-metadata-form";
+import { VariantsRow } from "./variants-row";
 
 export interface StopCanvasProps {
   stop: Stop | undefined;
@@ -100,6 +101,11 @@ export function StopCanvas({ stop }: StopCanvasProps) {
 
       {/* Per-stop horizontal asset strip under the hero. F-I018 */}
       <AssetStrip stop={stop} />
+
+      {/* Re-imagine the hero — 6-style variants row. Only renders if a
+          hero is set (VariantsRow internally also guards, but we skip
+          the whole section visually if there's nothing to start from). */}
+      {stop.heroAssetId && <VariantsRow stop={stop} />}
 
       {/* Stop metadata form */}
       <StopMetadataForm stop={stop} />

@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-23T07:10Z
+**Last updated:** 2026-04-23T07:30Z
 
 ## Plan version
 
@@ -13,9 +13,9 @@
 | M0 Consolidation | ✅ complete | 9/9 tasks |
 | M-fast Feature port | ✅ 14/14 done — but scaffold-level | ~45% of legacy surface actually covered; see `AUDIT-WORKSPACE.md` |
 | M-preview Soft launch | ✅ **LIVE** at `london-cuts.vercel.app` | password-gated via `web/proxy.ts` + Vercel `PREVIEW_PASSWORD` |
-| M-iter UX polish | 🟢 **near-done** — 26 fixes shipped (F-I001..F-I027, F-I028 WONTFIX), only VariantsRow + optional LLM-polish for layout remain | See `tasks/AUDIT.md` + `AUDIT-WORKSPACE.md` + `AUDIT-PUBLIC-PAGES.md` + `deferred/` |
+| M-iter UX polish | ✅ **COMPLETE** — F-I001..F-I031 shipped (F-I028 WONTFIX). VariantsRow + Polish-prose in. Public reader pages unlocked. | See `tasks/AUDIT.md` + `AUDIT-WORKSPACE.md` + `AUDIT-PUBLIC-PAGES.md` |
 | **M1 Supabase & data** | ✅ **complete (Phases 1+2+3 full + F-I012 verified)** — 2026-04-22/23 | Project `acymyvefnvydksxzzegw` / Frankfurt. 5 tables + RLS + Storage. SSR reads + "☁️ Sync to cloud" button + binary upload all live. F-I012 end-to-end verified against production |
-| M2 Auth & invites | ⏳ not started — **next eligible** | Magic-link via Supabase Auth + invite codes; replaces service_role writes with RLS |
+| M2 Auth & invites | 📝 **plan doc ready** — `tasks/deferred/M2-auth-and-invites.md` | Magic-link, SQL-minted invites, @supabase/ssr dep needed. 5-PR sequence spec'd. Next track. |
 | M3 Feature parity | 🗄 superseded by M-fast + M-iter | |
 | M4 Public pages polish | ⏳ not started | OG images, ToS, privacy, feedback form |
 | M5 Observability | ⏳ not started | Sentry / PostHog / GitHub Actions CI |
@@ -23,9 +23,9 @@
 
 ## Eligible next tracks (owner picks)
 
-1. **M2 Auth + invites** — real multi-user. Unblocks real cross-device collaboration and removes the service_role workaround. **Most architectural value now that M-iter is effectively done.**
-2. **VariantsRow** — the one remaining M-iter gap ("Re-imagine hero" w/ AI styles, ~345 legacy lines). Deferred to its own session because real AI calls + spend cap + architecture choice (pregen endpoint shape) deserve undivided attention.
-3. **M6 custom domain** — ~15 min owner action (IONOS DNS) + 5 min Vercel. No architectural change. Makes sharing friendlier (`zhouyixiaoxiao.org` beats `vercel.app`).
+1. **M2 Auth + invites** — highest architectural value now that M-iter is DONE. Full plan in `tasks/deferred/M2-auth-and-invites.md` (681 lines, 5 PRs). Owner decisions needed first: sign-in method (recommend magic link), invite flow (recommend SQL-minted codes). Adds `@supabase/ssr` dep.
+2. **M6 custom domain** — ~15 min owner action (IONOS DNS) + 5 min Vercel. No code changes. Can be done any time; independent of M2.
+3. **M4/M5** — OG images, ToS, privacy, feedback form, Sentry, PostHog, CI. Polish-for-launch, defer until M2 lands.
 
 First step for whichever track: read `tasks/HANDOFF.md` first — it's the canonical resume-point and has the M1 architecture diagram + seam map + gotchas.
 
@@ -39,6 +39,11 @@ _none_
 
 ## Recently completed
 
+- **F-I029..F-I031 + M2 plan doc + proxy public-bypass** (2026-04-23T07:30Z) — M-iter **CLOSED**:
+  - **F-I030** proxy.ts: `/@*/*` + `/atlas` reader pages are now password-free. Studio + `/api/ai/*` + `/api/sync/*` + `/api/migrate/*` stay gated until M2
+  - **F-I031 VariantsRow** — the final deferred item. `/api/ai/pregen-variants` with atomic spend-cap pre-flight, 6 style chips, per-variant thumbs (Use-as-hero / Use-as-postcard / Regen / ×), MOCK instant
+  - **F-I029 Polish-prose** — `polishStopBlocks()` + `/api/ai/layout-stop`. "✨ Polish prose" button next to "✨ Auto-layout" in body editor. gpt-4o-mini text-only, ~2¢. Same-length same-types contract (client refuses anything else)
+  - **M2 plan** — `tasks/deferred/M2-auth-and-invites.md` (681 lines). Recommendations + 5-PR sequence + flags `@supabase/ssr` dep
 - **F-I024..F-I027** (2026-04-23T07:10Z) — Second dogfood round: map overhaul + AI creator features:
   - **F-I024** atlas: replaced maplibregl.Popup entirely with a DOM overlay — hover-drift is GONE because MapLibre never sees the card. Pins 36→18px with mode-aware colours. Fashion tiles de-washed (no warm overlay, contrast 0.2). Default-coord stops jittered + "N stops need coordinates" chip
   - **F-I025** rule-based auto-layout: `lib/layout/skeleton.ts` (idempotent, pure, +6 tests). "✨ Auto-layout" button in body editor + dismissible rationale chip. Zero AI cost
