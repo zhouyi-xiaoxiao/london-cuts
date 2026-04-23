@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-23T07:30Z
+**Last updated:** 2026-04-23T09:05Z
 
 ## Plan version
 
@@ -15,7 +15,7 @@
 | M-preview Soft launch | ✅ **LIVE** at `london-cuts.vercel.app` | password-gated via `web/proxy.ts` + Vercel `PREVIEW_PASSWORD` |
 | M-iter UX polish | ✅ **COMPLETE** — F-I001..F-I031 shipped (F-I028 WONTFIX). VariantsRow + Polish-prose in. Public reader pages unlocked. | See `tasks/AUDIT.md` + `AUDIT-WORKSPACE.md` + `AUDIT-PUBLIC-PAGES.md` |
 | **M1 Supabase & data** | ✅ **complete (Phases 1+2+3 full + F-I012 verified)** — 2026-04-22/23 | Project `acymyvefnvydksxzzegw` / Frankfurt. 5 tables + RLS + Storage. SSR reads + "☁️ Sync to cloud" button + binary upload all live. F-I012 end-to-end verified against production |
-| M2 Auth & invites | 📝 **plan doc ready** — `tasks/deferred/M2-auth-and-invites.md` | Magic-link, SQL-minted invites, @supabase/ssr dep needed. 5-PR sequence spec'd. Next track. |
+| M2 Auth & invites | ✅ **code shipped, env-gated** — see `tasks/deferred/M2-ENABLE-CHECKLIST.md` | All 5 PRs committed. Owner flips `M2_AUTH_ENABLED=true` + applies `0002_auth.sql` + mints invite to activate. Rollback = one env toggle. |
 | M3 Feature parity | 🗄 superseded by M-fast + M-iter | |
 | M4 Public pages polish | ⏳ not started | OG images, ToS, privacy, feedback form |
 | M5 Observability | ⏳ not started | Sentry / PostHog / GitHub Actions CI |
@@ -23,11 +23,13 @@
 
 ## Eligible next tracks (owner picks)
 
-1. **M2 Auth + invites** — highest architectural value now that M-iter is DONE. Full plan in `tasks/deferred/M2-auth-and-invites.md` (681 lines, 5 PRs). Owner decisions needed first: sign-in method (recommend magic link), invite flow (recommend SQL-minted codes). Adds `@supabase/ssr` dep.
-2. **M6 custom domain** — ~15 min owner action (IONOS DNS) + 5 min Vercel. No code changes. Can be done any time; independent of M2.
-3. **M4/M5** — OG images, ToS, privacy, feedback form, Sentry, PostHog, CI. Polish-for-launch, defer until M2 lands.
+1. **Activate M2** — all code shipped + deployed. Owner works through `tasks/deferred/M2-ENABLE-CHECKLIST.md` (apply migration → enable magic-link in Supabase → mint invite → flip env flag). ~15 min total.
+2. **Per-user AI quota** — the only M2 gap. New migration + `user_daily_ai_spend` table + tracker in ai-provider. Needs design + 1 PR. Defer until M2 is activated and at least one friend-user has real traffic.
+3. **User menu UI** — sign-out button + display-name in studio chrome. Small; tack onto any future UI pass.
+4. **M6 custom domain** — ~15 min owner action (IONOS DNS) + 5 min Vercel. Independent of M2.
+5. **M4/M5** — OG images, ToS, privacy, feedback form, Sentry, PostHog, CI. Defer until M2 activated + beta cohort using it.
 
-First step for whichever track: read `tasks/HANDOFF.md` first — it's the canonical resume-point and has the M1 architecture diagram + seam map + gotchas.
+First step for whichever track: read `tasks/HANDOFF.md` first — it's the canonical resume-point and has the M1 architecture diagram + seam map + gotchas + M2 activation flow.
 
 ## In progress
 
@@ -39,6 +41,12 @@ _none_
 
 ## Recently completed
 
+- **Dogfood round 4 + M2 full build** (2026-04-23T09:05Z) — overnight autonomous session:
+  - **F-I035/36** atlas paint simplification. Removed the stacked raster filters (brightness-max, hue-rotate, saturation clamps, warm/cyan scrims) that fought CARTO's basemaps and rendered cinema tiles invisibly. New rule: trust each basemap, +0.05-0.1 contrast only.
+  - **F-I037** spine top "+" button beside the stop count header.
+  - **F-I038** mode-pill active-state color flipped to `var(--mode-bg)` — fixes cinema's amber-on-white wash.
+  - **F-I039** mobile responsive: <900px drops spine, shows `<MobileStopSwitcher>` chip + fullscreen modal; <480px tightens Publish/mode-pill.
+  - **M2 PRs 1-5** all shipped env-gated behind `M2_AUTH_ENABLED`. Migration, magic-link sign-in, onboarding + invite redemption, requireUser on AI + sync routes, user-scoped owner_id on sync. Rollback = one env toggle. See `tasks/deferred/M2-ENABLE-CHECKLIST.md`.
 - **F-I029..F-I031 + M2 plan doc + proxy public-bypass** (2026-04-23T07:30Z) — M-iter **CLOSED**:
   - **F-I030** proxy.ts: `/@*/*` + `/atlas` reader pages are now password-free. Studio + `/api/ai/*` + `/api/sync/*` + `/api/migrate/*` stay gated until M2
   - **F-I031 VariantsRow** — the final deferred item. `/api/ai/pregen-variants` with atomic spend-cap pre-flight, 6 style chips, per-variant thumbs (Use-as-hero / Use-as-postcard / Regen / ×), MOCK instant

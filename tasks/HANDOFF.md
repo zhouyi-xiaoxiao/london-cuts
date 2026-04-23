@@ -13,7 +13,7 @@ A creator tool for documenting a single-location trip (anywhere in the world) wi
 ## Plan version + where we are
 
 `docs/implementation-plan.md` is at **v2.1** — features-first ordering:
-M0 consolidation → M-fast feature port → M-preview soft-launch → **M-iter (near-done, only VariantsRow remains)** → **M1 Supabase (Phases 1+2+3 full, F-I012 verified in prod)** → M2 Auth+invites → M4/M5/M6.
+M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)** → **M1 Supabase (LIVE)** → **M2 Auth+invites (code shipped + env-gated; owner activates via `tasks/deferred/M2-ENABLE-CHECKLIST.md`)** → M4/M5/M6.
 
 **As of 2026-04-23 (post 4-stream sprint)**:
 - **M-preview LIVE**: `https://london-cuts.vercel.app` serving commits on `main`. `/` redirects to `/studio`. 13 seed photos (SE1) + 1 cover render from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired. Preview gate via `web/proxy.ts` (set `PREVIEW_PASSWORD` in Vercel env to activate). **Preview password is in Vercel prod env**; pull via `cd <repo-root> && npx vercel env pull /tmp/prod.env --environment=production --yes` (delete the file right after — it has ALL secrets).
@@ -68,6 +68,26 @@ M0 consolidation → M-fast feature port → M-preview soft-launch → **M-iter 
 2. `tasks/AGENTS.md` — the protocol. Claim a task by editing its frontmatter to `IN_PROGRESS`, append a LOG.md line, do the work, update `Trace`, mark DONE.
 3. `tasks/PARALLELISM.md` — subagent rules. Three concurrent subagents is the proven upper bound (main + 2 background via `Agent` tool with `run_in_background: true`). Check `touches:` arrays for overlap.
 4. `tasks/LOG.md` — append-only event history, newest at the bottom.
+
+## M2 auth is shipped but OFF (2026-04-23)
+
+All 5 M2 PRs are in main. **Nothing changes at runtime until the owner activates** by following `tasks/deferred/M2-ENABLE-CHECKLIST.md`. The flag is `M2_AUTH_ENABLED` in Vercel env. Rollback = set it to `false` / delete. No DB rollback needed — migration `0002_auth.sql` is additive.
+
+**What's live (off until flag flipped)**:
+- `web/supabase/migrations/0002_auth.sql` — schema additions + owner-scoped RLS (NOT applied yet; owner runs in SQL Editor)
+- `@supabase/ssr@0.5.2` installed
+- `lib/supabase.ts` gains `getUserServerClient()` (SSR + session-cookie aware)
+- `lib/auth.ts` real impl: `getCurrentUser`, `requireUser`, `requireOnboardedUser`, `requireAdmin`, `sendMagicLink`, `signOut`
+- `/sign-in` page + `/api/auth/send-magic-link` + `/auth/callback` route (all public, coexist with preview-password gate)
+- `/onboarding` page + `/api/invites/redeem` + `/api/me` (handle validation, invite code redemption)
+- `lib/api-auth.ts` `gateApiRequest()` — wraps every write route. OFF by default.
+- All `/api/ai/*` + `/api/vision/describe` + `/api/sync/upsert` routes use the gate. When OFF they're legacy-behaviour.
+
+**Known gaps intentionally deferred**:
+- Per-user daily AI quota (global cap still enforced)
+- Sign-out button in studio chrome
+- Handle live-validation on onboarding form
+- External SMTP (Supabase built-in mailer throttles ~3/hour)
 
 ## Drag-drop network (added 2026-04-23, don't break)
 
