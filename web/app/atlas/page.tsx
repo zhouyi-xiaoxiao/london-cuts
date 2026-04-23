@@ -18,7 +18,9 @@ export default function Page() {
   const mode = useMode();
 
   // Union of seed stops. Prefix the Reykjavík IDs so `n` is unique across
-  // the two projects (both use "01".."NN").
+  // the two projects (both use "01".."NN"). `mood` / `time` feed the
+  // pin-hover popover; no hero thumbnails at this demo layer — the
+  // asset pool isn't wired through, so `heroUrl` stays undefined.
   const allStops = useMemo<readonly AtlasStop[]>(
     () => [
       ...SEED_STOPS.map((s) => ({
@@ -26,12 +28,16 @@ export default function Page() {
         title: s.title,
         lat: s.lat,
         lng: s.lng,
+        mood: s.mood,
+        timeLabel: s.time,
       })),
       ...SEED_STOPS_REYKJAVIK.map((s) => ({
         n: `r${s.n}`,
         title: s.title,
         lat: s.lat,
         lng: s.lng,
+        mood: s.mood,
+        timeLabel: s.time,
       })),
     ],
     [],

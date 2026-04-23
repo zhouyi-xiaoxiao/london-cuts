@@ -8,8 +8,10 @@
 // affordances + a footer "+ ADD STOP" button. Without these, the legacy
 // workspace's spine UX was completely missing — see tasks/AUDIT-WORKSPACE.md.
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
+import { MIME_ASSET_ID } from "@/components/studio/hero-slot";
+import { useAssetActions } from "@/stores/asset";
 import { useStopActions } from "@/stores/stop";
 import type { Stop } from "@/stores/types";
 
@@ -180,6 +182,66 @@ function SpineRow({
 }: SpineRowProps) {
   // Per-row chrome (move + delete) only shows on the active row to avoid
   // visual noise on every list item. Mirrors legacy behaviour.
+  //
+  // Drop targets: accept asset-id drags from the assets drawer (MIME_ASSET_ID)
+  // and OS file drops (Finder). Reassigns the asset to this stop and, if the
+  // stop has no hero yet, promotes the asset to hero.
+  const [dropActive, setDropActive] = useState(false);
+  const { updateStop } = useStopActions();
+  const { addAsset, updateAsset } = useAssetActions();
+
+  function onDragOver(e: React.DragEvent<HTMLLIElement>) {
+    if (
+      e.dataTransfer.types.includes(MIME_ASSET_ID) ||
+      e.dataTransfer.types.includes("Files")
+    ) {
+      e.preventDefault();
+      setDropActive(true);
+    }
+  }
+
+  function onDragLeave() {
+    setDropActive(false);
+  }
+
+  async function onDrop(e: React.DragEvent<HTMLLIElement>) {
+    setDropActive(false);
+    const assetId = e.dataTransfer.getData(MIME_ASSET_ID);
+    if (assetId) {
+      e.preventDefault();
+      updateAsset(assetId, { stop: stop.n });
+      if (!stop.heroAssetId) {
+        updateStop(stop.n, {
+          heroAssetId: assetId,
+          status: { ...stop.status, hero: true, upload: true },
+        });
+      }
+      return;
+    }
+    const file = e.dataTransfer.files?.[0];
+    if (file?.type.startsWith("image/")) {
+      e.preventDefault();
+      const { prepareImage } = await import("@/lib/utils/image");
+      const { dataUrl } = await prepareImage(file, { maxEdge: 1600 });
+      const id = `upload-${stop.n}-${Date.now().toString(36)}`;
+      addAsset({ id, stop: stop.n, tone: stop.tone, imageUrl: dataUrl });
+      if (!stop.heroAssetId) {
+        updateStop(stop.n, {
+          heroAssetId: id,
+          status: { ...stop.status, hero: true, upload: true },
+        });
+      }
+    }
+  }
+
+  // Drop state stacks on top of selection: selection keeps paper-3, drop-over
+  // also uses paper-3 so the row reads as "targeted" whether selected or not.
+  // The left border is the unique drag affordance that wins over both.
+  const background = dropActive || selected ? "var(--paper-3)" : "transparent";
+  const borderLeft = dropActive
+    ? "3px solid var(--mode-accent)"
+    : "3px solid transparent";
+
   return (
     <li
       id={`spine-row-${stop.n}`}
@@ -189,13 +251,17 @@ function SpineRow({
       tabIndex={selected ? 0 : -1}
       onClick={onSelect}
       onKeyDown={onKeyDown}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
       style={{
         display: "flex",
         alignItems: "center",
         gap: 12,
         padding: "10px 20px",
         borderBottom: "1px solid var(--rule)",
-        background: selected ? "var(--paper-3)" : "transparent",
+        borderLeft,
+        background,
         cursor: "pointer",
         outline: "none",
       }}

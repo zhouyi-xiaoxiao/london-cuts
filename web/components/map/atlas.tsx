@@ -38,12 +38,22 @@ import { createStopPin } from "./stop-pin";
  * Minimal stop shape used by the atlas. Intentionally loose so callers
  * don't need to pass a full `Stop` from `web/stores/types.ts` — all we
  * need is coordinates + a short label + an id to bubble back on click.
+ *
+ * The optional fields (`heroUrl`, `mood`, `timeLabel`) feed the
+ * pin-hover popover. They're all optional so existing call sites don't
+ * need to know about them — missing fields just produce a simpler card.
  */
 export interface AtlasStop {
   n: string; // display label / numeric id ("01".."12")
   title: string;
   lat: number;
   lng: number;
+  /** Thumbnail URL shown in the hover popover. */
+  heroUrl?: string | null;
+  /** Shown as part of the eyebrow line in the popover. */
+  mood?: string | null;
+  /** Shown as part of the eyebrow line in the popover. */
+  timeLabel?: string | null;
 }
 
 export interface AtlasProps {
@@ -56,6 +66,56 @@ export interface AtlasProps {
   height?: number | string;
   /** Starting zoom if we have to fall back to it. Default 11. */
   zoom?: number;
+}
+
+// ─── Pin-hover popover (HTML) ──────────────────────────────────────────
+// Built as an HTML string and fed to `maplibregl.Popup.setHTML`. The
+// popup lives in MapLibre's own DOM container (outside React), so we
+// rely on the inherited `--mode-*` CSS custom props for the palette —
+// same trick `createStopPin` uses. `data-mode` on the wrapper mirrors
+// the active mode in case we want per-mode CSS overrides later.
+
+/** Escape the handful of HTML-sensitive characters that can appear in
+ * user-authored fields (titles, moods, time labels). The atlas popover
+ * HTML is built with `setHTML`, which is intentionally un-sanitised. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function renderPopoverHtml(stop: AtlasStop, mode: NarrativeMode): string {
+  const eyebrowParts: string[] = [];
+  if (stop.mood) eyebrowParts.push(stop.mood);
+  if (stop.timeLabel) eyebrowParts.push(stop.timeLabel);
+  const eyebrow =
+    eyebrowParts.length > 0 ? eyebrowParts.join(" · ") : `Stop ${stop.n}`;
+
+  const img = stop.heroUrl
+    ? `<img src="${escapeHtml(stop.heroUrl)}" alt="" style="display:block;width:100%;height:100px;object-fit:cover;border-radius:4px 4px 0 0;" />`
+    : "";
+
+  return (
+    `<div data-mode="${escapeHtml(mode)}" style="` +
+    "width:140px;" +
+    "max-width:220px;" +
+    "font-family:var(--f-sans, system-ui, sans-serif);" +
+    'color:var(--mode-ink, #1a1a1a);' +
+    '">' +
+    img +
+    '<div style="padding:8px 10px 10px;">' +
+    `<div style="font-family:var(--f-mono, monospace);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.66;margin-bottom:4px;">` +
+    escapeHtml(eyebrow) +
+    "</div>" +
+    `<div style="font-size:14px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;">` +
+    escapeHtml(stop.title) +
+    "</div>" +
+    "</div>" +
+    "</div>"
+  );
 }
 
 // ─── Tile style per mode ───────────────────────────────────────────────
@@ -278,12 +338,22 @@ function AtlasSvgFallback({
       >
         {stops.map((s) => {
           const { x, y } = project(s.lng, s.lat);
+          const eyebrowParts: string[] = [];
+          if (s.mood) eyebrowParts.push(s.mood);
+          if (s.timeLabel) eyebrowParts.push(s.timeLabel);
+          const tooltip =
+            eyebrowParts.length > 0
+              ? `${s.title} — ${eyebrowParts.join(" · ")}`
+              : s.title;
           return (
             <g
               key={s.n}
               style={{ cursor: onStopClick ? "pointer" : "default" }}
               onClick={() => onStopClick?.(s.n)}
             >
+              {/* Native SVG tooltip — browsers render it on hover. Good
+                  enough for the rare SVG-fallback path. */}
+              <title>{tooltip}</title>
               <circle
                 cx={x}
                 cy={y}
@@ -340,9 +410,17 @@ type MaplibreMarker = {
   addTo: (map: MaplibreMap) => MaplibreMarker;
   getElement?: () => HTMLElement;
 };
+type MaplibrePopup = {
+  remove: () => MaplibrePopup;
+  setLngLat: (coord: [number, number]) => MaplibrePopup;
+  setHTML: (html: string) => MaplibrePopup;
+  addTo: (map: MaplibreMap) => MaplibrePopup;
+  isOpen?: () => boolean;
+};
 type MaplibreModule = {
   Map: new (opts: unknown) => MaplibreMap;
   Marker: new (opts: unknown) => MaplibreMarker;
+  Popup: new (opts?: unknown) => MaplibrePopup;
   LngLatBounds: new () => {
     extend: (coord: [number, number]) => unknown;
   };
@@ -362,6 +440,9 @@ export function Atlas({
   // re-render on every pan/zoom.
   const mapRef = useRef<MaplibreMap | null>(null);
   const markersRef = useRef<MaplibreMarker[]>([]);
+  // One popup per marker, created lazily on first hover. Kept parallel
+  // to `markersRef` so we can remove them on re-render / unmount.
+  const popupsRef = useRef<MaplibrePopup[]>([]);
   const maplibreRef = useRef<MaplibreModule | null>(null);
 
   // Tracks whether we've had a hard failure and need to show the SVG.
@@ -398,7 +479,7 @@ export function Atlas({
       const maplibregl = maplibreRef.current;
       if (!map || !maplibregl) return;
 
-      // Drop previous markers.
+      // Drop previous markers + popups.
       markersRef.current.forEach((m) => {
         try {
           m.remove();
@@ -407,6 +488,14 @@ export function Atlas({
         }
       });
       markersRef.current = [];
+      popupsRef.current.forEach((p) => {
+        try {
+          p.remove();
+        } catch {
+          /* swallow */
+        }
+      });
+      popupsRef.current = [];
 
       stops.forEach((stop) => {
         const el = createStopPin({
@@ -425,6 +514,36 @@ export function Atlas({
           .setLngLat([stop.lng, stop.lat])
           .addTo(map);
         markersRef.current.push(marker);
+
+        // One popup per pin, added to the map only on mouseenter. Kept
+        // in `popupsRef` so the re-render / unmount path can tear them
+        // down alongside their markers.
+        const popup = new maplibregl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          offset: 24,
+          className: "atlas-pin-popover",
+          maxWidth: "220px",
+        });
+        popupsRef.current.push(popup);
+
+        el.addEventListener("mouseenter", () => {
+          try {
+            popup
+              .setLngLat([stop.lng, stop.lat])
+              .setHTML(renderPopoverHtml(stop, mode))
+              .addTo(map);
+          } catch {
+            /* swallow — popup failure shouldn't break the pin */
+          }
+        });
+        el.addEventListener("mouseleave", () => {
+          try {
+            popup.remove();
+          } catch {
+            /* swallow */
+          }
+        });
       });
     };
   }, [stops, mode, onStopClick]);
@@ -460,6 +579,34 @@ export function Atlas({
             "https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css";
           link.setAttribute("data-maplibre-css", "1");
           document.head.appendChild(link);
+        }
+
+        // Inject our minimal override for the hover popover. Scoped to
+        // the custom `.atlas-pin-popover` class MapLibre adds via the
+        // `className` popup option, so it can't leak onto other popups.
+        if (
+          typeof document !== "undefined" &&
+          !document.querySelector("style[data-atlas-popover-css]")
+        ) {
+          const style = document.createElement("style");
+          style.setAttribute("data-atlas-popover-css", "1");
+          style.textContent = [
+            ".maplibregl-popup.atlas-pin-popover{pointer-events:none;}",
+            ".maplibregl-popup.atlas-pin-popover .maplibregl-popup-content{",
+            "padding:0;",
+            "border-radius:6px;",
+            "border:1px solid color-mix(in oklab, var(--mode-ink, #1a1a1a) 18%, transparent);",
+            "background:var(--mode-surface, var(--paper, #fff));",
+            "color:var(--mode-ink, #1a1a1a);",
+            "box-shadow:0 4px 16px rgba(0,0,0,0.15);",
+            "overflow:hidden;",
+            "}",
+            ".maplibregl-popup.atlas-pin-popover .maplibregl-popup-tip{",
+            "border-top-color:var(--mode-surface, var(--paper, #fff));",
+            "border-bottom-color:var(--mode-surface, var(--paper, #fff));",
+            "}",
+          ].join("");
+          document.head.appendChild(style);
         }
 
         if (cancelled || !containerRef.current) return;
@@ -505,7 +652,7 @@ export function Atlas({
 
     return () => {
       cancelled = true;
-      // Clean up markers + map on unmount or prop change.
+      // Clean up markers + popups + map on unmount or prop change.
       markersRef.current.forEach((m) => {
         try {
           m.remove();
@@ -514,6 +661,14 @@ export function Atlas({
         }
       });
       markersRef.current = [];
+      popupsRef.current.forEach((p) => {
+        try {
+          p.remove();
+        } catch {
+          /* swallow */
+        }
+      });
+      popupsRef.current = [];
       if (mapRef.current) {
         try {
           mapRef.current.remove();

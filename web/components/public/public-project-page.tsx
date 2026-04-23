@@ -76,12 +76,23 @@ export function PublicProjectPage({
   const coverUrl = coverAsset?.imageUrl ?? null;
   const coverLabel = (coverStop?.label ?? project.coverLabel ?? "").toUpperCase();
 
-  const atlasStops: readonly AtlasStop[] = stops.map((s) => ({
-    n: s.n,
-    title: s.title,
-    lat: s.lat,
-    lng: s.lng,
-  }));
+  const atlasStops: readonly AtlasStop[] = stops.map((s) => {
+    // Pin-hover popover wants a thumbnail + mood/time eyebrow. Look up
+    // the hero asset from the assets pool via the stop's `heroAssetId`
+    // — same path the stop-card grid uses.
+    const hero = s.heroAssetId
+      ? assets.find((a) => a.id === s.heroAssetId) ?? null
+      : null;
+    return {
+      n: s.n,
+      title: s.title,
+      lat: s.lat,
+      lng: s.lng,
+      heroUrl: hero?.imageUrl ?? null,
+      mood: s.mood ?? null,
+      timeLabel: s.time ?? null,
+    };
+  });
 
   const onAtlasStop = (stopId: string) => {
     const stop = stops.find((s) => s.n === stopId);

@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-23T01:40Z
+**Last updated:** 2026-04-23T02:00Z
 
 ## Plan version
 
@@ -13,7 +13,7 @@
 | M0 Consolidation | ✅ complete | 9/9 tasks |
 | M-fast Feature port | ✅ 14/14 done — but scaffold-level | ~45% of legacy surface actually covered; see `AUDIT-WORKSPACE.md` |
 | M-preview Soft launch | ✅ **LIVE** at `london-cuts.vercel.app` | password-gated via `web/proxy.ts` + Vercel `PREVIEW_PASSWORD` |
-| M-iter UX polish | 🟡 **partial** — 14 fixes shipped (F-I001..F-I014), ~7 gaps remain | See `tasks/AUDIT.md` + `AUDIT-WORKSPACE.md` + `AUDIT-PUBLIC-PAGES.md` |
+| M-iter UX polish | 🟢 **near-done** — 18 fixes shipped (F-I001..F-I018), only VariantsRow remains | See `tasks/AUDIT.md` + `AUDIT-WORKSPACE.md` + `AUDIT-PUBLIC-PAGES.md` |
 | **M1 Supabase & data** | ✅ **complete (Phases 1+2+3 full + F-I012 verified)** — 2026-04-22/23 | Project `acymyvefnvydksxzzegw` / Frankfurt. 5 tables + RLS + Storage. SSR reads + "☁️ Sync to cloud" button + binary upload all live. F-I012 end-to-end verified against production |
 | M2 Auth & invites | ⏳ not started — **next eligible** | Magic-link via Supabase Auth + invite codes; replaces service_role writes with RLS |
 | M3 Feature parity | 🗄 superseded by M-fast + M-iter | |
@@ -23,8 +23,8 @@
 
 ## Eligible next tracks (owner picks)
 
-1. **M2 Auth + invites** — real multi-user. Unblocks real cross-device collaboration and removes the service_role workaround.
-2. **Finish M-iter** — remaining gaps: VariantsRow ("Re-imagine hero" w/ AI styles, ~345 legacy lines), AssetsPoolDrawer upload/delete/drag-source, AssetStrip per-stop, atlas pin hover, spine drop target, CanvasHeader maps links. HeroDraggable + 3 body blocks + AssetPicker all landed 2026-04-23 (F-I013/F-I014).
+1. **M2 Auth + invites** — real multi-user. Unblocks real cross-device collaboration and removes the service_role workaround. **Most architectural value now that M-iter is effectively done.**
+2. **VariantsRow** — the one remaining M-iter gap ("Re-imagine hero" w/ AI styles, ~345 legacy lines). Deferred to its own session because real AI calls + spend cap + architecture choice (pregen endpoint shape) deserve undivided attention.
 3. **M6 custom domain** — ~15 min owner action (IONOS DNS) + 5 min Vercel. No architectural change. Makes sharing friendlier (`zhouyixiaoxiao.org` beats `vercel.app`).
 
 First step for whichever track: read `tasks/HANDOFF.md` first — it's the canonical resume-point and has the M1 architecture diagram + seam map + gotchas.
@@ -39,6 +39,11 @@ _none_
 
 ## Recently completed
 
+- **F-I015..F-I018** (2026-04-23T02:00Z) — Four-stream parallel sprint closed the biggest audit gaps:
+  - **F-I015** drawers.tsx — AssetsPool upload + delete + drag-source + hover-⇥ detach (subagent D)
+  - **F-I016** atlas.tsx — MapLibre Popup on pin hover (subagent E, 4 files)
+  - **F-I017** stop-spine.tsx — drop target for asset-id + image files (subagent F)
+  - **F-I018** stop-canvas.tsx — CanvasHeader maps deep-links + AssetStrip per-stop (main)
 - **F-I014** (2026-04-23T01:40Z) — Body editor 3 → 6 block types (heroImage / inlineImage / mediaEmbed) + AssetPicker modal (project-scoped, bucketed, upload-in-modal). Via subagent; 55/55 tests.
 - **F-I013** (2026-04-23T01:30Z) — HeroDraggable + heroFocus pan + ↺/↻ 90° rotate + portrait letterbox + file-drop target. Main session.
 - **F-I012** (2026-04-23T01:00Z) — Production sync verification via curl: POST upsert → assetsUploaded=1 → Supabase Storage CDN 200. Test project cleaned up.

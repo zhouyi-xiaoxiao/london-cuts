@@ -39,6 +39,27 @@ class FakeLngLatBounds {
   }
 }
 
+// Hover popover (added in M-iter) uses `new maplibregl.Popup(...)`; the
+// fake is just enough to satisfy the chainable API that renderMarkers
+// calls against it. No DOM side-effects needed for this smoke test.
+class FakePopup {
+  setLngLat() {
+    return this;
+  }
+  setHTML() {
+    return this;
+  }
+  addTo() {
+    return this;
+  }
+  remove() {
+    return this;
+  }
+  isOpen() {
+    return false;
+  }
+}
+
 class FakeMap {
   constructor(opts: unknown) {
     mapCtor(opts);
@@ -75,11 +96,13 @@ vi.mock("maplibre-gl", () => ({
   default: {
     Map: FakeMap,
     Marker: FakeMarker,
+    Popup: FakePopup,
     LngLatBounds: FakeLngLatBounds,
     NavigationControl: class {},
   },
   Map: FakeMap,
   Marker: FakeMarker,
+  Popup: FakePopup,
   LngLatBounds: FakeLngLatBounds,
   NavigationControl: class {},
 }));
