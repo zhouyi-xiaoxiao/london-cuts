@@ -12,19 +12,32 @@
 
 import { useRef, useState } from "react";
 
-import type { VisionAnalysisResult } from "@/lib/ai-provider";
+import type {
+  ComposeProjectResult,
+  VisionAnalysisResult,
+} from "@/lib/ai-provider";
 import { prepareImage } from "@/lib/utils/image";
 import { useAssetActions } from "@/stores/asset";
 import { useProjectActions } from "@/stores/project";
 import { useStopActions } from "@/stores/stop";
 import { useRootStore } from "@/stores/root";
-import type { Stop, StopTone } from "@/stores/types";
+import type { BodyBlock, Stop, StopTone } from "@/stores/types";
 
 interface ProgressItem {
   fileName: string;
   status: "queued" | "resizing" | "describing" | "done" | "failed";
   error?: string;
   result?: VisionAnalysisResult & { mock: boolean };
+}
+
+/** One described photo we've analysed, ready to hand off to either the
+ *  "one stop per photo" flow or the compose-project flow. Kept in-memory
+ *  until the user picks an outcome. */
+interface DescribedPhoto {
+  id: string;
+  fileName: string;
+  dataUrl: string;
+  description: VisionAnalysisResult & { mock: boolean };
 }
 
 export interface VisionUploadProps {
@@ -35,7 +48,10 @@ export interface VisionUploadProps {
 export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [composing, setComposing] = useState(false);
+  const [composeError, setComposeError] = useState<string | null>(null);
   const [items, setItems] = useState<ProgressItem[]>([]);
+  const [describedPhotos, setDescribedPhotos] = useState<DescribedPhoto[]>([]);
   const [spendCents, setSpendCents] = useState<number | null>(null);
 
   const { setStops } = useStopActions();
@@ -46,9 +62,12 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
     if (!fileList || fileList.length === 0) return;
     const files = Array.from(fileList).slice(0, 20); // cap at 20 for safety
     setBusy(true);
+    setComposeError(null);
+    setDescribedPhotos([]);
     setItems(files.map((f) => ({ fileName: f.name, status: "queued" })));
 
     const results: Array<{
+      id: string;
       dataUrl: string;
       description: VisionAnalysisResult & { mock: boolean };
       fileName: string;
@@ -97,6 +116,7 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
             setSpendCents(body.spendToDateCents);
           }
           results.push({
+            id: `photo-${idx}-${Date.now().toString(36)}`,
             dataUrl,
             description: {
               title: body.title,
@@ -148,27 +168,40 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
 
     await Promise.all(workers);
 
-    if (results.length === 0) {
-      setBusy(false);
-      return;
-    }
+    setBusy(false);
 
-    // Build a fresh project from the results.
+    if (results.length === 0) return;
+
+    // Park the described photos in state — the owner now picks between
+    // "one stop per photo" (straight-through) and "✨ generate full draft"
+    // (calls /api/ai/compose-project to group + add project metadata).
+    setDescribedPhotos(results);
+  }
+
+  /** Create exactly one stop per described photo. The legacy straight-through
+   *  flow. Fast, zero extra AI cost, but 12 photos = 12 stops with no grouping. */
+  function createStopsOnePerPhoto() {
+    if (describedPhotos.length === 0) return;
+
     archiveCurrentProject();
     const now = new Date().toISOString();
     const projectId = `proj-vision-${Date.now().toString(36)}`;
     const slugBase =
-      results[0].description.locationHint?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") ||
-      "new-walk";
+      describedPhotos[0].description.locationHint
+        ?.toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "") || "new-walk";
     const slug = `${slugBase}-${Date.now().toString(36).slice(-4)}`;
 
     setProject({
       id: projectId,
       ownerId: "local",
       slug,
-      title: slugBase.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) || "New walk from photos",
+      title:
+        slugBase.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) ||
+        "New walk from photos",
       subtitle: null,
-      locationName: results[0].description.locationHint ?? null,
+      locationName: describedPhotos[0].description.locationHint ?? null,
       defaultMode: "fashion",
       status: "draft",
       visibility: "public",
@@ -178,10 +211,9 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
       updatedAt: now,
     });
 
-    const newStops: Stop[] = results.map((r, i) => {
+    const newStops: Stop[] = describedPhotos.map((r, i) => {
       const n = String(i + 1).padStart(2, "0");
       const assetId = `asset-vision-${projectId}-${n}`;
-      // Write the asset
       addAsset({
         id: assetId,
         stop: n,
@@ -215,11 +247,139 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
     });
 
     setStops(newStops);
-    // Also set the active stop to the first one.
     useRootStore.getState().setActiveStop(newStops[0].n);
-
-    setBusy(false);
+    setDescribedPhotos([]);
     onComplete?.(newStops.length);
+  }
+
+  /** AI-group the described photos into fewer, richer stops via the
+   *  compose-project endpoint, then materialise them. ~$0.02 per project. */
+  async function generateFullDraft() {
+    if (describedPhotos.length === 0) return;
+    setComposing(true);
+    setComposeError(null);
+    try {
+      const res = await fetch("/api/ai/compose-project", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          photos: describedPhotos.map((p) => ({
+            id: p.id,
+            fileName: p.fileName,
+            description: p.description,
+          })),
+        }),
+      });
+      const body = (await res.json()) as
+        | (ComposeProjectResult & { spendToDateCents?: number })
+        | { error: string };
+      if (!res.ok || !("project" in body)) {
+        const msg = "error" in body ? body.error : "compose failed";
+        setComposeError(msg);
+        setComposing(false);
+        return;
+      }
+      if (typeof (body as { spendToDateCents?: number }).spendToDateCents === "number") {
+        setSpendCents((body as { spendToDateCents: number }).spendToDateCents);
+      }
+
+      // ── Materialise the project + grouped stops. ───────────────────
+      archiveCurrentProject();
+      const now = new Date().toISOString();
+      const projectId = `proj-compose-${Date.now().toString(36)}`;
+      const composed = body as ComposeProjectResult;
+
+      const slug = composed.project.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 48) || `project-${Date.now().toString(36).slice(-4)}`;
+
+      setProject({
+        id: projectId,
+        ownerId: "local",
+        slug,
+        title: composed.project.title,
+        subtitle: composed.project.subtitle ?? null,
+        locationName: null,
+        defaultMode: composed.project.defaultMode,
+        status: "draft",
+        visibility: "public",
+        coverAssetId: null,
+        publishedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      // Pre-index photos by id for quick lookup during asset creation.
+      const photoById = new Map(describedPhotos.map((p) => [p.id, p]));
+
+      const newStops: Stop[] = composed.stops.map((cs, i) => {
+        const n = String(i + 1).padStart(2, "0");
+        const assetIds: string[] = [];
+        let heroAssetId: string | null = null;
+
+        for (const photoId of cs.photoIds) {
+          const photo = photoById.get(photoId);
+          if (!photo) continue;
+          const assetId = `asset-compose-${projectId}-${n}-${photoId}`;
+          addAsset({
+            id: assetId,
+            stop: n,
+            tone: cs.tone,
+            imageUrl: photo.dataUrl,
+          });
+          assetIds.push(assetId);
+          if (photoId === cs.heroPhotoId || heroAssetId === null) {
+            heroAssetId = assetId;
+          }
+        }
+
+        // Build body: paragraphs verbatim from the LLM's pick, pullQuote
+        // between paragraphs 1 and 2 if we have ≥2 paragraphs.
+        const paras = cs.paragraphs.filter(Boolean);
+        const body: BodyBlock[] = [];
+        if (paras[0]) body.push({ type: "paragraph", content: paras[0] });
+        if (cs.pullQuote) body.push({ type: "pullQuote", content: cs.pullQuote });
+        for (let pi = 1; pi < paras.length; pi++) {
+          body.push({ type: "paragraph", content: paras[pi] });
+        }
+
+        return {
+          n,
+          code: cs.code || "—",
+          title: cs.title,
+          time: cs.timeLabel || new Date().toTimeString().slice(0, 5),
+          mood: cs.mood,
+          tone: cs.tone,
+          lat: 0,
+          lng: 0,
+          label: cs.title.toUpperCase(),
+          status: {
+            upload: assetIds.length > 0,
+            hero: heroAssetId !== null,
+            body: body.length > 0,
+            media: null,
+          },
+          heroAssetId,
+          assetIds,
+          body,
+          postcard: {
+            message: cs.postcardMessage,
+            recipient: { name: "", line1: "", line2: "", country: "" },
+          },
+        };
+      });
+
+      setStops(newStops);
+      if (newStops[0]) useRootStore.getState().setActiveStop(newStops[0].n);
+      setDescribedPhotos([]);
+      setComposing(false);
+      onComplete?.(newStops.length);
+    } catch (err) {
+      setComposeError(err instanceof Error ? err.message : "compose failed");
+      setComposing(false);
+    }
   }
 
   const done = items.filter((i) => i.status === "done").length;
@@ -300,6 +460,61 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
           </span>
         )}
       </div>
+
+      {describedPhotos.length > 0 && !busy && (
+        <div
+          style={{
+            marginTop: 20,
+            padding: 16,
+            border: "1px solid var(--rule)",
+            background: "var(--paper)",
+          }}
+        >
+          <div className="eyebrow" style={{ marginBottom: 10 }}>
+            {describedPhotos.length} photos analysed — pick a mode
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={createStopsOnePerPhoto}
+              disabled={composing}
+              title="Create one stop per photo — no extra AI call"
+            >
+              + Create {describedPhotos.length} stops
+            </button>
+            <button
+              type="button"
+              className="btn btn-solid"
+              onClick={generateFullDraft}
+              disabled={composing}
+              title="AI groups photos into fewer richer stops + picks a project title. ~2¢."
+              style={{
+                background: "var(--mode-accent, var(--accent))",
+                borderColor: "var(--mode-accent, var(--accent))",
+                color: "var(--paper)",
+              }}
+            >
+              {composing ? "✨ composing…" : "✨ Generate full draft"}
+            </button>
+          </div>
+          {composeError && (
+            <div
+              role="alert"
+              className="mono-sm"
+              style={{
+                marginTop: 10,
+                padding: "6px 10px",
+                background: "var(--mode-accent, #b8360a)",
+                color: "var(--paper)",
+                fontSize: 10,
+              }}
+            >
+              {composeError}
+            </div>
+          )}
+        </div>
+      )}
 
       {items.length > 0 && (
         <div style={{ marginTop: 20 }}>

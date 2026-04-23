@@ -9,8 +9,9 @@
 // Slash-command menu is intentionally NOT ported — button-driven add-bar
 // is plenty for M-fast.
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import { applySkeleton } from "@/lib/layout/skeleton";
 import { useAssets } from "@/stores/asset";
 import { useStopActions } from "@/stores/stop";
 import type { BodyBlock, Stop } from "@/stores/types";
@@ -35,6 +36,17 @@ export function StopBodyEditor({ stop }: StopBodyEditorProps) {
   // Which block (by index) currently owns the open AssetPicker. `null`
   // means the picker is closed.
   const [pickerForIndex, setPickerForIndex] = useState<number | null>(null);
+
+  // Rationale message surfaced after a successful AUTO-LAYOUT click.
+  // `null` when no message is active. Auto-dismisses after 4s.
+  const [autoLayoutMsg, setAutoLayoutMsg] = useState<string | null>(null);
+  const autoLayoutTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (autoLayoutTimer.current) clearTimeout(autoLayoutTimer.current);
+    },
+    [],
+  );
 
   const mutate = useCallback(
     (next: BodyBlock[]) => {
@@ -82,6 +94,19 @@ export function StopBodyEditor({ stop }: StopBodyEditorProps) {
     mutate(next);
   };
 
+  const onAutoLayout = () => {
+    const result = applySkeleton(stop.body, {
+      mood: stop.mood,
+      time: stop.time,
+      // Hero lives in a separate slot — don't duplicate it into the body.
+      hasExplicitHero: Boolean(stop.heroAssetId),
+    });
+    mutate(result.blocks);
+    setAutoLayoutMsg(result.rationale);
+    if (autoLayoutTimer.current) clearTimeout(autoLayoutTimer.current);
+    autoLayoutTimer.current = setTimeout(() => setAutoLayoutMsg(null), 4000);
+  };
+
   const activePickerBlock =
     pickerForIndex != null ? stop.body[pickerForIndex] : null;
   const pickerCurrentAssetId =
@@ -120,6 +145,13 @@ export function StopBodyEditor({ stop }: StopBodyEditorProps) {
           </li>
         ))}
       </ul>
+
+      <AutoLayoutBar
+        disabled={stop.body.length === 0}
+        onClick={onAutoLayout}
+        rationale={autoLayoutMsg}
+        onDismiss={() => setAutoLayoutMsg(null)}
+      />
 
       <AddBlockBar onAdd={(k) => add(k, stop.body.length)} />
 
@@ -675,4 +707,95 @@ function labelFor(kind: SupportedKind): string {
   if (kind === "heroImage") return "Hero image";
   if (kind === "inlineImage") return "Inline image";
   return "Media embed";
+}
+
+// ─── Auto-layout bar ──────────────────────────────────────────────────
+
+function AutoLayoutBar({
+  disabled,
+  onClick,
+  rationale,
+  onDismiss,
+}: {
+  disabled: boolean;
+  onClick: () => void;
+  rationale: string | null;
+  onDismiss: () => void;
+}) {
+  const title = disabled
+    ? "Add a block first — AUTO-LAYOUT rearranges what you've written"
+    : "Rearrange the body blocks into a beautiful shape";
+  return (
+    <div
+      style={{
+        marginTop: 24,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        maxWidth: 720,
+      }}
+    >
+      <div>
+        <button
+          type="button"
+          onClick={onClick}
+          disabled={disabled}
+          title={title}
+          aria-label="Auto-layout body blocks"
+          className="mono-sm"
+          style={{
+            padding: "10px 18px",
+            border: "1px solid var(--ink)",
+            background: disabled ? "var(--paper-2)" : "var(--ink)",
+            color: disabled ? "var(--ink)" : "var(--paper)",
+            fontSize: 12,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            cursor: disabled ? "not-allowed" : "pointer",
+            opacity: disabled ? 0.55 : 1,
+          }}
+        >
+          ✨ Auto-layout
+        </button>
+      </div>
+      {rationale && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mono-sm"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "8px 12px",
+            background: "var(--paper-2)",
+            border: "1px solid var(--rule)",
+            fontFamily: "var(--f-mono)",
+            fontSize: 11,
+            lineHeight: 1.5,
+            opacity: 0.9,
+            animation: "skeleton-fade-in 200ms ease-out",
+          }}
+        >
+          <span style={{ flex: 1 }}>{rationale}</span>
+          <button
+            type="button"
+            onClick={onDismiss}
+            aria-label="Dismiss auto-layout message"
+            title="Dismiss"
+            style={{
+              border: "none",
+              background: "transparent",
+              cursor: "pointer",
+              fontSize: 14,
+              lineHeight: 1,
+              padding: 2,
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }

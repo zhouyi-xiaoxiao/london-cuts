@@ -20,6 +20,15 @@
 //    worker URL can't load), we render an SVG schematic that projects the
 //    same stops onto a 800×500 viewport. No network needed.
 //
+// NOTE on the hover card: Earlier iterations used `maplibregl.Popup`. That
+// kept tripping an auto-pan on mouseenter — MapLibre's popup system
+// sometimes shifts the viewport to keep the popup within bounds, which the
+// owner perceived as "pins drift away when you hover". We now render a
+// single plain <div> overlay *inside* the container div, absolutely
+// positioned, and manually reposition it via `map.project(...)` on every
+// `move` event. A DOM overlay we drive ourselves cannot trigger MapLibre
+// to re-layout, so the map stays perfectly still on hover.
+//
 // NOTE: This component deliberately avoids the 3-tier fallback of the
 // legacy prototype (MapLibre → Leaflet → SVG). The Leaflet tier exists
 // because the legacy prototype loaded maplibre-gl from a CDN at runtime;
@@ -40,7 +49,7 @@ import { createStopPin } from "./stop-pin";
  * need is coordinates + a short label + an id to bubble back on click.
  *
  * The optional fields (`heroUrl`, `mood`, `timeLabel`) feed the
- * pin-hover popover. They're all optional so existing call sites don't
+ * pin-hover card. They're all optional so existing call sites don't
  * need to know about them — missing fields just produce a simpler card.
  */
 export interface AtlasStop {
@@ -48,11 +57,11 @@ export interface AtlasStop {
   title: string;
   lat: number;
   lng: number;
-  /** Thumbnail URL shown in the hover popover. */
+  /** Thumbnail URL shown in the hover card. */
   heroUrl?: string | null;
-  /** Shown as part of the eyebrow line in the popover. */
+  /** Shown as part of the eyebrow line in the hover card. */
   mood?: string | null;
-  /** Shown as part of the eyebrow line in the popover. */
+  /** Shown as part of the eyebrow line in the hover card. */
   timeLabel?: string | null;
 }
 
@@ -68,16 +77,50 @@ export interface AtlasProps {
   zoom?: number;
 }
 
-// ─── Pin-hover popover (HTML) ──────────────────────────────────────────
-// Built as an HTML string and fed to `maplibregl.Popup.setHTML`. The
-// popup lives in MapLibre's own DOM container (outside React), so we
-// rely on the inherited `--mode-*` CSS custom props for the palette —
-// same trick `createStopPin` uses. `data-mode` on the wrapper mirrors
-// the active mode in case we want per-mode CSS overrides later.
+// ─── Missing-coord helpers ────────────────────────────────────────────
+// Stops added via `stores/root.ts → addStop` default to lat: 51.505,
+// lng: -0.09. If the owner hasn't set real coords yet, multiple stops
+// land on top of each other at that point and occlude everything on
+// the map. We detect the exact-default case, jitter the pins so each
+// is individually visible, and surface a chip telling the owner how
+// many stops still need coords.
+const DEFAULT_LAT = 51.505;
+const DEFAULT_LNG = -0.09;
+
+function isDefaultCoord(stop: AtlasStop): boolean {
+  return stop.lat === DEFAULT_LAT && stop.lng === DEFAULT_LNG;
+}
+
+/** Deterministic tiny jitter so default-coord pins fan out rather than
+ * stacking. Seeded on `stop.n` so the same stop always lands in the
+ * same spot — we don't want pins to wobble between renders. */
+function jitterForStop(stopId: string): { dLat: number; dLng: number } {
+  let hash = 0;
+  for (let i = 0; i < stopId.length; i++) {
+    hash = (hash << 5) - hash + stopId.charCodeAt(i);
+    hash |= 0;
+  }
+  const a = (hash % 97) / 97; // 0..<1
+  const b = ((hash >> 3) % 89) / 89;
+  // ~60-180m radius, plenty enough to separate pins visually without
+  // putting them on the wrong side of a landmark.
+  return {
+    dLat: (a - 0.5) * 0.004,
+    dLng: (b - 0.5) * 0.004,
+  };
+}
+
+// ─── Hover card (DOM overlay, NOT MapLibre Popup) ──────────────────────
+// We populate a single <div> overlay inside the atlas container. On
+// pin mouseenter we compute `map.project(...)` → pixel coords and
+// set `transform: translate(...)` to place the card above the pin.
+// `pointer-events: none` so it never steals the mouseenter/leave from
+// the pin underneath. Styling lives inline so it cascades `--mode-*`
+// tokens from the containing `[data-mode]` wrapper.
 
 /** Escape the handful of HTML-sensitive characters that can appear in
- * user-authored fields (titles, moods, time labels). The atlas popover
- * HTML is built with `setHTML`, which is intentionally un-sanitised. */
+ * user-authored fields (titles, moods, time labels). The hover card
+ * HTML is built via innerHTML so must be sanitised. */
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -87,7 +130,7 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function renderPopoverHtml(stop: AtlasStop, mode: NarrativeMode): string {
+function renderHoverCardHtml(stop: AtlasStop): string {
   const eyebrowParts: string[] = [];
   if (stop.mood) eyebrowParts.push(stop.mood);
   if (stop.timeLabel) eyebrowParts.push(stop.timeLabel);
@@ -95,24 +138,17 @@ function renderPopoverHtml(stop: AtlasStop, mode: NarrativeMode): string {
     eyebrowParts.length > 0 ? eyebrowParts.join(" · ") : `Stop ${stop.n}`;
 
   const img = stop.heroUrl
-    ? `<img src="${escapeHtml(stop.heroUrl)}" alt="" style="display:block;width:100%;height:100px;object-fit:cover;border-radius:4px 4px 0 0;" />`
+    ? `<img src="${escapeHtml(stop.heroUrl)}" alt="" style="display:block;width:100%;height:96px;object-fit:cover;border-radius:5px 5px 0 0;" />`
     : "";
 
   return (
-    `<div data-mode="${escapeHtml(mode)}" style="` +
-    "width:140px;" +
-    "max-width:220px;" +
-    "font-family:var(--f-sans, system-ui, sans-serif);" +
-    'color:var(--mode-ink, #1a1a1a);' +
-    '">' +
     img +
     '<div style="padding:8px 10px 10px;">' +
     `<div style="font-family:var(--f-mono, monospace);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.66;margin-bottom:4px;">` +
     escapeHtml(eyebrow) +
     "</div>" +
-    `<div style="font-size:14px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;">` +
+    `<div style="font-size:13px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;">` +
     escapeHtml(stop.title) +
-    "</div>" +
     "</div>" +
     "</div>"
   );
@@ -221,7 +257,11 @@ function buildStyle(mode: NarrativeMode) {
     };
   }
 
-  // fashion (default)
+  // fashion (default). Owner feedback: previous pass felt "washed out"
+  // because the warm scrim muddied tile contrast more than it gave
+  // character. Dropping the warm layer entirely and pushing contrast /
+  // saturation gives cleaner tiles without losing the fashion palette
+  // (the pins + postcard chrome already carry the warm accent).
   return {
     version: 8 as const,
     sources: {
@@ -243,29 +283,22 @@ function buildStyle(mode: NarrativeMode) {
         type: "raster" as const,
         source: "t",
         paint: {
-          "raster-saturation": -0.35,
+          // Less desat than before (-0.25 vs -0.35) so warm hues read.
+          "raster-saturation": -0.25,
           "raster-hue-rotate": 20,
           // Drop min so dark ink (road names, labels) can reach through
-          // the warm overlay without being lifted toward grey.
+          // without being lifted toward grey.
           "raster-brightness-min": 0.75,
           // Capped at 1.0 — MapLibre rejects > 1 and the resulting console
           // error wakes Next dev tools' "1 issue" badge on every public page.
           "raster-brightness-max": 1.0,
-          // Positive contrast pushes street labels forward instead of
-          // blending them into the cream base.
-          "raster-contrast": 0.1,
-          "raster-opacity": 0.9,
+          // Pushed from 0.1 to 0.2 — street labels now pop, building
+          // outlines stop blending into the cream base.
+          "raster-contrast": 0.2,
+          "raster-opacity": 0.95,
         },
       },
-      {
-        id: "warm",
-        type: "background" as const,
-        paint: {
-          "background-color": "#c97a3c",
-          // Warm scrim dialed back so it tints without washing out text.
-          "background-opacity": 0.05,
-        },
-      },
+      // NO warm overlay layer here — dropped to fix the washed-out look.
     ],
   };
 }
@@ -362,18 +395,17 @@ function AtlasSvgFallback({
               <circle
                 cx={x}
                 cy={y}
-                r="14"
+                r="9"
                 fill={palette.dotFill}
                 stroke={palette.dotRing}
-                strokeWidth="2.5"
+                strokeWidth="1"
               />
               <text
                 x={x}
-                y={y + 4}
+                y={y + 3}
                 textAnchor="middle"
                 fontFamily="monospace"
-                fontSize="11"
-                fontWeight="700"
+                fontSize="10"
                 fill={palette.label}
               >
                 {s.n}
@@ -410,6 +442,7 @@ type MaplibreMap = {
   on: (event: string, cb: () => void) => unknown;
   off?: (event: string, cb: () => void) => unknown;
   fitBounds: (bounds: unknown, opts: unknown) => unknown;
+  project: (coord: [number, number]) => { x: number; y: number };
 };
 type MaplibreMarker = {
   remove: () => void;
@@ -417,6 +450,9 @@ type MaplibreMarker = {
   addTo: (map: MaplibreMap) => MaplibreMarker;
   getElement?: () => HTMLElement;
 };
+// Kept for compatibility with the `maplibre-gl` module type — we no
+// longer instantiate Popup, but the mock in atlas.test.tsx still
+// exports the class and we want the typed import to resolve cleanly.
 type MaplibrePopup = {
   remove: () => MaplibrePopup;
   setLngLat: (coord: [number, number]) => MaplibrePopup;
@@ -427,6 +463,8 @@ type MaplibrePopup = {
 type MaplibreModule = {
   Map: new (opts: unknown) => MaplibreMap;
   Marker: new (opts: unknown) => MaplibreMarker;
+  // Still declared so the module typecheck passes in mixed envs.
+  // Not used — see the long note at the top of this file.
   Popup: new (opts?: unknown) => MaplibrePopup;
   LngLatBounds: new () => {
     extend: (coord: [number, number]) => unknown;
@@ -442,21 +480,19 @@ export function Atlas({
 }: AtlasProps) {
   const mode = useMode();
   const containerRef = useRef<HTMLDivElement | null>(null);
+  // The single hover-card overlay. Created on mount, reused for every
+  // pin. `pointer-events: none` so it never steals mouse events from
+  // the pin below it.
+  const hoverCardRef = useRef<HTMLDivElement | null>(null);
 
   // Imperative map handle + marker list. Kept in refs so we don't
   // re-render on every pan/zoom.
   const mapRef = useRef<MaplibreMap | null>(null);
   const markersRef = useRef<MaplibreMarker[]>([]);
-  // One popup per marker, created eagerly at marker-creation time and
-  // kept parallel to `markersRef` so a single `popup.addTo` /
-  // `popup.remove()` flips visibility on hover without re-building DOM
-  // on every `mouseenter`. Re-creating the popup per hover was the root
-  // cause of the "map drifts when the mouse moves over a pin" bug —
-  // MapLibre would auto-pan to keep the freshly-added content in view.
-  const popupsRef = useRef<MaplibrePopup[]>([]);
-  // Tracks whichever popup is currently on-screen so map-level events
-  // (movestart / zoomstart) can yank it off even if `mouseleave` missed.
-  const activePopupRef = useRef<MaplibrePopup | null>(null);
+  // Tracks whichever stop the hover card is currently anchored to, so
+  // the `move` handler can recompute its pixel position during pan/zoom.
+  // `null` when the card is hidden.
+  const activeHoverStopRef = useRef<AtlasStop | null>(null);
   const maplibreRef = useRef<MaplibreModule | null>(null);
 
   // Tracks whether we've had a hard failure and need to show the SVG.
@@ -471,14 +507,27 @@ export function Atlas({
   // boot effect below). Refs are assigned in a layoutless effect on
   // every render — by the time any effect runs, the ref is current.
   const renderMarkersRef = useRef<() => void>(() => undefined);
+  // Same pattern for the overlay repositioner so the `move` listener
+  // always sees the current stops / jitter.
+  const repositionHoverCardRef = useRef<() => void>(() => undefined);
+
+  // Missing-coord accounting. Drives the "📍 N stops need coordinates"
+  // chip and the jitter-on-render behaviour. Recomputed per render;
+  // cheap, the stops array is small.
+  const missingCoordCount = stops.filter(isDefaultCoord).length;
 
   // Resolve the initial centre. Compute from stops if not provided.
+  // Skips default-coord stops when computing the mean so a single
+  // real stop still centres the map on *its* location rather than on
+  // the default central-London coord.
+  const realCoordStops = stops.filter((s) => !isDefaultCoord(s));
+  const centerSource = realCoordStops.length > 0 ? realCoordStops : stops;
   const initialCenter: [number, number] =
     center ??
-    (stops.length > 0
+    (centerSource.length > 0
       ? [
-          stops.reduce((a, s) => a + s.lng, 0) / stops.length,
-          stops.reduce((a, s) => a + s.lat, 0) / stops.length,
+          centerSource.reduce((a, s) => a + s.lng, 0) / centerSource.length,
+          centerSource.reduce((a, s) => a + s.lat, 0) / centerSource.length,
         ]
       : [-0.1276, 51.5074]);
 
@@ -488,12 +537,21 @@ export function Atlas({
   // rules and can cause stale reads; doing it in `useEffect` is the
   // idiomatic pattern.
   useEffect(() => {
+    // Compute effective coords once and share between renderMarkers and
+    // the overlay repositioner. Jitters default-coord stops so they
+    // don't stack on top of each other at 51.505 / -0.09.
+    const effectiveCoord = (stop: AtlasStop): [number, number] => {
+      if (!isDefaultCoord(stop)) return [stop.lng, stop.lat];
+      const { dLat, dLng } = jitterForStop(stop.n);
+      return [stop.lng + dLng, stop.lat + dLat];
+    };
+
     renderMarkersRef.current = () => {
       const map = mapRef.current;
       const maplibregl = maplibreRef.current;
       if (!map || !maplibregl) return;
 
-      // Drop previous markers + popups.
+      // Drop previous markers.
       markersRef.current.forEach((m) => {
         try {
           m.remove();
@@ -502,15 +560,11 @@ export function Atlas({
         }
       });
       markersRef.current = [];
-      popupsRef.current.forEach((p) => {
-        try {
-          p.remove();
-        } catch {
-          /* swallow */
-        }
-      });
-      popupsRef.current = [];
-      activePopupRef.current = null;
+      // Hide the hover card — the stop it was anchored to might have
+      // been removed or renumbered.
+      const card = hoverCardRef.current;
+      if (card) card.style.display = "none";
+      activeHoverStopRef.current = null;
 
       stops.forEach((stop) => {
         const el = createStopPin({
@@ -526,56 +580,54 @@ export function Atlas({
           element: el,
           anchor: "center",
         })
-          .setLngLat([stop.lng, stop.lat])
+          .setLngLat(effectiveCoord(stop))
           .addTo(map);
         markersRef.current.push(marker);
 
-        // One popup per pin, fully configured at creation time. Building
-        // + populating the popup once (rather than per-mouseenter) stops
-        // MapLibre from auto-panning to "reveal" freshly-added popup DOM
-        // — that auto-pan was the user-visible "map drifts on hover" bug.
-        //
-        // `anchor: "bottom"` with `offset: [0, -18]` pins the popup above
-        // the marker, which means MapLibre already knows where the tip
-        // will land when `addTo` is called — no layout-driven re-center.
-        // `closeOnMove: false` keeps the caller in charge of teardown.
-        const popup = new maplibregl.Popup({
-          closeButton: false,
-          closeOnClick: false,
-          closeOnMove: false,
-          anchor: "bottom",
-          offset: [0, -18],
-          className: "atlas-pin-popover",
-          maxWidth: "220px",
-        })
-          .setLngLat([stop.lng, stop.lat])
-          .setHTML(renderPopoverHtml(stop, mode));
-        popupsRef.current.push(popup);
-
+        // Mouseenter shows the custom DOM overlay at the pin's screen
+        // position. Mouseleave hides it. Map `move` / `zoom` handlers
+        // (registered in the boot effect) reposition it as the user
+        // pans — the whole point of this approach is that WE drive the
+        // overlay, not MapLibre, so the map never auto-pans to reveal
+        // an attached popup.
         el.addEventListener("mouseenter", () => {
-          try {
-            // Clear whatever was shown before (defensive — fast mouse
-            // moves can land on a neighbour before `mouseleave` fires).
-            if (activePopupRef.current && activePopupRef.current !== popup) {
-              activePopupRef.current.remove();
-            }
-            popup.addTo(map);
-            activePopupRef.current = popup;
-          } catch {
-            /* swallow — popup failure shouldn't break the pin */
-          }
+          const cardEl = hoverCardRef.current;
+          if (!cardEl) return;
+          cardEl.innerHTML = renderHoverCardHtml(stop);
+          activeHoverStopRef.current = stop;
+          repositionHoverCardRef.current();
+          cardEl.style.display = "block";
         });
         el.addEventListener("mouseleave", () => {
-          try {
-            popup.remove();
-            if (activePopupRef.current === popup) {
-              activePopupRef.current = null;
-            }
-          } catch {
-            /* swallow */
+          const cardEl = hoverCardRef.current;
+          if (!cardEl) return;
+          cardEl.style.display = "none";
+          if (activeHoverStopRef.current?.n === stop.n) {
+            activeHoverStopRef.current = null;
           }
         });
       });
+    };
+
+    repositionHoverCardRef.current = () => {
+      const map = mapRef.current;
+      const cardEl = hoverCardRef.current;
+      const stop = activeHoverStopRef.current;
+      if (!map || !cardEl || !stop) return;
+      let screen: { x: number; y: number };
+      try {
+        screen = map.project(effectiveCoord(stop));
+      } catch {
+        return;
+      }
+      // Card dimensions: measured each call so the translate tracks a
+      // real-world thumbnail if one loaded after the initial render.
+      const cardH = cardEl.offsetHeight || 64;
+      const cardW = cardEl.offsetWidth || 220;
+      // 14px gap above the pin (pin radius ~9 + visual breathing room).
+      const x = Math.round(screen.x - cardW / 2);
+      const y = Math.round(screen.y - cardH - 14);
+      cardEl.style.transform = `translate(${x}px, ${y}px)`;
     };
   }, [stops, mode, onStopClick]);
 
@@ -612,43 +664,6 @@ export function Atlas({
           document.head.appendChild(link);
         }
 
-        // Inject our minimal override for the hover popover. Scoped to
-        // the custom `.atlas-pin-popover` class MapLibre adds via the
-        // `className` popup option, so it can't leak onto other popups.
-        if (
-          typeof document !== "undefined" &&
-          !document.querySelector("style[data-atlas-popover-css]")
-        ) {
-          const style = document.createElement("style");
-          style.setAttribute("data-atlas-popover-css", "1");
-          style.textContent = [
-            // The popup root is absolutely positioned by MapLibre. Belt-
-            // and-suspenders `pointer-events: none` so the hover card
-            // never eats events on the pin underneath or causes the map
-            // to treat it as interactive (which would trigger auto-pan).
-            ".maplibregl-popup.atlas-pin-popover{",
-            "pointer-events:none;",
-            "position:absolute;",
-            "will-change:transform;",
-            "}",
-            ".maplibregl-popup.atlas-pin-popover .maplibregl-popup-content{",
-            "pointer-events:none;",
-            "padding:0;",
-            "border-radius:6px;",
-            "border:1px solid color-mix(in oklab, var(--mode-ink, #1a1a1a) 18%, transparent);",
-            "background:var(--mode-surface, var(--paper, #fff));",
-            "color:var(--mode-ink, #1a1a1a);",
-            "box-shadow:0 4px 16px rgba(0,0,0,0.15);",
-            "overflow:hidden;",
-            "}",
-            ".maplibregl-popup.atlas-pin-popover .maplibregl-popup-tip{",
-            "border-top-color:var(--mode-surface, var(--paper, #fff));",
-            "border-bottom-color:var(--mode-surface, var(--paper, #fff));",
-            "}",
-          ].join("");
-          document.head.appendChild(style);
-        }
-
         if (cancelled || !containerRef.current) return;
         if (mapRef.current) return; // strict-mode double-fire guard
 
@@ -664,24 +679,15 @@ export function Atlas({
         mapRef.current = map;
         setReady(true);
 
-        // Dismiss any popup the moment the user starts panning or
-        // zooming. Without this, a popup left hanging by a too-fast
-        // `mouseleave` can feel like the map "drifted" on hover —
-        // addressing the same dogfooding report as the popup rework.
-        const dismissPopup = () => {
-          const active = activePopupRef.current;
-          if (active) {
-            try {
-              active.remove();
-            } catch {
-              /* swallow */
-            }
-            activePopupRef.current = null;
-          }
+        // Reposition the hover card on every `move` event (pan + zoom
+        // both fire `move`). This is what makes the card feel "glued"
+        // to the pin during user interaction while the map stays
+        // absolutely still on simple hover-over-pin.
+        const onMove = () => {
+          repositionHoverCardRef.current();
         };
         try {
-          map.on("movestart", dismissPopup);
-          map.on("zoomstart", dismissPopup);
+          map.on("move", onMove);
         } catch {
           /* swallow — test stubs may not implement .on */
         }
@@ -693,6 +699,8 @@ export function Atlas({
           if (stops.length > 1) {
             try {
               const bounds = new maplibregl.LngLatBounds();
+              // Use real coords where available; fall back to default
+              // for missing-coord stops so bounds stay non-degenerate.
               stops.forEach((s) => bounds.extend([s.lng, s.lat]));
               map.fitBounds(bounds, {
                 padding: 48,
@@ -714,7 +722,7 @@ export function Atlas({
 
     return () => {
       cancelled = true;
-      // Clean up markers + popups + map on unmount or prop change.
+      // Clean up markers + map on unmount or prop change.
       markersRef.current.forEach((m) => {
         try {
           m.remove();
@@ -723,15 +731,7 @@ export function Atlas({
         }
       });
       markersRef.current = [];
-      popupsRef.current.forEach((p) => {
-        try {
-          p.remove();
-        } catch {
-          /* swallow */
-        }
-      });
-      popupsRef.current = [];
-      activePopupRef.current = null;
+      activeHoverStopRef.current = null;
       if (mapRef.current) {
         try {
           mapRef.current.remove();
@@ -815,6 +815,60 @@ export function Atlas({
         data-testid="atlas-map-container"
         style={{ width: "100%", height: "100%" }}
       />
+      {/* Custom DOM hover card — a single overlay, repositioned on
+          every marker hover and every map move. `pointer-events:none`
+          means it never steals events from the pin underneath. */}
+      <div
+        ref={hoverCardRef}
+        aria-hidden
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          display: "none",
+          pointerEvents: "none",
+          zIndex: 5,
+          width: "220px",
+          maxWidth: "220px",
+          background: "var(--mode-surface, #fff)",
+          color: "var(--mode-ink, #1a1a1a)",
+          border:
+            "1px solid color-mix(in oklab, var(--mode-ink, #1a1a1a) 18%, transparent)",
+          borderRadius: "6px",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+          overflow: "hidden",
+          fontFamily: "var(--f-sans, system-ui, sans-serif)",
+          willChange: "transform",
+        }}
+      />
+      {missingCoordCount > 0 && (
+        <div
+          className="mono-sm"
+          aria-live="polite"
+          style={{
+            position: "absolute",
+            top: "10px",
+            left: "10px",
+            zIndex: 4,
+            padding: "6px 10px",
+            borderRadius: "999px",
+            background: "var(--mode-surface, #fff)",
+            color: "var(--mode-ink, #1a1a1a)",
+            border:
+              "1px solid color-mix(in oklab, var(--mode-ink, #1a1a1a) 18%, transparent)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+            fontFamily: "var(--f-mono, monospace)",
+            fontSize: "10px",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            pointerEvents: "none",
+          }}
+        >
+          {missingCoordCount === 1
+            ? "1 stop needs coordinates"
+            : `${missingCoordCount} stops need coordinates`}
+        </div>
+      )}
       {!ready && (
         <div
           className="mono-sm"

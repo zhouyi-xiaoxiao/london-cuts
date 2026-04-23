@@ -346,3 +346,197 @@ export async function describePhoto(
   spendToDateCents += VISION_COST_CENTS;
   return { ...result, costCents: VISION_COST_CENTS, mock: false };
 }
+
+// ─── Compose full project from per-photo descriptions ──────────────────
+// "Vision → full project" — owner's dogfood ask F-I026. Takes the N
+// per-photo descriptions that `describePhoto` already produced, asks
+// GPT-4o-mini (text-only; no re-upload of images) to group photos into
+// stops + propose project-level title / subtitle / mode. Cheap ~$0.02
+// per project for the second pass.
+
+/** One input photo: the id we'll use to reference it back in the output
+ *  grouping, plus the description we already generated in vision pass 1. */
+export interface ComposePhotoInput {
+  id: string;
+  fileName?: string;
+  description: VisionAnalysisResult;
+}
+
+/** One composed stop: which photos belong to it, which photo is the hero,
+ *  plus stop-level metadata. Body is built by the caller from the per-photo
+ *  paragraphs (LLM doesn't re-write prose; it just groups + tags). */
+export interface ComposedStop {
+  title: string;
+  mood: string;
+  tone: "warm" | "cool" | "punk";
+  timeLabel: string;
+  photoIds: string[];
+  heroPhotoId: string;
+  paragraphs: string[];
+  pullQuote: string;
+  postcardMessage: string;
+  code: string;
+}
+
+export interface ComposeProjectResult {
+  project: {
+    title: string;
+    subtitle: string;
+    defaultMode: "fashion" | "punk" | "cinema";
+  };
+  stops: ComposedStop[];
+  rationale: string;
+  costCents: number;
+  mock: boolean;
+}
+
+// Cheap — one text call to gpt-4o-mini. Conservative upper bound.
+const COMPOSE_COST_CENTS = 3;
+
+function mockCompose(photos: readonly ComposePhotoInput[]): ComposeProjectResult {
+  // Deterministic mock: group photos in pairs (or solo if odd count).
+  // Mood + tone taken from the first photo of each group for variety.
+  const stops: ComposedStop[] = [];
+  for (let i = 0; i < photos.length; i += 2) {
+    const group = photos.slice(i, i + 2);
+    const first = group[0];
+    const paragraphs = group.map((p) => p.description.paragraph).filter(Boolean);
+    const quote =
+      group.find((p) => p.description.pullQuote)?.description.pullQuote ?? "";
+    stops.push({
+      title: first.description.title || `Scene ${stops.length + 1}`,
+      mood: first.description.mood || "Amber",
+      tone: first.description.tone || "warm",
+      timeLabel: new Date().toTimeString().slice(0, 5),
+      photoIds: group.map((p) => p.id),
+      heroPhotoId: first.id,
+      paragraphs,
+      pullQuote: quote,
+      postcardMessage:
+        group[0].description.postcardMessage ?? "MOCK — a short note.",
+      code: (first.description.locationHint || "").slice(0, 8).toUpperCase(),
+    });
+  }
+  return {
+    project: {
+      title: "A walk from photos",
+      subtitle: "MOCK — flip AI_PROVIDER_MOCK=false for a real compose",
+      defaultMode: "fashion",
+    },
+    stops,
+    rationale: `MOCK: grouped ${photos.length} photos into ${stops.length} stop(s) by pairs.`,
+    costCents: 0,
+    mock: true,
+  };
+}
+
+async function realCompose(
+  photos: readonly ComposePhotoInput[],
+): Promise<ComposeProjectResult> {
+  if (!env.OPENAI_API_KEY) throw new AuthRequiredError();
+  const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+
+  // Build a compact digest the LLM can reason over — don't resend dataUrls.
+  const digest = photos.map((p) => ({
+    id: p.id,
+    fileName: p.fileName,
+    title: p.description.title,
+    paragraph: p.description.paragraph,
+    pullQuote: p.description.pullQuote,
+    postcardMessage: p.description.postcardMessage,
+    mood: p.description.mood,
+    tone: p.description.tone,
+    locationHint: p.description.locationHint,
+  }));
+
+  const system = [
+    "You compose a travel storytelling project from per-photo vision descriptions.",
+    "Input: an array of photo digests with title / paragraph / mood / tone / locationHint.",
+    "Output JSON only. Group related photos into 3–8 stops (not one stop per photo).",
+    "Grouping signals: locationHint, visual mood, paragraph content.",
+    "Pick a project-level title (5–9 words), subtitle (one short evocative line), and a defaultMode:",
+    '  "fashion" (editorial, sunlit, people) / "punk" (raw, graphic, protest, red) / "cinema" (dusk, interiors, moody).',
+    "For each stop: assign the photo ids that belong, pick one as heroPhotoId,",
+    "synthesise a title, mood (one evocative word), tone (warm|cool|punk),",
+    "timeLabel (HH:MM), code (≤8 upper-case characters — a short place code),",
+    "paragraphs[] (keep 1–3 from the input verbatim, don't rewrite),",
+    "pullQuote (one short evocative line, ≤ 15 words, pick from paragraph material),",
+    "postcardMessage (1–2 first-person sentences to a friend).",
+    "Finally, return a rationale explaining the groupings in one sentence.",
+  ].join(" ");
+
+  const response = await client.chat.completions.create({
+    model: "gpt-4o-mini",
+    max_tokens: 1800,
+    temperature: 0.4,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: system },
+      {
+        role: "user",
+        content: JSON.stringify({ photos: digest }),
+      },
+    ],
+  });
+
+  const raw = response.choices[0]?.message?.content;
+  if (!raw) throw new Error("compose response empty");
+  const parsed = JSON.parse(raw) as Partial<ComposeProjectResult>;
+
+  // Defensive: validate shape + fall back on missing fields.
+  const project = parsed.project ?? {
+    title: "A walk",
+    subtitle: "",
+    defaultMode: "fashion" as const,
+  };
+  const stops: ComposedStop[] = Array.isArray(parsed.stops)
+    ? parsed.stops.map((s): ComposedStop => ({
+        title: s.title ?? "Untitled",
+        mood: s.mood ?? "Amber",
+        tone:
+          s.tone === "cool" || s.tone === "punk" ? s.tone : "warm",
+        timeLabel: s.timeLabel ?? "",
+        photoIds: Array.isArray(s.photoIds) ? s.photoIds : [],
+        heroPhotoId: s.heroPhotoId ?? s.photoIds?.[0] ?? "",
+        paragraphs: Array.isArray(s.paragraphs) ? s.paragraphs : [],
+        pullQuote: s.pullQuote ?? "",
+        postcardMessage: s.postcardMessage ?? "",
+        code: (s.code ?? "").slice(0, 8).toUpperCase(),
+      }))
+    : [];
+
+  return {
+    project: {
+      title: project.title ?? "A walk",
+      subtitle: project.subtitle ?? "",
+      defaultMode:
+        project.defaultMode === "punk" || project.defaultMode === "cinema"
+          ? project.defaultMode
+          : "fashion",
+    },
+    stops,
+    rationale: parsed.rationale ?? "",
+    costCents: COMPOSE_COST_CENTS,
+    mock: false,
+  };
+}
+
+export async function composeProject(
+  photos: readonly ComposePhotoInput[],
+): Promise<ComposeProjectResult> {
+  if (photos.length === 0) {
+    return {
+      project: { title: "Empty", subtitle: "", defaultMode: "fashion" },
+      stops: [],
+      rationale: "No photos provided.",
+      costCents: 0,
+      mock: true,
+    };
+  }
+  const mockMode = env.AI_PROVIDER_MOCK === "true" || !env.OPENAI_API_KEY;
+  if (mockMode) return mockCompose(photos);
+  assertWithinBudget(COMPOSE_COST_CENTS);
+  const result = await realCompose(photos);
+  spendToDateCents += COMPOSE_COST_CENTS;
+  return result;
+}

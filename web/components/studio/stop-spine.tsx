@@ -82,7 +82,10 @@ export function StopSpine({ stops, selectedId, onSelect, summary }: StopSpinePro
     <aside
       style={{
         borderRight: "1px solid var(--rule)",
-        overflowY: "auto",
+        // Outer aside no longer scrolls — the <ul> does. This keeps the
+        // "+ NEW STOP" footer permanently docked at the bottom instead of
+        // sliding off-screen when the list is long. Dogfood F-I027.
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
@@ -94,6 +97,7 @@ export function StopSpine({ stops, selectedId, onSelect, summary }: StopSpinePro
         style={{
           padding: "16px 20px 12px",
           borderBottom: "1px solid var(--rule)",
+          flexShrink: 0,
         }}
       >
         <div className="eyebrow">{stops.length} stops</div>
@@ -114,6 +118,10 @@ export function StopSpine({ stops, selectedId, onSelect, summary }: StopSpinePro
           padding: 0,
           margin: 0,
           flex: 1,
+          // This element is the only scroller in the spine — lets the
+          // sticky footer below stay visible at all times.
+          overflowY: "auto",
+          minHeight: 0,
         }}
       >
         {stops.map((stop, index) => (
@@ -138,6 +146,7 @@ export function StopSpine({ stops, selectedId, onSelect, summary }: StopSpinePro
           padding: "12px 16px",
           borderTop: "1px solid var(--rule)",
           background: "var(--paper)",
+          flexShrink: 0,
         }}
       >
         <button

@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-23T02:30Z
+**Last updated:** 2026-04-23T07:10Z
 
 ## Plan version
 
@@ -13,7 +13,7 @@
 | M0 Consolidation | ✅ complete | 9/9 tasks |
 | M-fast Feature port | ✅ 14/14 done — but scaffold-level | ~45% of legacy surface actually covered; see `AUDIT-WORKSPACE.md` |
 | M-preview Soft launch | ✅ **LIVE** at `london-cuts.vercel.app` | password-gated via `web/proxy.ts` + Vercel `PREVIEW_PASSWORD` |
-| M-iter UX polish | 🟢 **near-done** — 22 fixes shipped (F-I001..F-I022), VariantsRow + AI features deferred | See `tasks/AUDIT.md` + `AUDIT-WORKSPACE.md` + `AUDIT-PUBLIC-PAGES.md` + `deferred/` |
+| M-iter UX polish | 🟢 **near-done** — 26 fixes shipped (F-I001..F-I027, F-I028 WONTFIX), only VariantsRow + optional LLM-polish for layout remain | See `tasks/AUDIT.md` + `AUDIT-WORKSPACE.md` + `AUDIT-PUBLIC-PAGES.md` + `deferred/` |
 | **M1 Supabase & data** | ✅ **complete (Phases 1+2+3 full + F-I012 verified)** — 2026-04-22/23 | Project `acymyvefnvydksxzzegw` / Frankfurt. 5 tables + RLS + Storage. SSR reads + "☁️ Sync to cloud" button + binary upload all live. F-I012 end-to-end verified against production |
 | M2 Auth & invites | ⏳ not started — **next eligible** | Magic-link via Supabase Auth + invite codes; replaces service_role writes with RLS |
 | M3 Feature parity | 🗄 superseded by M-fast + M-iter | |
@@ -39,6 +39,12 @@ _none_
 
 ## Recently completed
 
+- **F-I024..F-I027** (2026-04-23T07:10Z) — Second dogfood round: map overhaul + AI creator features:
+  - **F-I024** atlas: replaced maplibregl.Popup entirely with a DOM overlay — hover-drift is GONE because MapLibre never sees the card. Pins 36→18px with mode-aware colours. Fashion tiles de-washed (no warm overlay, contrast 0.2). Default-coord stops jittered + "N stops need coordinates" chip
+  - **F-I025** rule-based auto-layout: `lib/layout/skeleton.ts` (idempotent, pure, +6 tests). "✨ Auto-layout" button in body editor + dismissible rationale chip. Zero AI cost
+  - **F-I026** vision → full project: `composeProject()` + `/api/ai/compose-project` (~$0.02/call, gpt-4o-mini text-only). Vision-upload now asks "+ Create N stops" vs "✨ Generate full draft" after describe completes
+  - **F-I027** spine footer sticky: "+ NEW STOP" always visible (overflow moved from aside to ul)
+  - **F-I028 WONTFIX**: postcard gen slow is OpenAI latency, not network
 - **F-I019..F-I023** (2026-04-23T02:30Z) — Dogfood bug-fix sprint from owner's first real-use test:
   - **F-I019** postcard generate accepts data: | http(s) | /-public paths (was: hard 400 on seed heroes)
   - **F-I020** atlas pin hover no longer drifts viewport + fashion tiles legible (subagent)

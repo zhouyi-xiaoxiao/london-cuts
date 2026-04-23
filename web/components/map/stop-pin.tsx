@@ -37,22 +37,29 @@ export function createStopPin(desc: PinDescriptor): HTMLElement {
 
   // Pin chrome — circular badge with the stop number. Kept minimal so
   // the three modes all read cleanly. Tokens come from globals.css.
+  //
+  // Sizing note: earlier iterations used a 36px pin with a 2.5px ring —
+  // owner feedback on dogfooding a 12-stop project was "very crowded,
+  // clashes with the warm tiles". Shrinking to 18px with a 1px stroke
+  // gives the map breathing room while keeping the number readable.
   Object.assign(el.style, {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    width: "36px",
-    height: "36px",
+    width: "18px",
+    height: "18px",
+    padding: "0",
     borderRadius: "50%",
-    background: "var(--mode-bg, #fff)",
-    color: "var(--mode-accent, #b8360a)",
-    border: "2.5px solid var(--mode-accent, #b8360a)",
+    background: "var(--paper, #fff)",
+    color: "var(--mode-ink, #1a1a1a)",
+    border: "1px solid var(--mode-accent, #b8360a)",
     fontFamily: "var(--f-mono, monospace)",
-    fontSize: "12px",
-    fontWeight: "700",
-    letterSpacing: "0.02em",
+    fontSize: "10px",
+    fontWeight: "500",
+    letterSpacing: "0",
+    lineHeight: "1",
     cursor: "pointer",
-    boxShadow: "0 6px 16px rgba(17, 14, 11, 0.18)",
+    boxShadow: "0 2px 6px rgba(17, 14, 11, 0.14)",
     transition: "transform 120ms ease",
     transform: "translate(-50%, -50%) translate(0, 0)",
   } satisfies Partial<CSSStyleDeclaration>);
@@ -62,7 +69,7 @@ export function createStopPin(desc: PinDescriptor): HTMLElement {
   el.appendChild(span);
 
   el.addEventListener("mouseenter", () => {
-    el.style.transform = "translate(-50%, -50%) scale(1.08)";
+    el.style.transform = "translate(-50%, -50%) scale(1.15)";
   });
   el.addEventListener("mouseleave", () => {
     el.style.transform = "translate(-50%, -50%) translate(0, 0)";
