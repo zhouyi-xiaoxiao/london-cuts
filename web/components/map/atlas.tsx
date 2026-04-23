@@ -215,6 +215,14 @@ function buildStyle(mode: NarrativeMode) {
   }
 
   if (mode === "cinema") {
+    // Dogfood round 3 (F-I035): the previous cinema style had
+    // `raster-brightness-max: 0.55` layered over a `#050a18` background,
+    // which rendered CARTO's already-dark `dark_all` tiles essentially
+    // invisible — owner screenshot showed a solid dark navy box with only
+    // the pins visible. Reality-check in Chrome: tile network requests
+    // DID fire (dark_all/12/...png, 200 OK, 24KB each) — they just drew
+    // too dark to see against the bg. Fix = trust CARTO's dark_all
+    // design and strip the heavy post-filter.
     return {
       version: 8 as const,
       sources: {
@@ -226,31 +234,27 @@ function buildStyle(mode: NarrativeMode) {
         },
       },
       layers: [
+        // Under-tile fallback. Sits below the raster so pixels between
+        // tiles (edges, loading state) match the tile palette instead of
+        // flashing paper-cream from the parent container.
         {
           id: "bg",
           type: "background" as const,
-          paint: { "background-color": "#050a18" },
+          paint: { "background-color": "#0f1420" },
         },
         {
           id: "t",
           type: "raster" as const,
           source: "t",
           paint: {
-            "raster-saturation": -0.45,
-            "raster-hue-rotate": 210,
-            "raster-brightness-min": 0.0,
-            "raster-brightness-max": 0.55,
-            "raster-contrast": 0.35,
-            "raster-opacity": 0.95,
-          },
-        },
-        // Subtle cyan rim
-        {
-          id: "cyan-tint",
-          type: "background" as const,
-          paint: {
-            "background-color": "#0a2040",
-            "background-opacity": 0.18,
+            // Let the tiles carry themselves. A tiny saturation lift and
+            // contrast bump give streets definition without washing
+            // anything out.
+            "raster-saturation": 0.1,
+            "raster-brightness-min": 0.15,
+            "raster-brightness-max": 1.0,
+            "raster-contrast": 0.15,
+            "raster-opacity": 1.0,
           },
         },
       ],
