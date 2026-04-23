@@ -1,25 +1,27 @@
-// Supabase client factory (M1). Two clients:
+// Supabase client factory. Three clients:
 //   - `getServerClient()` — uses SUPABASE_SERVICE_ROLE_KEY, bypasses RLS.
 //     Server-only. Safe to call from RSC / route handlers / migrations.
 //   - `getBrowserClient()` — uses NEXT_PUBLIC_SUPABASE_ANON_KEY, respects RLS.
 //     Safe for client bundles. Cached as a module-level singleton.
+//   - `getUserServerClient()` — (M2) SSR auth-aware client that reads the
+//     user's session cookies via `@supabase/ssr`. Use from server components
+//     + route handlers + middleware when you need `auth.uid()` to resolve.
 //
-// Per repo seam discipline: `@supabase/supabase-js` is imported ONLY in this
-// file + in `scripts/*.ts`. Every other `web/lib/*.ts` or component must
-// use these factories (or the higher-level `lib/storage.ts`) so we can swap
-// backends without fan-out.
-//
-// The browser client is intentionally unauthenticated in M1 — reads fall
-// through RLS to the "public SELECT on published+public projects" policy.
-// M2 will inject the Supabase Auth session (magic link) so writes land.
+// Per repo seam discipline: `@supabase/supabase-js` + `@supabase/ssr` are
+// imported ONLY in this file + in `scripts/*.ts`. Every other `web/lib/*.ts`
+// or component must use these factories (or the higher-level `lib/storage.ts`
+// / `lib/auth.ts`) so we can swap backends without fan-out.
 
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
 
 let browserClient: SupabaseClient | null = null;
 
 /**
  * Browser client (anon key). Respects RLS. Cached per module load.
- * Call from "use client" components only.
+ * Call from "use client" components only. M2 flipped this to persist
+ * sessions + detect callback codes so magic-link sign-in works.
  */
 export function getBrowserClient(): SupabaseClient {
   if (browserClient) return browserClient;
@@ -32,10 +34,9 @@ export function getBrowserClient(): SupabaseClient {
   }
   browserClient = createClient(url, anonKey, {
     auth: {
-      // M1: no user sessions yet. Don't persist anything; M2 flips this.
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
     },
   });
   return browserClient;
@@ -63,6 +64,50 @@ export function getServerClient(): SupabaseClient {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
+    },
+  });
+}
+
+/**
+ * M2 — auth-aware server client. Reads the user's session from cookies
+ * via `@supabase/ssr`. Use this when you need RLS policies to evaluate
+ * with `auth.uid()` populated (i.e. from the signed-in user's perspective).
+ *
+ * Safe to call from route handlers / server components / server actions.
+ * Returns a client that:
+ *   - respects RLS
+ *   - sees `auth.uid()` as whoever holds the current session cookie
+ *   - sees `null` user when not signed in
+ *
+ * Cookie mutation (setAll) is a no-op inside plain server components —
+ * Next's cookies() is readonly there. Route handlers + middleware CAN
+ * set cookies, and this client's refresh logic works there. We swallow
+ * the error silently so RSC callers don't crash.
+ */
+export async function getUserServerClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) {
+    throw new Error(
+      "getUserServerClient: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set",
+    );
+  }
+  const cookieStore = await cookies();
+  return createServerClient(url, anonKey, {
+    cookies: {
+      getAll: () => cookieStore.getAll(),
+      setAll: (
+        cookiesToSet: Array<{ name: string; value: string; options: CookieOptions }>,
+      ) => {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options),
+          );
+        } catch {
+          // Read-only in server components — Next will use the
+          // middleware / route-handler cookies for refresh instead.
+        }
+      },
     },
   });
 }

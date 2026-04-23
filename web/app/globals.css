@@ -871,3 +871,50 @@ body[data-mode="cinema"] {
   /* New-project modal — shrink padding, loosen width cap. */
   [role="dialog"] { padding: 20px !important; }
 }
+
+
+/* =========================================================================
+   11. STUDIO WORKSPACE MOBILE BREAKPOINT — 900px
+   Dogfood 2026-04-23: the workspace shell needs its own breakpoint because
+   the spine (288px) + drawer (340px) columns dwarf a 390px iPhone viewport.
+   The layout switch itself happens in components/studio/workspace.tsx via
+   `useViewportWidth(900)`; this block handles CSS-only polish that shouldn't
+   round-trip through React (topbar spacing, mode-pill label hiding, etc.).
+   Scope is intentionally tight — add rules here rather than sprinkling
+   @media blocks across components.
+   ========================================================================= */
+
+@media (max-width: 900px) {
+  /* Topbar — shrink padding, allow wrapping. The isMobile branch in
+     workspace.tsx already does most of this inline, but this covers any
+     remaining browser-default nudges (e.g. the button margin around the
+     mode-pill at narrow widths). */
+  .ws-topbar {
+    min-height: 56px;
+  }
+
+  /* Mode pill — compact labels at tablet/phone widths. */
+  .ws-topbar .mode-pill button {
+    padding: 6px 10px;
+    letter-spacing: 0.1em;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Very narrow phones — mode pill becomes icon-only to save room for
+     the stop-switcher chip and Publish button on the same row. */
+  .ws-topbar .mode-pill button {
+    padding: 6px 8px;
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    min-width: 0;
+  }
+
+  /* Keep the Publish solid button compact so it doesn't push other
+     controls off the row. */
+  .ws-topbar .btn-solid {
+    padding: 8px 10px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+}

@@ -18,19 +18,26 @@ import { StopSpine } from "./stop-spine";
 import { StopCanvas } from "./stop-canvas";
 import { Drawers } from "./drawers/drawers";
 import { PublishDialog } from "./publish-dialog";
+import { MobileStopSwitcher } from "./mobile-stop-switcher";
 
-// ─── Hook: narrow-viewport detection with auto-close on first mount ────
+// ─── Hook: viewport-width detection with threshold ─────────────────────
+// We track two thresholds:
+//   - isNarrow  (< 1200px): drawer collapses to overlay, matches legacy behaviour
+//   - isMobile  (<  900px): spine column hides entirely; stop selection moves
+//                           to a top-bar chip + fullscreen overlay
+// Dogfood 2026-04-23: on an iPhone 14 (390px) the 288px spine ate 74% of the
+// viewport. Hide it below 900px and surface the MobileStopSwitcher instead.
 
-function useNarrowViewport(threshold = 1200): boolean {
-  const [isNarrow, setIsNarrow] = useState(false);
+function useViewportWidth(threshold: number): boolean {
+  const [below, setBelow] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const check = () => setIsNarrow(window.innerWidth < threshold);
+    const check = () => setBelow(window.innerWidth < threshold);
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, [threshold]);
-  return isNarrow;
+  return below;
 }
 
 // ─── Main workspace ────────────────────────────────────────────────────
@@ -46,7 +53,8 @@ export function Workspace() {
   const activeStop = useActiveStop();
   const activeId = useActiveStopId();
   const { setActiveStop } = useStopActions();
-  const isNarrow = useNarrowViewport(1200);
+  const isNarrow = useViewportWidth(1200);
+  const isMobile = useViewportWidth(900);
 
   // On narrow viewport, auto-close drawer once per session so canvas is visible.
   useEffect(() => {
@@ -106,15 +114,22 @@ export function Workspace() {
         />
       )}
 
-      {/* ─── Top bar ────────────────────────────────────────────── */}
+      {/* ─── Top bar ──────────────────────────────────────────────
+          Mobile (<900px): condense. Drop the status/ready eyebrow (it's shown
+          inside the MobileStopSwitcher modal and the drawer "Progress" tab),
+          drop the project title as a separate line (it's already on the
+          /studio landing + still accessible via ← Projects), and surface the
+          stop switcher chip in its place. */}
       <header
+        className="ws-topbar"
+        data-mobile={isMobile ? "true" : "false"}
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "12px 20px",
+          padding: isMobile ? "10px 14px" : "12px 20px",
           borderBottom: "1px solid var(--rule)",
-          gap: 16,
+          gap: isMobile ? 10 : 16,
           flexWrap: "wrap",
         }}
       >
@@ -122,51 +137,100 @@ export function Workspace() {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 14,
+            gap: isMobile ? 10 : 14,
             minWidth: 0,
+            flex: isMobile ? 1 : undefined,
           }}
         >
           <a
             href="/studio"
             className="mono-sm"
-            style={{ opacity: 0.6, textDecoration: "none" }}
+            style={{ opacity: 0.6, textDecoration: "none", flexShrink: 0 }}
+            aria-label="Back to projects"
           >
-            ← Projects
+            {isMobile ? "←" : "← Projects"}
           </a>
           <span
             className="roundel"
-            style={{ width: 20, height: 20, display: "inline-block" }}
+            style={{
+              width: 20,
+              height: 20,
+              display: "inline-block",
+              flexShrink: 0,
+            }}
             aria-hidden
           />
-          <span
-            style={{
-              fontFamily: "var(--mode-display-font, var(--f-fashion))",
-              fontStyle: "var(--mode-italic, italic)",
-              fontSize: 17,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              maxWidth: 280,
-            }}
-            title={project.title}
-          >
-            {project.title}
-          </span>
-          <span className="mono-sm" style={{ opacity: 0.45, fontSize: 10 }}>
-            {project.status === "published" ? "PUBLISHED" : "DRAFT"} · ED.01 ·{" "}
-            {summary.ready}/{summary.total} STOPS READY
-          </span>
+          {!isMobile && (
+            <span
+              style={{
+                fontFamily: "var(--mode-display-font, var(--f-fashion))",
+                fontStyle: "var(--mode-italic, italic)",
+                fontSize: 17,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                maxWidth: 280,
+              }}
+              title={project.title}
+            >
+              {project.title}
+            </span>
+          )}
+          {!isMobile && (
+            <span className="mono-sm" style={{ opacity: 0.45, fontSize: 10 }}>
+              {project.status === "published" ? "PUBLISHED" : "DRAFT"} · ED.01 ·{" "}
+              {summary.ready}/{summary.total} STOPS READY
+            </span>
+          )}
+          {isMobile && (
+            <MobileStopSwitcher
+              stops={stops}
+              selectedId={activeId}
+              onSelect={setActiveStop}
+            />
+          )}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: isMobile ? 6 : 12,
+            flexShrink: 0,
+          }}
+        >
           <ModePill mode={mode} onChange={setMode} />
-          <button
-            className="btn btn-sm"
-            onClick={toggleDrawer}
-            title={ui.drawerOpen ? "Hide right panels" : "Show right panels"}
-          >
-            {ui.drawerOpen ? "Hide panels →" : "← Show panels"}
-          </button>
+          {!isMobile && (
+            <button
+              className="btn btn-sm"
+              onClick={toggleDrawer}
+              title={ui.drawerOpen ? "Hide right panels" : "Show right panels"}
+            >
+              {ui.drawerOpen ? "Hide panels →" : "← Show panels"}
+            </button>
+          )}
+          {isMobile && (
+            <button
+              type="button"
+              onClick={toggleDrawer}
+              aria-label={ui.drawerOpen ? "Hide right panels" : "Show right panels"}
+              title={ui.drawerOpen ? "Hide right panels" : "Show right panels"}
+              className="mono-sm"
+              style={{
+                minHeight: 40,
+                minWidth: 40,
+                padding: "6px 10px",
+                border: "1px solid var(--rule)",
+                background: ui.drawerOpen ? "var(--paper-3)" : "var(--paper-2)",
+                color: "var(--ink)",
+                cursor: "pointer",
+                fontSize: 14,
+                lineHeight: 1,
+              }}
+            >
+              ☰
+            </button>
+          )}
           <button
             className="btn btn-solid"
             onClick={() => setPublishOpen(true)}
@@ -176,32 +240,40 @@ export function Workspace() {
                 : `${summary.total - summary.ready} stop(s) still missing hero/body/postcard`
             }
           >
-            Publish →
+            {isMobile ? "Publish" : "Publish →"}
           </button>
         </div>
       </header>
 
-      {/* ─── Three-column shell ─────────────────────────────────── */}
+      {/* ─── Shell ───────────────────────────────────────────────
+          Mobile (<900px): single full-width canvas column. Spine is hidden
+          entirely; its functions move to the top-bar MobileStopSwitcher.
+          Tablet/laptop (900-1199px): spine + canvas, drawer overlays.
+          Desktop (≥1200px): spine + canvas + drawer. */}
       <div
         className="ws-shell"
         style={{
           display: "grid",
-          gridTemplateColumns: isNarrow
-            ? "var(--spine-w) 1fr"
-            : ui.drawerOpen
-              ? "var(--spine-w) 1fr var(--drawer-w)"
-              : "var(--spine-w) 1fr",
+          gridTemplateColumns: isMobile
+            ? "1fr"
+            : isNarrow
+              ? "var(--spine-w) 1fr"
+              : ui.drawerOpen
+                ? "var(--spine-w) 1fr var(--drawer-w)"
+                : "var(--spine-w) 1fr",
           gap: 0,
           flex: 1,
           minHeight: 0,
         }}
       >
-        <StopSpine
-          stops={stops}
-          selectedId={activeId}
-          onSelect={setActiveStop}
-          summary={summary}
-        />
+        {!isMobile && (
+          <StopSpine
+            stops={stops}
+            selectedId={activeId}
+            onSelect={setActiveStop}
+            summary={summary}
+          />
+        )}
         <StopCanvas stop={activeStop} />
         {ui.drawerOpen && (
           <Drawers

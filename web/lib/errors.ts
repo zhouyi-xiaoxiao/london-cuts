@@ -28,3 +28,17 @@ export class AuthRequiredError extends Error {
     this.name = "AuthRequiredError";
   }
 }
+
+export class OnboardingRequiredError extends Error {
+  constructor() {
+    super("User profile incomplete — redeem an invite code first");
+    this.name = "OnboardingRequiredError";
+  }
+}
+
+export class AdminRequiredError extends Error {
+  constructor() {
+    super("Admin privileges required");
+    this.name = "AdminRequiredError";
+  }
+}
