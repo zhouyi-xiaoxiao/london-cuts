@@ -10,7 +10,7 @@
 
 import { useRef, useState } from "react";
 
-import { MIME_ASSET_ID } from "@/components/studio/hero-slot";
+import { MIME_ASSET_ID } from "@/lib/constants";
 import { useAssetActions } from "@/stores/asset";
 import { useStopActions } from "@/stores/stop";
 import type { Stop } from "@/stores/types";

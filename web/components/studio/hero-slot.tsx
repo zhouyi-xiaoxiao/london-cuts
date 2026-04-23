@@ -18,6 +18,7 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 
+import { DEFAULT_HERO_FOCUS, MIME_ASSET_ID } from "@/lib/constants";
 import { useAssetActions, useAssetsByStop } from "@/stores/asset";
 import { useStopActions } from "@/stores/stop";
 import type { HeroFocus, Stop } from "@/stores/types";
@@ -25,11 +26,6 @@ import type { HeroFocus, Stop } from "@/stores/types";
 export interface HeroSlotProps {
   stop: Stop;
 }
-
-// Shared drag-drop contract. Once the AssetsPoolDrawer starts setting this on
-// dragstart, the hero slot will accept its drops for free.
-export const MIME_ASSET_ID = "text/lc-asset-id";
-const DEFAULT_FOCUS: HeroFocus = { x: 50, y: 50 };
 
 export function HeroSlot({ stop }: HeroSlotProps) {
   const { updateStop } = useStopActions();
@@ -47,7 +43,7 @@ export function HeroSlot({ stop }: HeroSlotProps) {
     ? stopAssets.find((a) => a.id === stop.heroAssetId) ?? null
     : null;
   const heroSrc = heroAsset?.imageUrl ?? null;
-  const focus: HeroFocus = stop.heroFocus ?? DEFAULT_FOCUS;
+  const focus: HeroFocus = stop.heroFocus ?? DEFAULT_HERO_FOCUS;
 
   const attachUploadedFile = useCallback(
     async (file: File) => {
@@ -65,7 +61,7 @@ export function HeroSlot({ stop }: HeroSlotProps) {
         });
         updateStop(stop.n, {
           heroAssetId: assetId,
-          heroFocus: DEFAULT_FOCUS,
+          heroFocus: DEFAULT_HERO_FOCUS,
           status: { ...stop.status, upload: true, hero: true },
         });
         setUploadState("idle");
@@ -127,7 +123,7 @@ export function HeroSlot({ stop }: HeroSlotProps) {
       e.preventDefault();
       updateStop(stop.n, {
         heroAssetId: assetId,
-        heroFocus: DEFAULT_FOCUS,
+        heroFocus: DEFAULT_HERO_FOCUS,
         status: { ...stop.status, upload: true, hero: true },
       });
       return;
@@ -403,8 +399,8 @@ function HeroDraggable({ src, alt, focus, onFocusChange }: HeroDraggableProps) {
   };
 
   const recenter = () => {
-    setLocal(DEFAULT_FOCUS);
-    onFocusChange(DEFAULT_FOCUS);
+    setLocal(DEFAULT_HERO_FOCUS);
+    onFocusChange(DEFAULT_HERO_FOCUS);
   };
 
   if (isPortrait) {

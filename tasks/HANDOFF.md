@@ -13,11 +13,19 @@ A creator tool for documenting a single-location trip (anywhere in the world) wi
 ## Plan version + where we are
 
 `docs/implementation-plan.md` is at **v2.1** — features-first ordering:
-M0 consolidation → M-fast feature port → M-preview soft-launch → M-iter (half-done) → **M1 Supabase (Phases 1+2+3-minimal LIVE)** → M2 Auth+invites → M4/M5/M6.
+M0 consolidation → M-fast feature port → M-preview soft-launch → **M-iter (near-done, only VariantsRow remains)** → **M1 Supabase (Phases 1+2+3 full, F-I012 verified in prod)** → M2 Auth+invites → M4/M5/M6.
 
-**As of 2026-04-22**:
-- **M-preview LIVE**: `https://london-cuts.vercel.app` serving commits on `main`. `/` redirects to `/studio`. 13 seed photos (SE1) + 1 cover render from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired. Preview gate via `web/proxy.ts` (set `PREVIEW_PASSWORD` in Vercel env to activate).
-- **M-iter**: half-done. F-I001..F-I011 shipped (font swap, cinema letterbox, postcard flip, publish URL, atlas brightness, spine add/remove/move, per-mode postcard front + chapter grammars, variant cache). Still missing per `tasks/AUDIT-WORKSPACE.md` + `tasks/AUDIT-PUBLIC-PAGES.md`: VariantsRow, HeroDraggable, AssetPicker, 3 body block types, atlas pin hover, heroFocus integration, cover-asset fallback bug.
+**As of 2026-04-23 (post 4-stream sprint)**:
+- **M-preview LIVE**: `https://london-cuts.vercel.app` serving commits on `main`. `/` redirects to `/studio`. 13 seed photos (SE1) + 1 cover render from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired. Preview gate via `web/proxy.ts` (set `PREVIEW_PASSWORD` in Vercel env to activate). **Preview password is in Vercel prod env**; pull via `cd <repo-root> && npx vercel env pull /tmp/prod.env --environment=production --yes` (delete the file right after — it has ALL secrets).
+- **M-iter: 18/21+ shipped.** F-I001..F-I018. The 4-stream sprint on 2026-04-23 closed the biggest audit gaps. Still open: **VariantsRow only** (deferred to its own session per `tasks/AUDIT-WORKSPACE.md` M3 recommendation — 345-line AI-generation UI, real $ spend, needs undivided attention).
+  - F-I001..F-I011: font swap / cinema letterbox / postcard flip / publish URL / atlas brightness / spine add-remove-move / per-mode postcard-front + chapter grammars / variant cache
+  - F-I012: production sync end-to-end verified via curl (POST /api/sync/upsert → Supabase Storage CDN → HTTP 200)
+  - F-I013: HeroDraggable (pointer-drag pan) + heroFocus persistence + portrait EXIF letterbox + ↺/↻ 90° rotate + file-drop target
+  - F-I014: Body editor 3 → 6 block types (heroImage / inlineImage / mediaEmbed) + AssetPicker modal
+  - F-I015: AssetsPoolDrawer full rewrite — thumbnails + drag-source + hover-× delete + hover-⇥ detach + multi-file upload (per-section) + "Loose + N more" cap
+  - F-I016: Atlas pin-hover MapLibre Popup (mode-token-aware, 220px card, heroUrl thumb + title + mood/time eyebrow)
+  - F-I017: Spine row drop target (MIME_ASSET_ID + files → reassign asset to stop; auto-promote to hero if none)
+  - F-I018: CanvasHeader (Google/Apple Maps deep-links + 📋 copy-coords + body/media counters) + per-stop AssetStrip (thumbnails with HERO badge, click-to-promote, hover-× detach, draggable)
 - **M1 LIVE (Phases 1+2+3 full)**: Supabase backend is real, complete.
   - Project ref: `acymyvefnvydksxzzegw`, region Central EU (Frankfurt), Free tier, org "55".
   - Schema: 5 tables (`users` / `projects` / `stops` / `postcards` / `assets`) + RLS + storage bucket `assets`. Applied via Supabase SQL Editor; source of truth = `web/supabase/migrations/0001_initial.sql`.
@@ -61,12 +69,29 @@ M0 consolidation → M-fast feature port → M-preview soft-launch → M-iter (h
 3. `tasks/PARALLELISM.md` — subagent rules. Three concurrent subagents is the proven upper bound (main + 2 background via `Agent` tool with `run_in_background: true`). Check `touches:` arrays for overlap.
 4. `tasks/LOG.md` — append-only event history, newest at the bottom.
 
+## Drag-drop network (added 2026-04-23, don't break)
+
+After the F-I015/17/18 sprint, the studio has a **drag-drop contract** that four components share. Breaking this breaks the whole network.
+
+**Shared MIME type**: `"text/lc-asset-id"` (value = asset id string). Currently exported as `MIME_ASSET_ID` from `web/components/studio/hero-slot.tsx`. TODO: extract to `web/lib/constants.ts` on next touch (3 files already re-import from hero-slot, import arrow is pointing the wrong way).
+
+**Drag SOURCES** (set `e.dataTransfer.setData(MIME_ASSET_ID, assetId) + effectAllowed="copyMove"` on dragstart):
+- `drawers.tsx` AssetsDrawer cells
+- `stop-canvas.tsx` AssetStrip cells
+
+**Drop TARGETS** (accept `MIME_ASSET_ID` OR `"Files"` on dragover, act on drop):
+- `hero-slot.tsx` — drop asset → set as hero of this stop; drop file → upload + set as hero
+- `stop-spine.tsx` SpineRow — drop asset → reassign to this stop's stop.n; drop file → upload + attach to this stop; auto-promote to hero if stop has none
+
+A new drop target needs the same two handlers (`onDragOver` / `onDrop`), the same MIME check, and should mirror the auto-promote-if-empty pattern. A new drag source needs `draggable={true}` + `onDragStart` setting `MIME_ASSET_ID`.
+
 ## Things a fresh session must NOT regress (latent bug classes)
 
 - **Zustand selectors returning any fresh reference (object literal, filtered array, mapped array) MUST use `useShallow`**. Otherwise "Maximum update depth exceeded" on mount. All existing `use*Actions()`, `useAssetsByStop`, `useLooseAssets` already do this. Caught twice in M-fast (F-T003 action bundles, F-T005 filter selectors). When adding new hooks, default to `useShallow` unless the selector returns a primitive or a value that IS a stable reference.
 - **Test environment**: `vitest.config.ts` defaults to `jsdom`. The Zustand store uses a `safeLocalStorage()` shim in `web/stores/root.ts` that falls back to an in-memory Map. Don't remove — fixes both jsdom and SSR.
 - **Postcard style IDs stay legacy-verbatim**: `illustration | poster | riso | inkwash | anime | artnouveau`. Don't rename to semantic — they key into the variants cache and OpenAI calls later.
 - **Next.js private folders**: `_xxx/` prefix excludes a folder from routing. Use plain `xxx/` for test/poc routes.
+- **`heroFocus` field on Stop is OPTIONAL**. Existing persisted state without it gets a runtime `?? { x: 50, y: 50 }` default — don't change the default without a persist-schema bump (currently v5). Missing `heroFocus` should never throw.
 - **Seed data**: `web/stores/root.ts` pre-seeds `projectsArchive` with a Reykjavík demo. Tests that count archive entries need to account for baseline=1 (see `tests/store.test.ts`).
 - **`next.config.ts` must NOT set `outputFileTracingRoot`** — breaks Vercel deploy with `ENOENT: routes-manifest-deterministic.json`. See "Deploy gotchas" below.
 - **`proxy.ts` (NOT `middleware.ts`)** — Next 16 renamed the convention. Both the file and the exported function are `proxy`. Legacy `middleware.ts` compiles but files a deprecation warning.

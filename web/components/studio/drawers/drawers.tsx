@@ -7,7 +7,7 @@
 
 import { useRef, useState } from "react";
 
-import { MIME_ASSET_ID } from "@/components/studio/hero-slot";
+import { MIME_ASSET_ID } from "@/lib/constants";
 import { useAssetActions, useAssets } from "@/stores/asset";
 import {
   useActiveStop,

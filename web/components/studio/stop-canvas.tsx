@@ -14,7 +14,8 @@ import { useAssetActions, useAssetsByStop } from "@/stores/asset";
 import { useStops, useStopActions } from "@/stores/stop";
 import type { Asset, Stop } from "@/stores/types";
 
-import { HeroSlot, MIME_ASSET_ID } from "./hero-slot";
+import { MIME_ASSET_ID } from "@/lib/constants";
+import { HeroSlot } from "./hero-slot";
 import { StopBodyEditor } from "./stop-body-editor";
 import { StopMetadataForm } from "./stop-metadata-form";
 
