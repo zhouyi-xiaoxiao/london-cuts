@@ -98,15 +98,47 @@ export function StopSpine({ stops, selectedId, onSelect, summary }: StopSpinePro
           padding: "16px 20px 12px",
           borderBottom: "1px solid var(--rule)",
           flexShrink: 0,
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 10,
         }}
       >
-        <div className="eyebrow">{stops.length} stops</div>
-        <div
-          className="mono-sm"
-          style={{ opacity: 0.55, marginTop: 6 }}
-        >
-          {summary.ready}/{summary.total} ready
+        <div style={{ minWidth: 0 }}>
+          <div className="eyebrow">{stops.length} stops</div>
+          <div
+            className="mono-sm"
+            style={{ opacity: 0.55, marginTop: 6 }}
+          >
+            {summary.ready}/{summary.total} ready
+          </div>
         </div>
+        {/* Dogfood F-I037: a top-of-spine "+" button so the add affordance
+            is visible immediately, not 12 rows + a scroll away. Keeps the
+            footer button too (F-I027) — two entry points, both always
+            visible. */}
+        <button
+          type="button"
+          onClick={handleAdd}
+          aria-label="Add a new stop"
+          title="Add a new stop"
+          className="mono-sm"
+          data-testid="spine-add-stop-top"
+          style={{
+            flexShrink: 0,
+            width: 32,
+            height: 32,
+            padding: 0,
+            border: "1px solid var(--rule)",
+            background: "var(--paper-2)",
+            color: "var(--ink)",
+            fontSize: 16,
+            lineHeight: 1,
+            cursor: "pointer",
+          }}
+        >
+          +
+        </button>
       </header>
       <ul
         ref={listRef}

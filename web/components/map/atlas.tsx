@@ -166,48 +166,60 @@ const TILE_ATTR = "© OpenStreetMap © CARTO";
 
 /**
  * Build a MapLibre style spec tuned to a narrative mode.
- * The raster source is the CARTO basemap; paint tweaks nudge the palette
- * toward the mode's vibe (punk gets a full desat + contrast bump to turn
- * the tiles into B&W zine art; cinema and fashion mostly ride on CARTO's
- * own styling with light tint layers for visual seasoning).
+ *
+ * ─── Dogfood round 4 simplification (F-I036) ─────────────────────────
+ *
+ * Previous iterations stacked heavy raster paint filters (brightness-max
+ * caps, hue rotates, saturation clamps, warm/cyan scrims) that tried to
+ * "theme" each mode on top of CARTO's already-designed basemaps. Net
+ * effect was unpredictable rendering — owner reported maps appearing as
+ * blank boxes or unreadable washes across multiple modes even after
+ * tile requests confirmed 200 OK.
+ *
+ * New approach: trust each CARTO basemap as-is (they're professionally
+ * designed for their themes) and use only TINY paint tweaks:
+ *   - 0.05 contrast bump so thin street labels pop
+ *   - raster-opacity: 1.0 (full weight — no ghost tiles)
+ *   - a subtle under-tile bg so loading-state / edge-of-tile pixels
+ *     match the tile palette instead of flashing the paper-cream of
+ *     the parent container
+ *
+ * The narrative VIBE comes from elsewhere: pin colours (mode-accent),
+ * hover-card theming, page chrome. Map is just the map.
  */
 function buildStyle(mode: NarrativeMode) {
+  const tileConfig = {
+    version: 8 as const,
+    sources: {
+      t: {
+        type: "raster" as const,
+        tiles: [TILE_URL[mode]],
+        tileSize: 256,
+        attribution: TILE_ATTR,
+      },
+    },
+  };
+
   if (mode === "punk") {
     return {
-      version: 8 as const,
-      sources: {
-        t: {
-          type: "raster" as const,
-          tiles: [TILE_URL.punk],
-          tileSize: 256,
-          attribution: TILE_ATTR,
-        },
-      },
+      ...tileConfig,
       layers: [
         {
           id: "bg",
           type: "background" as const,
           paint: { "background-color": "#f4f0e6" },
         },
-        // Full desat + extreme contrast — near-B&W xerox look.
         {
           id: "t",
           type: "raster" as const,
           source: "t",
           paint: {
+            // Light_all is already high-contrast B&W-ish; just lift
+            // contrast slightly + desat fully so any stray colour on
+            // the tiles reads zine-mono.
             "raster-saturation": -1,
-            "raster-contrast": 0.9,
-            "raster-brightness-min": 0.0,
-            "raster-brightness-max": 1.0,
-          },
-        },
-        // Red scrim — the "third colour" of the zine palette.
-        {
-          id: "scrim",
-          type: "background" as const,
-          paint: {
-            "background-color": "#b8360a",
-            "background-opacity": 0.14,
+            "raster-contrast": 0.1,
+            "raster-opacity": 1.0,
           },
         },
       ],
@@ -215,28 +227,9 @@ function buildStyle(mode: NarrativeMode) {
   }
 
   if (mode === "cinema") {
-    // Dogfood round 3 (F-I035): the previous cinema style had
-    // `raster-brightness-max: 0.55` layered over a `#050a18` background,
-    // which rendered CARTO's already-dark `dark_all` tiles essentially
-    // invisible — owner screenshot showed a solid dark navy box with only
-    // the pins visible. Reality-check in Chrome: tile network requests
-    // DID fire (dark_all/12/...png, 200 OK, 24KB each) — they just drew
-    // too dark to see against the bg. Fix = trust CARTO's dark_all
-    // design and strip the heavy post-filter.
     return {
-      version: 8 as const,
-      sources: {
-        t: {
-          type: "raster" as const,
-          tiles: [TILE_URL.cinema],
-          tileSize: 256,
-          attribution: TILE_ATTR,
-        },
-      },
+      ...tileConfig,
       layers: [
-        // Under-tile fallback. Sits below the raster so pixels between
-        // tiles (edges, loading state) match the tile palette instead of
-        // flashing paper-cream from the parent container.
         {
           id: "bg",
           type: "background" as const,
@@ -247,13 +240,9 @@ function buildStyle(mode: NarrativeMode) {
           type: "raster" as const,
           source: "t",
           paint: {
-            // Let the tiles carry themselves. A tiny saturation lift and
-            // contrast bump give streets definition without washing
-            // anything out.
-            "raster-saturation": 0.1,
-            "raster-brightness-min": 0.15,
-            "raster-brightness-max": 1.0,
-            "raster-contrast": 0.15,
+            // CARTO dark_all is already dark by design. Just lift
+            // contrast so streets carry. No brightness-cap, no tints.
+            "raster-contrast": 0.08,
             "raster-opacity": 1.0,
           },
         },
@@ -261,48 +250,27 @@ function buildStyle(mode: NarrativeMode) {
     };
   }
 
-  // fashion (default). Owner feedback: previous pass felt "washed out"
-  // because the warm scrim muddied tile contrast more than it gave
-  // character. Dropping the warm layer entirely and pushing contrast /
-  // saturation gives cleaner tiles without losing the fashion palette
-  // (the pins + postcard chrome already carry the warm accent).
+  // fashion (default)
   return {
-    version: 8 as const,
-    sources: {
-      t: {
-        type: "raster" as const,
-        tiles: [TILE_URL.fashion],
-        tileSize: 256,
-        attribution: TILE_ATTR,
-      },
-    },
+    ...tileConfig,
     layers: [
       {
         id: "bg",
         type: "background" as const,
-        paint: { "background-color": "#f0e3cb" },
+        paint: { "background-color": "#f7f1e5" },
       },
       {
         id: "t",
         type: "raster" as const,
         source: "t",
         paint: {
-          // Less desat than before (-0.25 vs -0.35) so warm hues read.
-          "raster-saturation": -0.25,
-          "raster-hue-rotate": 20,
-          // Drop min so dark ink (road names, labels) can reach through
-          // without being lifted toward grey.
-          "raster-brightness-min": 0.75,
-          // Capped at 1.0 — MapLibre rejects > 1 and the resulting console
-          // error wakes Next dev tools' "1 issue" badge on every public page.
-          "raster-brightness-max": 1.0,
-          // Pushed from 0.1 to 0.2 — street labels now pop, building
-          // outlines stop blending into the cream base.
-          "raster-contrast": 0.2,
-          "raster-opacity": 0.95,
+          // Voyager is warm + readable out of the box. Tiny contrast
+          // lift only; no brightness cap, no saturation clamp, no
+          // hue-rotate. Keeps street labels sharp.
+          "raster-contrast": 0.08,
+          "raster-opacity": 1.0,
         },
       },
-      // NO warm overlay layer here — dropped to fix the washed-out look.
     ],
   };
 }
