@@ -1,31 +1,34 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-21T05:30Z
+**Last updated:** 2026-04-23T00:00Z
 
 ## Plan version
 
-**Plan v2.1** (see `docs/implementation-plan.md`): features-first, time estimates removed. M0 complete → **M-fast complete** → M-preview next. M1/M2/M4/M5/M6 still deferred.
+**Plan v2.1** (see `docs/implementation-plan.md`): features-first, time estimates removed. M0 → M-fast → M-preview → M-iter → **M1 complete** → M2 next.
 
 ## Summary
 
-| Milestone | TODO | IN_PROGRESS | DONE | BLOCKED | Total | Status |
-|-----------|------|-------------|------|---------|-------|--------|
-| M0 Consolidation        | 0  | 0 | 9  | 0 | 9  | ✅ complete |
-| **M-fast Feature port** | 0  | 0 | 14 | 0 | 14 | ✅ **complete** |
-| M-preview Soft launch   | —  | — | —  | — | —  | **next** ⭐ |
-| M-preview Soft launch   | —  | — | — | — | —  | after M-fast |
-| M1 Supabase & data      | 8  | 0 | 0 | 0 | 8  | ⏸ postponed |
-| M2 Auth & invites       | 10 | 0 | 0 | 0 | 10 | ⏸ postponed |
-| M3 Feature parity       | 13 | 0 | 0 | 0 | 13 | 🗄 superseded by M-fast |
-| M4 Public pages         | 10 | 0 | 0 | 0 | 10 | ⏸ postponed |
-| M5 Observability        | 6  | 0 | 0 | 0 | 6  | ⏸ postponed |
-| M6 Launch               | 9  | 0 | 0 | 0 | 9  | ⏸ postponed |
+| Milestone | Status | Notes |
+|---|---|---|
+| M0 Consolidation | ✅ complete | 9/9 tasks |
+| M-fast Feature port | ✅ 14/14 done — but scaffold-level | ~45% of legacy surface actually covered; see `AUDIT-WORKSPACE.md` |
+| M-preview Soft launch | ✅ **LIVE** at `london-cuts.vercel.app` | password-gated via `web/proxy.ts` + Vercel `PREVIEW_PASSWORD` |
+| M-iter UX polish | 🟡 **partial** — 11 fixes shipped (F-I001..F-I011), 10+ gaps remain | See `tasks/AUDIT.md` + `AUDIT-WORKSPACE.md` + `AUDIT-PUBLIC-PAGES.md` |
+| **M1 Supabase & data** | ✅ **complete (Phases 1+2+3 full)** — 2026-04-22/23 | Project `acymyvefnvydksxzzegw` / Frankfurt. 5 tables + RLS + Storage. SSR reads + "☁️ Sync to cloud" button + binary upload all live |
+| M2 Auth & invites | ⏳ not started — **next eligible** | Magic-link via Supabase Auth + invite codes; replaces service_role writes with RLS |
+| M3 Feature parity | 🗄 superseded by M-fast + M-iter | |
+| M4 Public pages polish | ⏳ not started | OG images, ToS, privacy, feedback form |
+| M5 Observability | ⏳ not started | Sentry / PostHog / GitHub Actions CI |
+| M6 Launch | ⏳ not started | Custom domain `zhouyixiaoxiao.org` (IONOS CNAME + Vercel), invite codes, smoke test |
 
-## Eligible next tasks
+## Eligible next tracks (owner picks)
 
-**M-fast 14/14 complete.** Next milestone is **M-preview** — soft-launch at a password-gated Vercel URL so 3–5 friends can try the app. See `tasks/HANDOFF.md` "The road ahead" section for the post-M-fast roadmap (M-preview → M-iter → M1 Supabase → M2 Auth → M4/M5/M6).
+1. **M2 Auth + invites** — real multi-user. Unblocks real cross-device collaboration and removes the service_role workaround.
+2. **Finish M-iter** — close the 10+ audit gaps (VariantsRow, HeroDraggable, AssetPicker, heroFocus integration, atlas pin hover, 3 body block types). This is polish work; no architectural unlock.
+3. **M6 custom domain** — ~15 min owner action (IONOS DNS) + 5 min Vercel. No architectural change. Makes sharing friendlier (`zhouyixiaoxiao.org` beats `vercel.app`).
+4. **M-iter F-I012: verify sync end-to-end in production** — 5 min owner action; see HANDOFF.md "what the owner should do next".
 
-First step for M-preview is an **owner action**: create/link Vercel project, paste env vars. A small `web/middleware.ts` adds the password gate.
+First step for whichever track: read `tasks/HANDOFF.md` first — it's the canonical resume-point and has the M1 architecture diagram + seam map + gotchas.
 
 ## In progress
 
