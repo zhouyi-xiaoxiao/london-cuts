@@ -12,6 +12,9 @@
 // Client code never imports `openai` directly — it posts to
 // /api/ai/generate which calls `generatePostcardArt` here.
 
+import { promises as fs } from "node:fs";
+import path from "node:path";
+
 import OpenAI from "openai";
 
 import { AuthRequiredError, QuotaExceededError } from "./errors";
@@ -29,7 +32,14 @@ export type PostcardStyle =
 export interface GeneratePostcardInput {
   /** Stable owner identity (future: Supabase auth user id). */
   userId: string;
-  /** A data URL (data:image/jpeg;base64,...) of the source photo. */
+  /**
+   * Source photo. Accepts any of:
+   *   - `data:image/<mime>;base64,<payload>`  (fresh upload)
+   *   - `https?://...`                         (remote, e.g. Supabase CDN)
+   *   - `/seed-images/foo.jpg`                 (same-origin public path)
+   * Kept as `sourceImageDataUrl` for back-compat with the route + client
+   * payload shape; don't be fooled by the name.
+   */
   sourceImageDataUrl: string;
   style: PostcardStyle;
   /** Quality tier. 'low' / 'medium' / 'high' map to OpenAI sizes and cost. */
@@ -99,11 +109,77 @@ function mockImage(style: StyleMeta): string {
   return "data:image/svg+xml;base64," + Buffer.from(svg).toString("base64");
 }
 
+// ─── Source normalisation ─────────────────────────────────────────────
+//
+// The postcard pipeline accepts hero images in THREE shapes:
+//   1. `data:image/<mime>;base64,<payload>` — fresh client upload.
+//   2. `https?://...` — remote URL (e.g. Supabase Storage CDN after Sync).
+//   3. `/seed-images/foo.jpg` — same-origin public path (demo seed assets).
+//
+// OpenAI's `images.edit` wants bytes. We fetch/read + convert to a File
+// before making the call. Kept private to this module; callers pass any
+// of the three shapes.
+
+const MIME_FROM_EXT: Record<string, string> = {
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+};
+
+interface NormalisedSource {
+  bytes: Buffer;
+  mime: string;
+}
+
+async function sourceToBytes(source: string): Promise<NormalisedSource> {
+  // (1) data URL — parse inline.
+  const dataMatch = /^data:(image\/[\w+-]+);base64,(.*)$/.exec(source);
+  if (dataMatch) {
+    const [, mime, b64] = dataMatch;
+    return { mime, bytes: Buffer.from(b64, "base64") };
+  }
+
+  // (2) remote http(s) URL — fetch + derive mime from Content-Type.
+  if (source.startsWith("http://") || source.startsWith("https://")) {
+    const resp = await fetch(source);
+    if (!resp.ok) {
+      throw new Error(
+        `fetch source image failed (${resp.status} ${resp.statusText})`,
+      );
+    }
+    const mime = resp.headers.get("content-type") ?? "image/jpeg";
+    const ab = await resp.arrayBuffer();
+    return { mime, bytes: Buffer.from(ab) };
+  }
+
+  // (3) same-origin public path — read from disk. Next serves `public/*`
+  // at the URL root, so `/seed-images/foo.jpg` lives at
+  // `<cwd>/public/seed-images/foo.jpg` during `next dev` and `next start`.
+  if (source.startsWith("/")) {
+    const safe = source.replace(/^\/+/, "").split("?")[0];
+    // Guardrail: reject anything that tries to escape the public root.
+    if (safe.includes("..")) {
+      throw new Error("refusing to read outside public/");
+    }
+    const full = path.join(process.cwd(), "public", safe);
+    const bytes = await fs.readFile(full);
+    const ext = path.extname(full).toLowerCase();
+    const mime = MIME_FROM_EXT[ext] ?? "image/jpeg";
+    return { mime, bytes };
+  }
+
+  throw new Error(
+    "source must be a data: URL, http(s) URL, or '/'-rooted public path",
+  );
+}
+
 // ─── Real OpenAI call ─────────────────────────────────────────────────
 
 async function realGenerate(
   style: StyleMeta,
-  sourceImageDataUrl: string,
+  source: string,
   quality: "low" | "medium" | "high",
 ): Promise<string> {
   if (!env.OPENAI_API_KEY) {
@@ -111,14 +187,16 @@ async function realGenerate(
   }
   const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 
-  // Convert data URL → Blob → File (what the SDK's images.edit expects).
-  const match = /^data:(image\/[\w+-]+);base64,(.*)$/.exec(sourceImageDataUrl);
-  if (!match) {
-    throw new Error("sourceImageDataUrl must be a base64-encoded data URL");
-  }
-  const [, mime, b64] = match;
-  const bytes = Buffer.from(b64, "base64");
-  const file = new File([bytes], "source.png", { type: mime });
+  const { bytes, mime } = await sourceToBytes(source);
+  const ext = mime.includes("png")
+    ? "png"
+    : mime.includes("webp")
+      ? "webp"
+      : "jpg";
+  // `new File([Buffer])` trips the DOM typings in Node 22+ (Buffer's
+  // backing store can be SharedArrayBuffer). Copy to a plain Uint8Array
+  // which File/Blob accepts unconditionally.
+  const file = new File([new Uint8Array(bytes)], `source.${ext}`, { type: mime });
 
   // Model: gpt-image-2 — current OpenAI image-edit model. Same request
   // shape as gpt-image-1; swap in place. If OpenAI deprecates this name

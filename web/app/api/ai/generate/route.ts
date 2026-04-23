@@ -44,12 +44,23 @@ export async function POST(req: Request) {
   if (typeof userId !== "string" || !userId) {
     return NextResponse.json({ error: "userId is required" }, { status: 400 });
   }
-  if (
-    typeof sourceImageDataUrl !== "string" ||
-    !sourceImageDataUrl.startsWith("data:image/")
-  ) {
+  if (typeof sourceImageDataUrl !== "string" || !sourceImageDataUrl) {
     return NextResponse.json(
-      { error: "sourceImageDataUrl must be a base64 image data URL" },
+      { error: "sourceImageDataUrl is required" },
+      { status: 400 },
+    );
+  }
+  const validSource =
+    sourceImageDataUrl.startsWith("data:image/") ||
+    sourceImageDataUrl.startsWith("http://") ||
+    sourceImageDataUrl.startsWith("https://") ||
+    sourceImageDataUrl.startsWith("/");
+  if (!validSource) {
+    return NextResponse.json(
+      {
+        error:
+          "sourceImageDataUrl must be a data: URL, an http(s) URL, or a '/'-rooted public path",
+      },
       { status: 400 },
     );
   }

@@ -24,6 +24,7 @@ export interface StopSpineProps {
 
 export function StopSpine({ stops, selectedId, onSelect, summary }: StopSpineProps) {
   const listRef = useRef<HTMLUListElement>(null);
+  const [addHover, setAddHover] = useState(false);
   const { addStop, removeStop, moveStop } = useStopActions();
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLLIElement>, index: number) => {
@@ -51,6 +52,15 @@ export function StopSpine({ stops, selectedId, onSelect, summary }: StopSpinePro
     const newN = addStop(selectedId);
     // addStop already updates ui.activeStopId; mirror the selection prop.
     onSelect(newN);
+    // The new row may be off-screen if the list is long — scroll it into view
+    // so the owner can see where the stop landed.
+    // Defer to next frame so the DOM node for the new row has mounted.
+    requestAnimationFrame(() => {
+      const row = listRef.current?.querySelector<HTMLLIElement>(
+        `#spine-row-${CSS.escape(newN)}`,
+      );
+      row?.scrollIntoView({ block: "nearest" });
+    });
   };
 
   const handleMove = (stopId: string, direction: "up" | "down") => {
@@ -110,6 +120,7 @@ export function StopSpine({ stops, selectedId, onSelect, summary }: StopSpinePro
           <SpineRow
             key={stop.n}
             stop={stop}
+            index={index}
             selected={stop.n === selectedId}
             isFirst={index === 0}
             isLast={index === stops.length - 1}
@@ -132,23 +143,28 @@ export function StopSpine({ stops, selectedId, onSelect, summary }: StopSpinePro
         <button
           type="button"
           onClick={handleAdd}
+          onMouseEnter={() => setAddHover(true)}
+          onMouseLeave={() => setAddHover(false)}
+          onFocus={() => setAddHover(true)}
+          onBlur={() => setAddHover(false)}
           className="btn btn-sm"
           style={{
             width: "100%",
-            padding: "8px 12px",
+            padding: "12px 14px",
             fontFamily: "var(--f-mono)",
             fontSize: 11,
             letterSpacing: "0.12em",
             textTransform: "uppercase",
-            border: "1px dashed var(--rule)",
-            background: "transparent",
+            border: "1px solid var(--rule)",
+            background: addHover ? "var(--paper-3)" : "var(--paper-2)",
             color: "var(--ink)",
             cursor: "pointer",
+            transition: "background 120ms ease",
           }}
           data-testid="spine-add-stop"
           aria-label="Add a new stop after the current one"
         >
-          + Add stop
+          + NEW STOP
         </button>
       </footer>
     </aside>
@@ -157,6 +173,7 @@ export function StopSpine({ stops, selectedId, onSelect, summary }: StopSpinePro
 
 interface SpineRowProps {
   stop: Stop;
+  index: number;
   selected: boolean;
   isFirst: boolean;
   isLast: boolean;
@@ -170,6 +187,7 @@ interface SpineRowProps {
 
 function SpineRow({
   stop,
+  index,
   selected,
   isFirst,
   isLast,
@@ -270,7 +288,7 @@ function SpineRow({
         className="mono-sm"
         style={{ opacity: 0.55, width: 28, flexShrink: 0 }}
       >
-        {stop.n}
+        {String(index + 1).padStart(2, "0")}
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div

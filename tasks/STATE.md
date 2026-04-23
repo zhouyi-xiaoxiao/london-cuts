@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-23T02:00Z
+**Last updated:** 2026-04-23T02:30Z
 
 ## Plan version
 
@@ -13,7 +13,7 @@
 | M0 Consolidation | ✅ complete | 9/9 tasks |
 | M-fast Feature port | ✅ 14/14 done — but scaffold-level | ~45% of legacy surface actually covered; see `AUDIT-WORKSPACE.md` |
 | M-preview Soft launch | ✅ **LIVE** at `london-cuts.vercel.app` | password-gated via `web/proxy.ts` + Vercel `PREVIEW_PASSWORD` |
-| M-iter UX polish | 🟢 **near-done** — 18 fixes shipped (F-I001..F-I018), only VariantsRow remains | See `tasks/AUDIT.md` + `AUDIT-WORKSPACE.md` + `AUDIT-PUBLIC-PAGES.md` |
+| M-iter UX polish | 🟢 **near-done** — 22 fixes shipped (F-I001..F-I022), VariantsRow + AI features deferred | See `tasks/AUDIT.md` + `AUDIT-WORKSPACE.md` + `AUDIT-PUBLIC-PAGES.md` + `deferred/` |
 | **M1 Supabase & data** | ✅ **complete (Phases 1+2+3 full + F-I012 verified)** — 2026-04-22/23 | Project `acymyvefnvydksxzzegw` / Frankfurt. 5 tables + RLS + Storage. SSR reads + "☁️ Sync to cloud" button + binary upload all live. F-I012 end-to-end verified against production |
 | M2 Auth & invites | ⏳ not started — **next eligible** | Magic-link via Supabase Auth + invite codes; replaces service_role writes with RLS |
 | M3 Feature parity | 🗄 superseded by M-fast + M-iter | |
@@ -39,6 +39,12 @@ _none_
 
 ## Recently completed
 
+- **F-I019..F-I023** (2026-04-23T02:30Z) — Dogfood bug-fix sprint from owner's first real-use test:
+  - **F-I019** postcard generate accepts data: | http(s) | /-public paths (was: hard 400 on seed heroes)
+  - **F-I020** atlas pin hover no longer drifts viewport + fashion tiles legible (subagent)
+  - **F-I021** spine displays 1-index position (`01`, `02` contiguous after deletes); `stop.n` stays stable. "+ NEW STOP" button more obvious (subagent)
+  - **F-I022** cinema mode text visibility: `[data-mode="cinema"]` now overrides raw `--paper*` + `--ink*` tokens so inline-style components auto-adapt; body gradient also dark in cinema
+  - **F-I023 (research)** — `tasks/deferred/ai-auto-layout-and-vision-to-project.md` (598 lines): recommends rule-based skeleton + optional LLM polish; reuse per-photo describe + text compose call; $0.14-0.38 per project
 - **F-I015..F-I018** (2026-04-23T02:00Z) — Four-stream parallel sprint closed the biggest audit gaps:
   - **F-I015** drawers.tsx — AssetsPool upload + delete + drag-source + hover-⇥ detach (subagent D)
   - **F-I016** atlas.tsx — MapLibre Popup on pin hover (subagent E, 4 files)

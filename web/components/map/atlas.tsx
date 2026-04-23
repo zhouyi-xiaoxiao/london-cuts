@@ -245,11 +245,15 @@ function buildStyle(mode: NarrativeMode) {
         paint: {
           "raster-saturation": -0.35,
           "raster-hue-rotate": 20,
-          "raster-brightness-min": 0.85,
+          // Drop min so dark ink (road names, labels) can reach through
+          // the warm overlay without being lifted toward grey.
+          "raster-brightness-min": 0.75,
           // Capped at 1.0 — MapLibre rejects > 1 and the resulting console
           // error wakes Next dev tools' "1 issue" badge on every public page.
           "raster-brightness-max": 1.0,
-          "raster-contrast": -0.05,
+          // Positive contrast pushes street labels forward instead of
+          // blending them into the cream base.
+          "raster-contrast": 0.1,
           "raster-opacity": 0.9,
         },
       },
@@ -258,7 +262,8 @@ function buildStyle(mode: NarrativeMode) {
         type: "background" as const,
         paint: {
           "background-color": "#c97a3c",
-          "background-opacity": 0.08,
+          // Warm scrim dialed back so it tints without washing out text.
+          "background-opacity": 0.05,
         },
       },
     ],
@@ -402,6 +407,8 @@ type MaplibreMap = {
   remove: () => void;
   setStyle: (style: ReturnType<typeof buildStyle>) => unknown;
   once: (event: string, cb: () => void) => unknown;
+  on: (event: string, cb: () => void) => unknown;
+  off?: (event: string, cb: () => void) => unknown;
   fitBounds: (bounds: unknown, opts: unknown) => unknown;
 };
 type MaplibreMarker = {
@@ -440,9 +447,16 @@ export function Atlas({
   // re-render on every pan/zoom.
   const mapRef = useRef<MaplibreMap | null>(null);
   const markersRef = useRef<MaplibreMarker[]>([]);
-  // One popup per marker, created lazily on first hover. Kept parallel
-  // to `markersRef` so we can remove them on re-render / unmount.
+  // One popup per marker, created eagerly at marker-creation time and
+  // kept parallel to `markersRef` so a single `popup.addTo` /
+  // `popup.remove()` flips visibility on hover without re-building DOM
+  // on every `mouseenter`. Re-creating the popup per hover was the root
+  // cause of the "map drifts when the mouse moves over a pin" bug —
+  // MapLibre would auto-pan to keep the freshly-added content in view.
   const popupsRef = useRef<MaplibrePopup[]>([]);
+  // Tracks whichever popup is currently on-screen so map-level events
+  // (movestart / zoomstart) can yank it off even if `mouseleave` missed.
+  const activePopupRef = useRef<MaplibrePopup | null>(null);
   const maplibreRef = useRef<MaplibreModule | null>(null);
 
   // Tracks whether we've had a hard failure and need to show the SVG.
@@ -496,6 +510,7 @@ export function Atlas({
         }
       });
       popupsRef.current = [];
+      activePopupRef.current = null;
 
       stops.forEach((stop) => {
         const el = createStopPin({
@@ -515,24 +530,37 @@ export function Atlas({
           .addTo(map);
         markersRef.current.push(marker);
 
-        // One popup per pin, added to the map only on mouseenter. Kept
-        // in `popupsRef` so the re-render / unmount path can tear them
-        // down alongside their markers.
+        // One popup per pin, fully configured at creation time. Building
+        // + populating the popup once (rather than per-mouseenter) stops
+        // MapLibre from auto-panning to "reveal" freshly-added popup DOM
+        // — that auto-pan was the user-visible "map drifts on hover" bug.
+        //
+        // `anchor: "bottom"` with `offset: [0, -18]` pins the popup above
+        // the marker, which means MapLibre already knows where the tip
+        // will land when `addTo` is called — no layout-driven re-center.
+        // `closeOnMove: false` keeps the caller in charge of teardown.
         const popup = new maplibregl.Popup({
           closeButton: false,
           closeOnClick: false,
-          offset: 24,
+          closeOnMove: false,
+          anchor: "bottom",
+          offset: [0, -18],
           className: "atlas-pin-popover",
           maxWidth: "220px",
-        });
+        })
+          .setLngLat([stop.lng, stop.lat])
+          .setHTML(renderPopoverHtml(stop, mode));
         popupsRef.current.push(popup);
 
         el.addEventListener("mouseenter", () => {
           try {
-            popup
-              .setLngLat([stop.lng, stop.lat])
-              .setHTML(renderPopoverHtml(stop, mode))
-              .addTo(map);
+            // Clear whatever was shown before (defensive — fast mouse
+            // moves can land on a neighbour before `mouseleave` fires).
+            if (activePopupRef.current && activePopupRef.current !== popup) {
+              activePopupRef.current.remove();
+            }
+            popup.addTo(map);
+            activePopupRef.current = popup;
           } catch {
             /* swallow — popup failure shouldn't break the pin */
           }
@@ -540,6 +568,9 @@ export function Atlas({
         el.addEventListener("mouseleave", () => {
           try {
             popup.remove();
+            if (activePopupRef.current === popup) {
+              activePopupRef.current = null;
+            }
           } catch {
             /* swallow */
           }
@@ -591,8 +622,17 @@ export function Atlas({
           const style = document.createElement("style");
           style.setAttribute("data-atlas-popover-css", "1");
           style.textContent = [
-            ".maplibregl-popup.atlas-pin-popover{pointer-events:none;}",
+            // The popup root is absolutely positioned by MapLibre. Belt-
+            // and-suspenders `pointer-events: none` so the hover card
+            // never eats events on the pin underneath or causes the map
+            // to treat it as interactive (which would trigger auto-pan).
+            ".maplibregl-popup.atlas-pin-popover{",
+            "pointer-events:none;",
+            "position:absolute;",
+            "will-change:transform;",
+            "}",
             ".maplibregl-popup.atlas-pin-popover .maplibregl-popup-content{",
+            "pointer-events:none;",
             "padding:0;",
             "border-radius:6px;",
             "border:1px solid color-mix(in oklab, var(--mode-ink, #1a1a1a) 18%, transparent);",
@@ -623,6 +663,28 @@ export function Atlas({
         });
         mapRef.current = map;
         setReady(true);
+
+        // Dismiss any popup the moment the user starts panning or
+        // zooming. Without this, a popup left hanging by a too-fast
+        // `mouseleave` can feel like the map "drifted" on hover —
+        // addressing the same dogfooding report as the popup rework.
+        const dismissPopup = () => {
+          const active = activePopupRef.current;
+          if (active) {
+            try {
+              active.remove();
+            } catch {
+              /* swallow */
+            }
+            activePopupRef.current = null;
+          }
+        };
+        try {
+          map.on("movestart", dismissPopup);
+          map.on("zoomstart", dismissPopup);
+        } catch {
+          /* swallow — test stubs may not implement .on */
+        }
 
         // Render markers once the style has loaded. `idle` fires after
         // every tile has settled, so it's the most reliable moment.
@@ -669,6 +731,7 @@ export function Atlas({
         }
       });
       popupsRef.current = [];
+      activePopupRef.current = null;
       if (mapRef.current) {
         try {
           mapRef.current.remove();
