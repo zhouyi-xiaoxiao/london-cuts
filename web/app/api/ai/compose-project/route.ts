@@ -18,6 +18,7 @@ import {
   getSpendToDateCents,
   type ComposePhotoInput,
 } from "@/lib/ai-provider";
+import { gateApiRequest } from "@/lib/api-auth";
 import { AuthRequiredError, QuotaExceededError } from "@/lib/errors";
 
 interface RequestBody {
@@ -25,6 +26,9 @@ interface RequestBody {
 }
 
 export async function POST(req: Request) {
+  const gate = await gateApiRequest();
+  if (!gate.allowed) return gate.response;
+
   let body: RequestBody;
   try {
     body = (await req.json()) as RequestBody;

@@ -14,6 +14,7 @@ import {
   type GeneratePostcardInput,
   type PostcardStyle,
 } from "@/lib/ai-provider";
+import { gateApiRequest } from "@/lib/api-auth";
 import {
   AuthRequiredError,
   QuotaExceededError,
@@ -29,6 +30,9 @@ const VALID_STYLES: readonly PostcardStyle[] = [
 ];
 
 export async function POST(req: Request) {
+  const gate = await gateApiRequest();
+  if (!gate.allowed) return gate.response;
+
   let body: Partial<GeneratePostcardInput>;
   try {
     body = await req.json();
@@ -39,7 +43,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const { userId, sourceImageDataUrl, style, quality } = body;
+  const { sourceImageDataUrl, style, quality } = body;
+  // Session profile id (when M2 auth active) wins over client-supplied
+  // userId — clients can't forge someone else's identity.
+  const userId = gate.profileId ?? body.userId;
 
   if (typeof userId !== "string" || !userId) {
     return NextResponse.json({ error: "userId is required" }, { status: 400 });

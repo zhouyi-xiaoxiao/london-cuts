@@ -1,8 +1,9 @@
-// Studio → Supabase sync endpoint (M1 Phase 3 full).
+// Studio → Supabase sync endpoint.
 //
-// The dashboard ships a "☁️ Sync to cloud" button. On click, the client POSTs
-// the current Zustand state here. We upsert it into Supabase using the
-// service_role key (M2 flips to owner-scoped RLS writes).
+// M1 path (default): writes via service_role + hardcoded OWNER_ID.
+// M2 path (when M2_AUTH_ENABLED=true): writes via user-scoped anon client;
+//   owner_id derived from the signed-in user's `public.users.id`;
+//   RLS enforces that users can only write their own projects.
 //
 // What syncs:
 //   ✓ Project row (title, subtitle, default_mode, etc.)
@@ -20,10 +21,13 @@
 
 import { NextResponse } from "next/server";
 
-import { getServerClient } from "@/lib/supabase";
+import { gateApiRequest, isM2Enabled } from "@/lib/api-auth";
+import { getServerClient, getUserServerClient } from "@/lib/supabase";
 
-// Same seeded owner UUID as migrate/seed/route.ts. M2 replaces with auth.uid().
-const OWNER_ID = "00000000-0000-4000-8000-000000000001";
+// Default owner UUID (same as migrate/seed/route.ts). Used when M2 auth
+// is not enabled. When M2_AUTH_ENABLED=true we derive owner_id from the
+// signed-in user's profile instead.
+const DEFAULT_OWNER_ID = "00000000-0000-4000-8000-000000000001";
 const ASSETS_BUCKET = "assets";
 
 interface SyncAsset {
@@ -85,6 +89,9 @@ interface SyncPayload {
 }
 
 export async function POST(req: Request) {
+  const gate = await gateApiRequest();
+  if (!gate.allowed) return gate.response;
+
   let payload: SyncPayload;
   try {
     payload = (await req.json()) as SyncPayload;
@@ -98,9 +105,14 @@ export async function POST(req: Request) {
     );
   }
 
+  // M2 auth enabled → write as the signed-in user via RLS-respecting
+  // client. `profileId` came from their session; forces `owner_id` to
+  // match so users cannot overwrite each other's projects.
+  // Legacy path (no M2) → service_role + seeded default owner id.
+  const ownerId = gate.profileId ?? DEFAULT_OWNER_ID;
   let db;
   try {
-    db = getServerClient();
+    db = isM2Enabled() ? await getUserServerClient() : getServerClient();
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : String(e) },
@@ -111,15 +123,20 @@ export async function POST(req: Request) {
   const log: string[] = [];
 
   try {
-    // ─── Ensure owner user row exists ──────────────────────────────
-    await db.from("users").upsert(
-      {
-        id: OWNER_ID,
-        handle: "ana-ishii",
-        display_name: payload.project.author ?? "Ana Ishii",
-      },
-      { onConflict: "id" },
-    );
+    // ─── Ensure owner user row exists (legacy path only) ───────────
+    // Under M2 the user row is created by /api/invites/redeem during
+    // onboarding, so we don't upsert here — it'd fail under RLS anyway
+    // since users table writes are service-role only.
+    if (!isM2Enabled()) {
+      await (db as ReturnType<typeof getServerClient>).from("users").upsert(
+        {
+          id: ownerId,
+          handle: "ana-ishii",
+          display_name: payload.project.author ?? "Ana Ishii",
+        },
+        { onConflict: "id" },
+      );
+    }
 
     // ─── Upsert project by legacy_id ───────────────────────────────
     const projectLegacyId = payload.project.id ?? `lc-${payload.project.slug}`;
@@ -128,7 +145,7 @@ export async function POST(req: Request) {
       .upsert(
         {
           legacy_id: projectLegacyId,
-          owner_id: OWNER_ID,
+          owner_id: ownerId,
           slug: payload.project.slug,
           title: payload.project.title,
           subtitle: payload.project.subtitle ?? null,
@@ -174,7 +191,7 @@ export async function POST(req: Request) {
           const uploaded = await uploadDataUrlToStorage(
             db,
             a.dataUrl,
-            `${OWNER_ID}/${projectId}/${a.legacyId}`,
+            `${ownerId}/${projectId}/${a.legacyId}`,
           );
           if (uploaded.ok) {
             storagePath = uploaded.publicUrl;
@@ -192,7 +209,7 @@ export async function POST(req: Request) {
 
         assetRows.push({
           legacy_id: a.legacyId,
-          owner_id: OWNER_ID,
+          owner_id: ownerId,
           project_id: projectId,
           kind: "photo",
           tone:

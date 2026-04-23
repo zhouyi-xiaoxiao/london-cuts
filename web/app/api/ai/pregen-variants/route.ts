@@ -12,7 +12,8 @@
 // VariantsRow, only pregens at low quality) but accepts an override so
 // future callers can choose.
 //
-// No auth yet (M-fast). M2 will wrap with requireUser().
+// M2 PR 4: env-gated `requireUser` via `gateApiRequest`. Behaviour
+// unchanged when M2_AUTH_ENABLED is not "true".
 
 import { NextResponse } from "next/server";
 
@@ -22,6 +23,7 @@ import {
   type GenerateVariantSetInput,
   type PostcardStyle,
 } from "@/lib/ai-provider";
+import { gateApiRequest } from "@/lib/api-auth";
 import { AuthRequiredError, QuotaExceededError } from "@/lib/errors";
 
 const VALID_STYLES: readonly PostcardStyle[] = [
@@ -34,6 +36,9 @@ const VALID_STYLES: readonly PostcardStyle[] = [
 ];
 
 export async function POST(req: Request) {
+  const gate = await gateApiRequest();
+  if (!gate.allowed) return gate.response;
+
   let body: Partial<GenerateVariantSetInput>;
   try {
     body = (await req.json()) as Partial<GenerateVariantSetInput>;
@@ -41,7 +46,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
   }
 
-  const { userId, sourceImageDataUrl, styles, quality } = body;
+  const { sourceImageDataUrl, styles, quality } = body;
+  const userId = gate.profileId ?? body.userId;
 
   if (typeof userId !== "string" || !userId) {
     return NextResponse.json({ error: "userId is required" }, { status: 400 });
