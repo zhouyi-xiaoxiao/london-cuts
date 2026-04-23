@@ -289,12 +289,27 @@ function mockVision(seed: string): VisionAnalysisResult {
 }
 
 async function realDescribePhoto(
-  imageDataUrl: string,
+  source: string,
+  hint: string | null,
 ): Promise<VisionAnalysisResult> {
   if (!env.OPENAI_API_KEY) {
     throw new AuthRequiredError();
   }
   const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+
+  // Normalize the source to a data URL the OpenAI vision API will accept
+  // regardless of whether the client sent a data: URL, a Supabase CDN
+  // link, or a seed `/seed-images/xxx.jpg` path. Same trick as F-I019
+  // for generatePostcardArt.
+  let visionUrl = source;
+  if (!source.startsWith("data:")) {
+    const { bytes, mime } = await sourceToBytes(source);
+    visionUrl = `data:${mime};base64,${bytes.toString("base64")}`;
+  }
+
+  const userText = hint && hint.trim()
+    ? `Analyse this photo. Return JSON. User context: ${hint.trim()}`
+    : "Analyse this photo. Return JSON.";
 
   const response = await client.chat.completions.create({
     model: "gpt-4o-mini",
@@ -304,13 +319,13 @@ async function realDescribePhoto(
       {
         role: "system",
         content:
-          'You analyse personal travel/memory photographs for a creator tool. Respond as JSON only with fields: title (5-10 words), paragraph (40-70 words describing what is visible), pullQuote (under 15 words, evocative), postcardMessage (1-2 short sentences, first-person, like a note to a friend), mood (single word like "Amber", "Steel", "Ember"), tone ("warm"|"cool"|"punk"), locationHint (neighborhood or landmark if recognisable).',
+          'You analyse personal travel/memory photographs for a creator tool. Respond as JSON only with fields: title (5-10 words), paragraph (40-70 words describing what is visible), pullQuote (under 15 words, evocative), postcardMessage (1-2 short sentences, first-person, like a note to a friend), mood (single word like "Amber", "Steel", "Ember"), tone ("warm"|"cool"|"punk"), locationHint (neighborhood or landmark if recognisable). When user context is provided, weigh it heavily — it is ground truth from the photographer.',
       },
       {
         role: "user",
         content: [
-          { type: "text", text: "Analyse this photo. Return JSON." },
-          { type: "image_url", image_url: { url: imageDataUrl } },
+          { type: "text", text: userText },
+          { type: "image_url", image_url: { url: visionUrl } },
         ],
       },
     ],
@@ -334,15 +349,16 @@ async function realDescribePhoto(
 }
 
 export async function describePhoto(
-  imageDataUrl: string,
+  source: string,
+  options: { hint?: string | null } = {},
 ): Promise<VisionAnalysisResult & { costCents: number; mock: boolean }> {
   const mockMode = env.AI_PROVIDER_MOCK === "true" || !env.OPENAI_API_KEY;
   if (mockMode) {
-    const seed = imageDataUrl.slice(0, 64);
+    const seed = source.slice(0, 64) + (options.hint ?? "");
     return { ...mockVision(seed), costCents: 0, mock: true };
   }
   assertWithinBudget(VISION_COST_CENTS);
-  const result = await realDescribePhoto(imageDataUrl);
+  const result = await realDescribePhoto(source, options.hint ?? null);
   spendToDateCents += VISION_COST_CENTS;
   return { ...result, costCents: VISION_COST_CENTS, mock: false };
 }

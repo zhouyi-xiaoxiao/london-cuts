@@ -1,12 +1,27 @@
 "use client";
 
 // F-P002 — Custom map marker used by the MapLibre Atlas.
+//
 // MapLibre markers are imperative: you hand it an HTMLElement, not JSX.
 // So we expose a plain function that builds the element rather than a
 // React component. Styling pulls the mode accent colour from the live
 // CSS custom property (--mode-accent) via `currentColor` so the pin
 // follows whatever narrative mode is active without needing React
 // re-renders on every mode swap.
+//
+// ─── Nested-element architecture (2026-04-23 dogfood round 3) ────────
+//
+// MapLibre positions each marker by WRITING `element.style.transform`
+// to something like `translate(-50%, -50%) translate3d(Xpx, Ypx, 0)`.
+// Earlier iterations applied our own `scale(1.15)` on hover by calling
+// `el.style.transform = "..."` — which CLOBBERED MapLibre's position
+// string, teleporting the pin to (0, 0). Owner reported this as
+// "鼠标移动到地图那里 那个点就会划走".
+//
+// Fix: split into an outer WRAP (what MapLibre positions; we never
+// write to its transform) and an inner BADGE (what we scale on hover).
+// The wrap is a zero-overhead sizing box; the badge carries all the
+// visual chrome.
 
 import type { NarrativeMode } from "@/lib/storage";
 
@@ -18,37 +33,46 @@ export interface PinDescriptor {
 
 /**
  * Build an HTMLElement suitable for `new maplibregl.Marker({ element })`.
- * The element includes an inline click handler hook via `onClick`. We
- * don't attach it here — the caller wires it up so the React-side
- * `onStopClick` prop can stay closure-friendly.
+ * The returned element is the OUTER WRAP. MapLibre owns its `transform`
+ * style. Hover scaling happens on a nested badge. Click handlers should
+ * be attached to the returned wrap by the caller — they bubble up from
+ * the inner badge automatically.
  *
- * Visuals use `var(--mode-accent)` so the pin follows the active narrative
- * mode via the `data-mode` attribute on <html>. Because MapLibre mounts
- * markers into its own container (outside the React tree) we need the
- * token to cascade from :root; CSS custom props do that automatically.
+ * Mouseenter / mouseleave listeners attached by the caller to the wrap
+ * also fire correctly because the wrap's physical area equals the
+ * badge's (the badge `inset: 0`s the wrap).
  */
 export function createStopPin(desc: PinDescriptor): HTMLElement {
-  const el = document.createElement("button");
-  el.type = "button";
-  el.className = "atlas-marker";
-  el.dataset.mode = desc.mode;
-  el.dataset.stopId = desc.stopId;
-  el.setAttribute("aria-label", `Stop ${desc.label}`);
+  // ─── Outer wrap — MapLibre's handle ─────────────────────────────
+  // No background, no transform. MapLibre writes `style.transform`
+  // to position us; we never overwrite it.
+  const wrap = document.createElement("div");
+  wrap.className = "atlas-marker";
+  wrap.dataset.mode = desc.mode;
+  wrap.dataset.stopId = desc.stopId;
+  wrap.setAttribute("role", "button");
+  wrap.setAttribute("aria-label", `Stop ${desc.label}`);
+  wrap.setAttribute("tabindex", "0");
+  Object.assign(wrap.style, {
+    width: "22px",
+    height: "22px",
+    position: "relative",
+    cursor: "pointer",
+    // Mouse events pass through to the badge child — the wrap itself
+    // has no chrome.
+    pointerEvents: "auto",
+  } satisfies Partial<CSSStyleDeclaration>);
 
-  // Pin chrome — circular badge with the stop number. Kept minimal so
-  // the three modes all read cleanly. Tokens come from globals.css.
-  //
-  // Sizing note: earlier iterations used a 36px pin with a 2.5px ring —
-  // owner feedback on dogfooding a 12-stop project was "very crowded,
-  // clashes with the warm tiles". Shrinking to 18px with a 1px stroke
-  // gives the map breathing room while keeping the number readable.
-  Object.assign(el.style, {
-    display: "inline-flex",
+  // ─── Inner badge — our hover target ─────────────────────────────
+  // Fills the wrap exactly so mouseenter on either fires the same way
+  // and the click surface matches the visible circle.
+  const badge = document.createElement("div");
+  Object.assign(badge.style, {
+    position: "absolute",
+    inset: "0",
+    display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    width: "18px",
-    height: "18px",
-    padding: "0",
     borderRadius: "50%",
     background: "var(--paper, #fff)",
     color: "var(--mode-ink, #1a1a1a)",
@@ -56,24 +80,31 @@ export function createStopPin(desc: PinDescriptor): HTMLElement {
     fontFamily: "var(--f-mono, monospace)",
     fontSize: "10px",
     fontWeight: "500",
-    letterSpacing: "0",
     lineHeight: "1",
-    cursor: "pointer",
     boxShadow: "0 2px 6px rgba(17, 14, 11, 0.14)",
-    transition: "transform 120ms ease",
-    transform: "translate(-50%, -50%) translate(0, 0)",
+    transition: "transform 120ms ease, box-shadow 120ms ease",
+    transform: "scale(1)",
+    transformOrigin: "center center",
+    // Important: badge owns pointer events so mouseleave/mouseenter
+    // track the VISIBLE circle, not a square wrap.
+    pointerEvents: "auto",
   } satisfies Partial<CSSStyleDeclaration>);
 
   const span = document.createElement("span");
   span.textContent = desc.label;
-  el.appendChild(span);
+  badge.appendChild(span);
+  wrap.appendChild(badge);
 
-  el.addEventListener("mouseenter", () => {
-    el.style.transform = "translate(-50%, -50%) scale(1.15)";
+  // Hover scale goes on BADGE, never on WRAP. Keeps MapLibre's
+  // transform on the wrap untouched.
+  wrap.addEventListener("mouseenter", () => {
+    badge.style.transform = "scale(1.15)";
+    badge.style.boxShadow = "0 4px 12px rgba(17, 14, 11, 0.22)";
   });
-  el.addEventListener("mouseleave", () => {
-    el.style.transform = "translate(-50%, -50%) translate(0, 0)";
+  wrap.addEventListener("mouseleave", () => {
+    badge.style.transform = "scale(1)";
+    badge.style.boxShadow = "0 2px 6px rgba(17, 14, 11, 0.14)";
   });
 
-  return el;
+  return wrap;
 }

@@ -6,13 +6,17 @@
 // M-iter F-I018 adds back the legacy CanvasHeader map links + the
 // per-stop AssetStrip (horizontal thumbnails under the hero) — these
 // were dropped in the scaffold port per tasks/AUDIT-WORKSPACE.md #7 + #11.
+// F-I032 adds the "✨ Describe from hero" assist button next to the
+// title input — owner dogfood round 3: seed text never matches the
+// seed images. This button reads the current hero with vision + fills
+// in title + mood + tone + a seed paragraph in the body.
 
 import { useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { PostcardEditor } from "@/components/postcard/postcard-editor";
 import { useAssetActions, useAssetsByStop } from "@/stores/asset";
 import { useStops, useStopActions } from "@/stores/stop";
-import type { Asset, Stop } from "@/stores/types";
+import type { Asset, BodyBlock, Stop, StopTone } from "@/stores/types";
 
 import { MIME_ASSET_ID } from "@/lib/constants";
 import { HeroSlot } from "./hero-slot";
@@ -62,39 +66,7 @@ export function StopCanvas({ stop }: StopCanvasProps) {
       {/* Eyebrow + title + maps deep-links + counters. F-I018 */}
       <CanvasHeader stop={stop} />
 
-      <label
-        style={{
-          display: "block",
-          marginTop: 16,
-        }}
-      >
-        <span
-          className="mono-sm"
-          style={{
-            fontSize: 10,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            opacity: 0.55,
-          }}
-        >
-          Title
-        </span>
-        <input
-          type="text"
-          value={stop.title}
-          onChange={(e) => updateStop(stop.n, { title: e.target.value })}
-          placeholder="Give this stop a title…"
-          style={{
-            marginTop: 6,
-            width: "100%",
-            fontSize: 16,
-            padding: "8px 0",
-            borderBottom: "1px solid var(--rule)",
-            background: "transparent",
-            fontFamily: "var(--f-sans)",
-          }}
-        />
-      </label>
+      <TitleWithVisionAssist stop={stop} />
 
       {/* Hero image slot */}
       <HeroSlot stop={stop} />
@@ -551,6 +523,334 @@ function AssetCell({ asset, isHero, onSetHero, onDetach }: AssetCellProps) {
         >
           ×
         </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Title + vision-assist (F-I032) ────────────────────────────────────
+
+interface TitleWithVisionAssistProps {
+  stop: Stop;
+}
+
+type VisionState =
+  | { kind: "idle" }
+  | { kind: "asking" } // awaiting owner to type an optional hint
+  | { kind: "running" }
+  | { kind: "error"; message: string };
+
+function TitleWithVisionAssist({ stop }: TitleWithVisionAssistProps) {
+  const { updateStop } = useStopActions();
+  const stopAssets = useAssetsByStop(stop.n);
+  const [state, setState] = useState<VisionState>({ kind: "idle" });
+  const [hint, setHint] = useState("");
+  const [lastMock, setLastMock] = useState<boolean | null>(null);
+
+  const heroAsset = stop.heroAssetId
+    ? stopAssets.find((a) => a.id === stop.heroAssetId) ?? null
+    : null;
+
+  const canAssist = Boolean(heroAsset?.imageUrl);
+
+  async function runVision() {
+    if (!heroAsset?.imageUrl) {
+      setState({ kind: "error", message: "Set a hero photo first." });
+      return;
+    }
+    setState({ kind: "running" });
+    try {
+      const res = await fetch("/api/vision/describe", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          imageDataUrl: heroAsset.imageUrl,
+          hint: hint.trim() || undefined,
+        }),
+      });
+      const body = (await res.json()) as
+        | {
+            title: string;
+            paragraph: string;
+            pullQuote: string;
+            postcardMessage: string;
+            mood: string;
+            tone: StopTone;
+            locationHint: string;
+            mock: boolean;
+            costCents: number;
+            spendToDateCents: number;
+          }
+        | { error: string };
+      if (!res.ok || !("title" in body)) {
+        const msg = "error" in body ? body.error : "vision failed";
+        setState({ kind: "error", message: msg });
+        return;
+      }
+      // Merge into the stop. Never CLOBBER a title the user has already
+      // written unless it looks like a placeholder ("Untitled stop" or
+      // empty). Same rule for mood/tone.
+      const titleIsPlaceholder =
+        !stop.title ||
+        stop.title === "Untitled stop" ||
+        stop.title === "(untitled stop)";
+      const patch: Partial<Stop> = {};
+      if (titleIsPlaceholder) patch.title = body.title;
+      if (!stop.mood) patch.mood = body.mood;
+      if (!stop.tone || stop.tone === "warm") patch.tone = body.tone;
+
+      // Body paragraph: only prepend if body currently has nothing
+      // paragraph-like. Don't stomp real writing.
+      const hasAnyProse = stop.body.some(
+        (b) => b.type === "paragraph" || b.type === "pullQuote",
+      );
+      if (!hasAnyProse && body.paragraph) {
+        const newBlocks: BodyBlock[] = [
+          { type: "paragraph", content: body.paragraph },
+          ...(body.pullQuote
+            ? [{ type: "pullQuote" as const, content: body.pullQuote }]
+            : []),
+          ...stop.body,
+        ];
+        patch.body = newBlocks;
+        patch.status = { ...stop.status, body: true };
+      }
+      updateStop(stop.n, patch);
+      setLastMock(body.mock);
+      setState({ kind: "idle" });
+      setHint("");
+    } catch (err) {
+      setState({
+        kind: "error",
+        message: err instanceof Error ? err.message : "vision failed",
+      });
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <label style={{ flex: 1, minWidth: 240 }}>
+          <span
+            className="mono-sm"
+            style={{
+              fontSize: 10,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              opacity: 0.55,
+            }}
+          >
+            Title
+          </span>
+          <input
+            type="text"
+            value={stop.title}
+            onChange={(e) =>
+              updateStop(stop.n, { title: e.target.value })
+            }
+            placeholder="Give this stop a title…"
+            style={{
+              marginTop: 6,
+              width: "100%",
+              fontSize: 16,
+              padding: "8px 0",
+              borderBottom: "1px solid var(--rule)",
+              background: "transparent",
+              fontFamily: "var(--f-sans)",
+            }}
+          />
+        </label>
+        <button
+          type="button"
+          className="mono-sm"
+          onClick={() => {
+            if (state.kind === "asking") setState({ kind: "idle" });
+            else setState({ kind: "asking" });
+          }}
+          disabled={!canAssist || state.kind === "running"}
+          title={
+            !canAssist
+              ? "Upload a hero photo first"
+              : "Let AI read the hero and fill title / mood / paragraph"
+          }
+          style={{
+            padding: "8px 14px",
+            border: "1px solid var(--mode-accent, var(--accent))",
+            background:
+              !canAssist || state.kind === "running"
+                ? "var(--paper-2)"
+                : state.kind === "asking"
+                  ? "var(--paper-3)"
+                  : "var(--mode-accent, var(--accent))",
+            color:
+              !canAssist || state.kind === "running"
+                ? "var(--ink)"
+                : state.kind === "asking"
+                  ? "var(--ink)"
+                  : "var(--paper)",
+            fontSize: 11,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            cursor: !canAssist ? "not-allowed" : "pointer",
+            opacity: !canAssist ? 0.5 : 1,
+            whiteSpace: "nowrap",
+            alignSelf: "flex-end",
+          }}
+        >
+          {state.kind === "running"
+            ? "✨ reading…"
+            : state.kind === "asking"
+              ? "× cancel"
+              : "✨ Describe from hero"}
+        </button>
+      </div>
+
+      {state.kind === "asking" && (
+        <div
+          style={{
+            marginTop: 10,
+            padding: 12,
+            border: "1px solid var(--mode-accent, var(--accent))",
+            background: "var(--paper-2)",
+          }}
+        >
+          <label
+            className="mono-sm"
+            style={{
+              display: "block",
+              fontSize: 10,
+              letterSpacing: "0.12em",
+              opacity: 0.7,
+              marginBottom: 6,
+            }}
+          >
+            Optional context (what was going on, who, why)
+          </label>
+          <input
+            type="text"
+            value={hint}
+            onChange={(e) => setHint(e.target.value)}
+            placeholder="e.g. early morning walk, first time in this market…"
+            style={{
+              width: "100%",
+              fontSize: 14,
+              padding: "8px 10px",
+              border: "1px solid var(--rule)",
+              background: "var(--paper)",
+              fontFamily: "var(--f-sans)",
+              marginBottom: 10,
+            }}
+            autoFocus
+          />
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              className="mono-sm"
+              onClick={runVision}
+              style={{
+                padding: "6px 14px",
+                border: "1px solid var(--mode-accent, var(--accent))",
+                background: "var(--mode-accent, var(--accent))",
+                color: "var(--paper)",
+                fontSize: 11,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+              }}
+            >
+              ✨ Run · ~1¢
+            </button>
+            <button
+              type="button"
+              className="mono-sm"
+              onClick={() => {
+                setState({ kind: "idle" });
+                setHint("");
+              }}
+              style={{
+                padding: "6px 14px",
+                border: "1px solid var(--rule)",
+                background: "transparent",
+                color: "var(--ink)",
+                fontSize: 11,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+          <p
+            className="mono-sm"
+            style={{
+              marginTop: 8,
+              fontSize: 9,
+              opacity: 0.55,
+              letterSpacing: "0.06em",
+              textTransform: "none",
+            }}
+          >
+            Will only fill title / mood if empty, and only add a paragraph
+            if you haven&apos;t written any prose yet — so running this won&apos;t
+            overwrite your work.
+          </p>
+        </div>
+      )}
+
+      {state.kind === "error" && (
+        <div
+          role="alert"
+          className="mono-sm"
+          style={{
+            marginTop: 10,
+            padding: "8px 12px",
+            background: "var(--mode-accent, #b8360a)",
+            color: "var(--paper)",
+            fontSize: 11,
+          }}
+        >
+          {state.message}
+          <button
+            type="button"
+            onClick={() => setState({ kind: "idle" })}
+            aria-label="Dismiss"
+            style={{
+              marginLeft: 10,
+              border: "none",
+              background: "transparent",
+              color: "var(--paper)",
+              cursor: "pointer",
+              fontSize: 14,
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {lastMock !== null && state.kind === "idle" && (
+        <div
+          className="mono-sm"
+          style={{
+            marginTop: 8,
+            fontSize: 9,
+            opacity: 0.55,
+            letterSpacing: "0.06em",
+            textTransform: "none",
+          }}
+        >
+          {lastMock
+            ? "Filled from MOCK vision — flip AI_PROVIDER_MOCK=false for a real read."
+            : "Filled from GPT-4o-mini vision."}
+        </div>
       )}
     </div>
   );
