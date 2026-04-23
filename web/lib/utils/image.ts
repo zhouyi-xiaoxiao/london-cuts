@@ -133,3 +133,70 @@ export async function prepareImage(
   );
   return { ...result, orientation };
 }
+
+/**
+ * Rotate an image source (data: URL or same-origin http(s) URL) by 90°
+ * increments, returning a JPEG data URL. Remote URLs may taint the canvas if
+ * CORS headers are absent — fall back to fetch→blob→dataURL first.
+ *
+ * Ported from archive/.../workspace.jsx `rotateImageDataUrl` for parity with
+ * the hero-slot ↺ / ↻ rotate buttons.
+ */
+export async function rotateImageDataUrl(
+  src: string,
+  degrees: 90 | -90 | 180,
+  quality = 0.88,
+): Promise<string> {
+  // Normalise remote URL → data URL to dodge canvas taint
+  let source = src;
+  if (!source.startsWith("data:")) {
+    try {
+      const resp = await fetch(source);
+      const blob = await resp.blob();
+      source = await new Promise<string>((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result));
+        fr.onerror = () => reject(new Error("fileReader failed"));
+        fr.readAsDataURL(blob);
+      });
+    } catch (err) {
+      throw new ImageDecodeError(
+        `rotate fetch failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const el = new Image();
+    el.onload = () => resolve(el);
+    el.onerror = () => reject(new ImageDecodeError("rotate image load failed"));
+    el.src = source;
+  });
+
+  const w = img.naturalWidth;
+  const h = img.naturalHeight;
+  if (!w || !h) throw new ImageDecodeError("zero-size image for rotate");
+
+  const rotated90 = degrees === 90 || degrees === -90;
+  const canvas = document.createElement("canvas");
+  canvas.width = rotated90 ? h : w;
+  canvas.height = rotated90 ? w : h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new ImageDecodeError("canvas 2D context unavailable");
+
+  ctx.save();
+  if (degrees === 90) {
+    ctx.translate(h, 0);
+    ctx.rotate(Math.PI / 2);
+  } else if (degrees === -90) {
+    ctx.translate(0, w);
+    ctx.rotate(-Math.PI / 2);
+  } else {
+    ctx.translate(w, h);
+    ctx.rotate(Math.PI);
+  }
+  ctx.drawImage(img, 0, 0);
+  ctx.restore();
+
+  return canvas.toDataURL("image/jpeg", quality);
+}

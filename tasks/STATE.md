@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-23T00:00Z
+**Last updated:** 2026-04-23T01:40Z
 
 ## Plan version
 
@@ -13,8 +13,8 @@
 | M0 Consolidation | ✅ complete | 9/9 tasks |
 | M-fast Feature port | ✅ 14/14 done — but scaffold-level | ~45% of legacy surface actually covered; see `AUDIT-WORKSPACE.md` |
 | M-preview Soft launch | ✅ **LIVE** at `london-cuts.vercel.app` | password-gated via `web/proxy.ts` + Vercel `PREVIEW_PASSWORD` |
-| M-iter UX polish | 🟡 **partial** — 11 fixes shipped (F-I001..F-I011), 10+ gaps remain | See `tasks/AUDIT.md` + `AUDIT-WORKSPACE.md` + `AUDIT-PUBLIC-PAGES.md` |
-| **M1 Supabase & data** | ✅ **complete (Phases 1+2+3 full)** — 2026-04-22/23 | Project `acymyvefnvydksxzzegw` / Frankfurt. 5 tables + RLS + Storage. SSR reads + "☁️ Sync to cloud" button + binary upload all live |
+| M-iter UX polish | 🟡 **partial** — 14 fixes shipped (F-I001..F-I014), ~7 gaps remain | See `tasks/AUDIT.md` + `AUDIT-WORKSPACE.md` + `AUDIT-PUBLIC-PAGES.md` |
+| **M1 Supabase & data** | ✅ **complete (Phases 1+2+3 full + F-I012 verified)** — 2026-04-22/23 | Project `acymyvefnvydksxzzegw` / Frankfurt. 5 tables + RLS + Storage. SSR reads + "☁️ Sync to cloud" button + binary upload all live. F-I012 end-to-end verified against production |
 | M2 Auth & invites | ⏳ not started — **next eligible** | Magic-link via Supabase Auth + invite codes; replaces service_role writes with RLS |
 | M3 Feature parity | 🗄 superseded by M-fast + M-iter | |
 | M4 Public pages polish | ⏳ not started | OG images, ToS, privacy, feedback form |
@@ -24,9 +24,8 @@
 ## Eligible next tracks (owner picks)
 
 1. **M2 Auth + invites** — real multi-user. Unblocks real cross-device collaboration and removes the service_role workaround.
-2. **Finish M-iter** — close the 10+ audit gaps (VariantsRow, HeroDraggable, AssetPicker, heroFocus integration, atlas pin hover, 3 body block types). This is polish work; no architectural unlock.
+2. **Finish M-iter** — remaining gaps: VariantsRow ("Re-imagine hero" w/ AI styles, ~345 legacy lines), AssetsPoolDrawer upload/delete/drag-source, AssetStrip per-stop, atlas pin hover, spine drop target, CanvasHeader maps links. HeroDraggable + 3 body blocks + AssetPicker all landed 2026-04-23 (F-I013/F-I014).
 3. **M6 custom domain** — ~15 min owner action (IONOS DNS) + 5 min Vercel. No architectural change. Makes sharing friendlier (`zhouyixiaoxiao.org` beats `vercel.app`).
-4. **M-iter F-I012: verify sync end-to-end in production** — 5 min owner action; see HANDOFF.md "what the owner should do next".
 
 First step for whichever track: read `tasks/HANDOFF.md` first — it's the canonical resume-point and has the M1 architecture diagram + seam map + gotchas.
 
@@ -40,6 +39,9 @@ _none_
 
 ## Recently completed
 
+- **F-I014** (2026-04-23T01:40Z) — Body editor 3 → 6 block types (heroImage / inlineImage / mediaEmbed) + AssetPicker modal (project-scoped, bucketed, upload-in-modal). Via subagent; 55/55 tests.
+- **F-I013** (2026-04-23T01:30Z) — HeroDraggable + heroFocus pan + ↺/↻ 90° rotate + portrait letterbox + file-drop target. Main session.
+- **F-I012** (2026-04-23T01:00Z) — Production sync verification via curl: POST upsert → assetsUploaded=1 → Supabase Storage CDN 200. Test project cleaned up.
 - **F-T009** (2026-04-21T05:30Z) — Public pages (PublicProjectPage + ChapterPage + PostcardPage) via subagent. 3 new tests; total 51/51.
 - **F-T008** (2026-04-21T05:25Z) — Publish slideover dialog + workspace wire. 4 new tests.
 - **F-T007** (2026-04-21T05:15Z) — Vision pipeline: `describePhoto`, `/api/vision/describe`, `<VisionUpload>`. Real GPT-4o-mini call verified 1¢/7s.

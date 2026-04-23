@@ -53,10 +53,19 @@ export interface Postcard {
   style?: PostcardStyle | null;
 }
 
+/** Normalised 2D coordinate (0..100 %) for hero image object-position pan.
+ * Stored per-stop so the owner's manual recentering survives reloads.
+ * `null` / missing = centered (50, 50). */
+export interface HeroFocus {
+  x: number;
+  y: number;
+}
+
 export interface Stop extends Omit<SeedStop, "status"> {
   body: readonly BodyBlock[];
   postcard: Postcard;
   heroAssetId: string | null;
+  heroFocus?: HeroFocus | null;
   assetIds: readonly string[];
   status: {
     upload: boolean;
