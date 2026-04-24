@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-24T21:30Z
+**Last updated:** 2026-04-24T22:15Z
 
 ## Plan version
 
@@ -41,6 +41,10 @@ _none_
 
 ## Recently completed
 
+- **OpenAI image2 safety-block fix** (2026-04-24T22:15Z):
+  - Owner hit OpenAI 400 `moderation_blocked` while generating a postcard. API key/account/model were verified OK; the trigger was the old Anime prompt naming specific style references.
+  - Kept `gpt-image-2`; replaced the Anime prompt with a generic animated-film travel-postcard prompt and added OpenAI `code/type/requestId` passthrough on image routes.
+  - Commit `ebfb115` deployed to production. Verification: typecheck, 61/61 tests, build, live logged-in `/api/ai/generate` anime 200 `mock:false`, live `/api/ai/pregen-variants` all 6 styles 200 with 6/6 `failed:false`.
 - **Dogfood round 4 + M2 full build** (2026-04-23T09:05Z) — overnight autonomous session:
   - **F-I035/36** atlas paint simplification. Removed the stacked raster filters (brightness-max, hue-rotate, saturation clamps, warm/cyan scrims) that fought CARTO's basemaps and rendered cinema tiles invisibly. New rule: trust each basemap, +0.05-0.1 contrast only.
   - **F-I037** spine top "+" button beside the stop count header.

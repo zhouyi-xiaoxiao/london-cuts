@@ -15,7 +15,7 @@ A creator tool for documenting a single-location trip (anywhere in the world) wi
 `docs/implementation-plan.md` is at **v2.1** — features-first ordering:
 M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)** → **M1 Supabase (LIVE)** → **M2 Auth+invites (LIVE + verified + preview gate retired)** → M4/M5/M6.
 
-**As of 2026-04-24T21:30Z**:
+**As of 2026-04-24T22:15Z**:
 - **M-preview LIVE, gate retired**: `https://london-cuts.vercel.app` serves commits on `main`. `/` redirects to the public reader demo `/@ana-ishii/a-year-in-se1`, so the main URL is shareable. 13 seed photos (SE1) + 1 cover render from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired. `PREVIEW_PASSWORD` has been removed from Vercel envs; `web/proxy.ts` is now only an emergency no-op brake if that env var is set again.
 - **M-iter: 18/21+ shipped.** F-I001..F-I018. The 4-stream sprint on 2026-04-23 closed the biggest audit gaps. Still open: **VariantsRow only** (deferred to its own session per `tasks/AUDIT-WORKSPACE.md` M3 recommendation — 345-line AI-generation UI, real $ spend, needs undivided attention).
   - F-I001..F-I011: font swap / cinema letterbox / postcard flip / publish URL / atlas brightness / spine add-remove-move / per-mode postcard-front + chapter grammars / variant cache
@@ -58,7 +58,9 @@ M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)**
 - `/api/ai/generate` for postcard art (**gpt-image-2**, swapped in 2026-04-21 after initial verification with gpt-image-1); `/api/vision/describe` for photo analysis (gpt-4o-mini).
 - `lib/ai-provider.ts` has MOCK mode (default, returns tinted SVG / pseudo-random JSON) and REAL mode (needs `AI_PROVIDER_MOCK=false` + valid `OPENAI_API_KEY` in `web/.env.local`).
 - Spend cap: `OPENAI_SPEND_CAP_CENTS` env (default 800 = $8). Enforced in `ai-provider.ts` before every call; throws `QuotaExceededError` → API returns HTTP 429.
-- Pipeline verified end-to-end on 2026-04-21: 1 postcard (gpt-image-1 watercolour, 2¢/19s) + 1 vision (gpt-4o-mini, 1¢/7s). If a new session needs to test real gen, ask the owner for a fresh key + flip `AI_PROVIDER_MOCK=false` + **revert to `true` before committing**.
+- Production AI env is REAL (`AI_PROVIDER_MOCK=false`) and server-side only; do not expose or rotate `OPENAI_API_KEY` unless the owner explicitly confirms a new key action. Current key/account tested OK with text, vision, compose, polish, and `gpt-image-2` image edits.
+- Safety gotcha (2026-04-24): OpenAI rejected the old Anime prompt because it named specific style references (`Ghibli / Makoto Shinkai feel`). Keep style prompts generic; the current Anime prompt ("warm animated-film background painting for a travel postcard...") was live-tested successfully.
+- Pipeline verified end-to-end on 2026-04-24 after commit `ebfb115`: logged-in prod `/api/ai/generate` with `style:"anime"` returned HTTP 200, `mock:false`, PNG data URL, costCents=2. Prod `/api/ai/pregen-variants` for all 6 styles returned HTTP 200, `mock:false`, 6/6 `failed:false`, totalCostCents=12.
 
 **Housekeeping done:** `web/providers/` removed. `web/lib/media-provider.ts` + `web/lib/seed-data.ts` deleted. `web/app/layout.tsx` simplified. Scaffold `studio-pages.tsx` + `public-pages.tsx` now read Zustand via `web/components/studio-pages.adapter.ts`. `web/lib/types.ts` still present (ui.tsx + routes.ts still import it).
 
