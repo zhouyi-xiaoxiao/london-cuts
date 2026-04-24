@@ -3,7 +3,8 @@
 > A creator tool for documenting a single-location trip (anywhere in the world) with photos, written stories, and AI-generated postcards. Three visual modes: **Fashion**, **Punk**, **Cinema**. Publish as a shareable page.
 
 **Working name:** London Cuts (placeholder; product may be renamed before public launch).
-**Live:** `zhouyixiaoxiao.org` (after M6).
+**Live fallback:** `https://london-cuts.vercel.app/` (currently redirects to the public SE1 reader demo).
+**Future custom domain:** `zhouyixiaoxiao.org` (M6, after IONOS → Vercel DNS).
 
 ---
 
@@ -38,7 +39,7 @@ open design-system/preview/brand-roundel.html
 
 ## Repo layout
 
-- `web/` — the product (Next.js 14 + TypeScript, pnpm, Node 22+)
+- `web/` — the product (Next.js 16 + TypeScript, pnpm, Node 22+)
 - `design-system/` — **canonical** tokens, components, seed imagery, preview pages
 - `docs/` — requirements, architecture, data model, implementation plan (v2.0)
 - `tasks/` — executable task system for AI coding agents
@@ -60,7 +61,7 @@ open design-system/preview/brand-roundel.html
 - `docs/requirements.md` — what we're building (v1.0, frozen)
 - `docs/architecture.md` — how `web/` is structured
 - `docs/data-model.md` — target DB schema
-- `docs/implementation-plan.md` — milestone roadmap (plan v2.0: features-first, then infra)
+- `docs/implementation-plan.md` — milestone roadmap (plan v2.1: features-first, then infra)
 
 ## License
 

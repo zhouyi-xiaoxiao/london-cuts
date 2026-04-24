@@ -14,9 +14,9 @@ All code for M2 auth + invites is committed and deployed (see
 | 5. Flip `M2_AUTH_ENABLED=true` | ✅ **DONE** 2026-04-24 01:05 UTC | Vercel prod env set via CLI (`--no-sensitive` flag required so pull works). Redeploy triggered via empty commit `17dd1ad`. Then onboarding UX polished in `b969521` |
 | 6. Owner first sign-in | ✅ **DONE** 2026-04-24 ~17:40 UTC | Automated via Claude using `supabase.auth.admin.generateLink` (skips actual email) + Chrome MCP navigation. Owner's `auth.users.id` = `d813b4cf-41b8-4b06-b10f-99ae4d6ef01a`, email `zhouyixiaoxiao@gmail.com` |
 | 7. Merge seed `ana-ishii` to owner's auth_user_id | ✅ **DONE** 2026-04-24 ~17:42 UTC | Node script using service_role: updated seed row to set `auth_user_id` + `is_admin=true`, inserted `invite_redemptions` row, set invite `uses_remaining = 0`. Verified: 2 projects (`a-year-in-se1`, `a-week-in-reykjavik`) now owned by her |
-| 8. Retire preview-password gate | ⏳ **OPTIONAL** (owner's call) | M2 is proven — cutting preview gate is safe. See the "Step 8 — retire the preview-password gate" section below for exact sequence |
+| 8. Retire preview-password gate | ✅ **DONE** 2026-04-24 21:30 UTC | `PREVIEW_PASSWORD` removed from Vercel envs. `/` now redirects to the public SE1 reader demo; `/studio/*` is guarded by M2 auth in `web/app/studio/layout.tsx`. |
 
-**Required owner action**: none. Full flow verified end-to-end in Chrome — `/sign-in → /auth/callback → /studio → ☁️ Sync clicked → green success banner "12 STOPS SYNCED"`.
+**Required owner action**: none for the fallback Vercel URL. Full flow verified end-to-end in Chrome — `/sign-in → /auth/callback → /studio → ☁️ Sync clicked → green success banner "12 STOPS SYNCED"`. Custom domain still needs owner action in IONOS when moving from `london-cuts.vercel.app` to `zhouyixiaoxiao.org`.
 
 ## Integration gotchas discovered during activation (kept in HANDOFF too)
 
@@ -125,15 +125,15 @@ After this you're the admin and you own SE1 + Reykjavík demos.
 5. Visit `/studio` → should redirect to `/sign-in` (proxy still gates,
    but now /sign-in is the door, not /gate).
 
-## Step 8 — retire the preview-password gate (optional)
+## Step 8 — retire the preview-password gate (done)
 
-Once M2 sign-in is verified working for you AND at least one friend:
+Completed 2026-04-24T21:30Z.
 
-Vercel → Environment Variables → delete `PREVIEW_PASSWORD`.
+- Vercel env `PREVIEW_PASSWORD` removed from Production, Preview, and Development.
+- `/` now redirects to `/@ana-ishii/a-year-in-se1`.
+- `/studio/*` is guarded by `web/app/studio/layout.tsx`; unauthenticated users go to `/sign-in?next=/studio`.
 
-Redeploy. Proxy's `if (!password) return NextResponse.next();` branch
-now lets every non-studio path through without ANY gate. `/studio/*`
-and `/api/sync|ai|migrate/*` stay locked by M2 auth.
+Redeploy after this change so Vercel picks up the removed env var and the route guard.
 
 ## Known gaps (defer to M3+)
 

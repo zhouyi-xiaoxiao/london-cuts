@@ -13,10 +13,10 @@ A creator tool for documenting a single-location trip (anywhere in the world) wi
 ## Plan version + where we are
 
 `docs/implementation-plan.md` is at **v2.1** — features-first ordering:
-M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)** → **M1 Supabase (LIVE)** → **M2 Auth+invites (code shipped + env-gated; owner activates via `tasks/deferred/M2-ENABLE-CHECKLIST.md`)** → M4/M5/M6.
+M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)** → **M1 Supabase (LIVE)** → **M2 Auth+invites (LIVE + verified + preview gate retired)** → M4/M5/M6.
 
-**As of 2026-04-23 (post 4-stream sprint)**:
-- **M-preview LIVE**: `https://london-cuts.vercel.app` serving commits on `main`. `/` redirects to `/studio`. 13 seed photos (SE1) + 1 cover render from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired. Preview gate via `web/proxy.ts` (set `PREVIEW_PASSWORD` in Vercel env to activate). **Preview password is in Vercel prod env**; pull via `cd <repo-root> && npx vercel env pull /tmp/prod.env --environment=production --yes` (delete the file right after — it has ALL secrets).
+**As of 2026-04-24T21:30Z**:
+- **M-preview LIVE, gate retired**: `https://london-cuts.vercel.app` serves commits on `main`. `/` redirects to the public reader demo `/@ana-ishii/a-year-in-se1`, so the main URL is shareable. 13 seed photos (SE1) + 1 cover render from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired. `PREVIEW_PASSWORD` has been removed from Vercel envs; `web/proxy.ts` is now only an emergency no-op brake if that env var is set again.
 - **M-iter: 18/21+ shipped.** F-I001..F-I018. The 4-stream sprint on 2026-04-23 closed the biggest audit gaps. Still open: **VariantsRow only** (deferred to its own session per `tasks/AUDIT-WORKSPACE.md` M3 recommendation — 345-line AI-generation UI, real $ spend, needs undivided attention).
   - F-I001..F-I011: font swap / cinema letterbox / postcard flip / publish URL / atlas brightness / spine add-remove-move / per-mode postcard-front + chapter grammars / variant cache
   - F-I012: production sync end-to-end verified via curl (POST /api/sync/upsert → Supabase Storage CDN → HTTP 200)
@@ -78,6 +78,8 @@ All 5 M2 PRs shipped + activated + tested in prod.
 - ✅ Supabase Auth: email provider + magic link ON, Site URL + 2 redirect URLs configured
 - ✅ Invite `ana-beta-001` minted + redeemed + marked used
 - ✅ Vercel env `M2_AUTH_ENABLED=true` (prod, non-sensitive flag)
+- ✅ Vercel env `PREVIEW_PASSWORD` removed (prod/preview/development)
+- ✅ `/studio/*` guarded by `web/app/studio/layout.tsx`; unauthenticated users redirect to `/sign-in?next=/studio`
 - ✅ Owner's auth identity linked to seed `ana-ishii` row:
   - `auth.users.id` = `d813b4cf-41b8-4b06-b10f-99ae4d6ef01a`
   - `public.users.id` = `00000000-0000-4000-8000-000000000001`
@@ -97,19 +99,19 @@ All 5 M2 PRs shipped + activated + tested in prod.
 3. `@supabase/ssr`'s `createBrowserClient` does NOT auto-consume `#access_token=...` hash fragments. It targets PKCE (code in query). Admin-generated magic links (`auth.admin.generateLink`) return the implicit/hash flow. `/auth/callback/page.tsx` explicitly parses the hash and calls `setSession({access_token, refresh_token})` for this case.
 4. `/auth/callback` must be a `page.tsx` (client component), not `route.ts`. The URL hash never reaches server routes.
 
-**Remaining optional**: retire `PREVIEW_PASSWORD` env var + add proxy auth check for `/studio/*`. Current state: both preview password AND M2 auth guard the route. M2 is now proven working — we can cut the preview layer whenever. See `tasks/deferred/M2-ENABLE-CHECKLIST.md` Step 8 for the safe sequence.
+**Preview gate status**: retired. Public reader pages are open. `/studio/*` is protected by the server layout guard, and write / AI APIs are protected by `gateApiRequest()` when `M2_AUTH_ENABLED=true`.
 
 Rollback = set env `M2_AUTH_ENABLED=false`. No DB rollback needed — migration is additive.
 
-**What's live (off until flag flipped)**:
+**What's live**:
 - `web/supabase/migrations/0002_auth.sql` — schema additions + owner-scoped RLS (NOT applied yet; owner runs in SQL Editor)
 - `@supabase/ssr@0.5.2` installed
 - `lib/supabase.ts` gains `getUserServerClient()` (SSR + session-cookie aware)
 - `lib/auth.ts` real impl: `getCurrentUser`, `requireUser`, `requireOnboardedUser`, `requireAdmin`, `sendMagicLink`, `signOut`
-- `/sign-in` page + `/api/auth/send-magic-link` + `/auth/callback` route (all public, coexist with preview-password gate)
+- `/sign-in` page + `/api/auth/send-magic-link` + `/auth/callback` route (all public)
 - `/onboarding` page + `/api/invites/redeem` + `/api/me` (handle validation, invite code redemption)
 - `lib/api-auth.ts` `gateApiRequest()` — wraps every write route. OFF by default.
-- All `/api/ai/*` + `/api/vision/describe` + `/api/sync/upsert` routes use the gate. When OFF they're legacy-behaviour.
+- All `/api/ai/*` + `/api/vision/describe` + `/api/sync/upsert` routes use the gate. With `M2_AUTH_ENABLED=true`, they require an onboarded user.
 
 **Known gaps intentionally deferred**:
 - Per-user daily AI quota (global cap still enforced)
@@ -149,7 +151,7 @@ A new drop target needs the same two handlers (`onDragOver` / `onDrop`), the sam
 - **Vercel root directory is `web/`** (configured at project level). Linking locally: `cd` to repo root, `npx vercel link` (the repo-level `.vercel/project.json` points at `london-cuts`). Do NOT run `vercel --prod` from inside `web/` — that creates a second orphan project called `web`.
 - **`next.config.ts` `outputFileTracingRoot` is a trap.** Setting it to `__dirname` seems to "fix" a harmless Vercel startup warning but actually redirects Next's `.next/` output in a way that breaks Vercel's post-build `routes-manifest-deterministic.json` check. Leave it unset; Vercel auto-infers from Root Directory.
 - **Build success ≠ deploy success.** Vercel's build logs can say "Build Completed in /vercel/output" and still `status ● Error` because the deploy-phase check fails. Look at `npx vercel --prod --yes` output (or `vercel logs`) for the real error — the build-log tail alone will lie to you.
-- **5 environment variables live in Vercel prod env**: `OPENAI_API_KEY`, `OPENAI_SPEND_CAP_CENTS=800`, `AI_PROVIDER_MOCK=true` (flip to `false` when running real AI), `PREVIEW_PASSWORD` (the shared gate password), `NEXT_PUBLIC_APP_URL`. To inspect: `npx vercel env ls production`.
+- **Production environment variables currently include**: `M2_AUTH_ENABLED=true`, Supabase URL/anon/service role, `OPENAI_API_KEY`, `OPENAI_SPEND_CAP_CENTS=800`, `AI_PROVIDER_MOCK=true` (flip to `false` when running real AI), `NEXT_PUBLIC_APP_URL`. `PREVIEW_PASSWORD` is intentionally absent. To inspect names only: `npx vercel env ls production`.
 - **Custom domain `zhouyixiaoxiao.org` not yet wired.** When ready: IONOS DNS panel → CNAME `@` and `www` → `cname.vercel-dns.com`, then Vercel → Settings → Domains → Add. HTTPS is auto.
 
 ## M1 architecture (2026-04-22) — data flow
@@ -216,7 +218,7 @@ These are real issues owner hit in the deployed preview. NOT M-preview blockers,
 ```bash
 cd web
 pnpm typecheck     # must be green
-pnpm test          # currently 23/23 green
+pnpm test          # currently 61/61 green
 pnpm build         # must be green
 ```
 
@@ -238,7 +240,8 @@ preview_screenshot(...)
 
 - Local dev: `cd web && pnpm dev` → `http://localhost:3000`
 - Legacy reference: `cd archive/app-html-prototype-2026-04-20 && python3 -m http.server 8000` → `http://localhost:8000` (useful for visual parity checks on postcard editor)
-- Remote: GitHub `zhouyi-xiaoxiao/london-cuts`. Force-with-lease push is fine for now (user is solo).
+- Remote: `https://london-cuts.vercel.app/` redirects to the shareable SE1 public reader. Direct share URL: `https://london-cuts.vercel.app/@ana-ishii/a-year-in-se1`.
+- GitHub: `zhouyi-xiaoxiao/london-cuts`. Force-with-lease push is fine for now (user is solo).
 
 ## Decisions already committed (don't reopen without cause)
 
@@ -257,9 +260,11 @@ preview_screenshot(...)
 
 ---
 
-## The road ahead (what comes AFTER M-fast)
+## Historical Road Ahead
 
-**Once M-fast is 14/14 the app has:**
+M-fast, M-preview, M-iter, M1, and M2 are complete as of 2026-04-24. Keep the old target list below only as historical context.
+
+**The app now has:**
 - Create/edit project with photos + stories + postcards
 - Real AI postcard generation (6 styles) + vision analysis of uploaded photos
 - Publish flow with pre-flight checklist
@@ -267,23 +272,16 @@ preview_screenshot(...)
 - Three visual modes, MapLibre map, PDF + PNG export
 - Tests, git hooks, responsive CSS, compaction-safe task system
 
-**What's still missing for launch (M-preview → M6):**
+**What's still missing for launch (M4 → M6):**
 
-### M-preview (short — 1 commit) — soft-launch to friends
-Goal: get the app onto a public URL behind a password gate so 3-5 trusted friends can poke at it and give feedback. Prerequisites:
-1. Vercel project linked to GitHub. Owner needs to: create Vercel account (or use existing), connect `github.com/zhouyi-xiaoxiao/london-cuts` repo, paste env vars (OPENAI_API_KEY, OPENAI_SPEND_CAP_CENTS=800, AI_PROVIDER_MOCK=false for preview, PREVIEW_PASSWORD=some-shared-string, NEXT_PUBLIC_APP_URL=the vercel domain).
-2. Add `web/middleware.ts` that reads `PREVIEW_PASSWORD` + checks a cookie. If missing: serve a simple "enter password" page. If present: pass through. **Not real auth** — just a scrape-blocker until M2.
-3. Copy + share the Vercel URL with 3-5 friends. Watch Sentry... wait, Sentry is M5.
-4. Observation only: what do real users do? Where do they get stuck? This informs M-iter.
+### M4 — Public pages & polish
+ToS, Privacy, feedback form, 404/loading states, social OG image, and a real landing page. Current fallback: `/` redirects to the SE1 public reader demo.
 
-### M-iter (open-ended) — fix what friends complain about
-Loop. No scope creep — if an issue is minor, log to a "v2 backlog" doc; only fix things blocking the published flow.
+### M5 — Observability & tests
+Sentry, PostHog, auth/invite/quota tests, and GitHub Actions typecheck/test checks.
 
-### M1 (bigger — 1-2 weeks of Claude time) — Supabase
-Swap `lib/storage.ts` implementation from localStorage+IDB to Supabase Postgres. This is where the data model in `docs/data-model.md` lands as migrations. Owner needs to: create Supabase project (link via Supabase CLI), get keys, paste to Vercel env. The seam makes this a ~1-file rewrite in `lib/storage.ts` plus schema migrations; UI code doesn't know.
-
-### M2 (medium) — Auth + invites
-Swap `lib/auth.ts` from mock-user to Supabase Auth. Magic-link sign-up requires an invite code (`invites` table). Move OpenAI key from `.env.local` to server env + user-scoped daily quota (50/day).
+### M6 — Launch
+Wire `zhouyixiaoxiao.org` in IONOS + Vercel, generate invite codes, smoke-test signup-to-publish, then send the first beta invites.
 
 Replaces the M-preview password gate. Kills the hardcoded `yx` handle — users choose their own.
 

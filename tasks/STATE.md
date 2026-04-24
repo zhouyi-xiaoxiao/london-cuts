@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-23T09:05Z
+**Last updated:** 2026-04-24T21:30Z
 
 ## Plan version
 
@@ -12,10 +12,10 @@
 |---|---|---|
 | M0 Consolidation | ✅ complete | 9/9 tasks |
 | M-fast Feature port | ✅ 14/14 done — but scaffold-level | ~45% of legacy surface actually covered; see `AUDIT-WORKSPACE.md` |
-| M-preview Soft launch | ✅ **LIVE** at `london-cuts.vercel.app` | password-gated via `web/proxy.ts` + Vercel `PREVIEW_PASSWORD` |
+| M-preview Soft launch | ✅ **LIVE** at `london-cuts.vercel.app` | preview-password gate retired 2026-04-24T21:30Z; `/` now redirects to the public SE1 reader demo |
 | M-iter UX polish | ✅ **COMPLETE** — F-I001..F-I031 shipped (F-I028 WONTFIX). VariantsRow + Polish-prose in. Public reader pages unlocked. | See `tasks/AUDIT.md` + `AUDIT-WORKSPACE.md` + `AUDIT-PUBLIC-PAGES.md` |
 | **M1 Supabase & data** | ✅ **complete (Phases 1+2+3 full + F-I012 verified)** — 2026-04-22/23 | Project `acymyvefnvydksxzzegw` / Frankfurt. 5 tables + RLS + Storage. SSR reads + "☁️ Sync to cloud" button + binary upload all live. F-I012 end-to-end verified against production |
-| M2 Auth & invites | 🟢 **LIVE + END-TO-END VERIFIED (2026-04-24)** | Migration applied, Auth configured, invite minted + redeemed, env flag ON, owner linked to seed `ana-ishii` (auth_user_id `d813b4cf-41b8-4b06-b10f-99ae4d6ef01a`), `/sign-in → /auth/callback → /studio → ☁️ Sync` full path verified in prod. Optional: retire PREVIEW_PASSWORD. |
+| M2 Auth & invites | 🟢 **LIVE + END-TO-END VERIFIED (2026-04-24)** | Migration applied, Auth configured, invite minted + redeemed, env flag ON, owner linked to seed `ana-ishii` (auth_user_id `d813b4cf-41b8-4b06-b10f-99ae4d6ef01a`), `/sign-in → /auth/callback → /studio → ☁️ Sync` full path verified in prod. Preview password removed; `/studio/*` is guarded by `web/app/studio/layout.tsx`. |
 | M3 Feature parity | 🗄 superseded by M-fast + M-iter | |
 | M4 Public pages polish | ⏳ not started | OG images, ToS, privacy, feedback form |
 | M5 Observability | ⏳ not started | Sentry / PostHog / GitHub Actions CI |
@@ -23,11 +23,11 @@
 
 ## Eligible next tracks (owner picks)
 
-1. **Activate M2** — all code shipped + deployed. Owner works through `tasks/deferred/M2-ENABLE-CHECKLIST.md` (apply migration → enable magic-link in Supabase → mint invite → flip env flag). ~15 min total.
-2. **Per-user AI quota** — the only M2 gap. New migration + `user_daily_ai_spend` table + tracker in ai-provider. Needs design + 1 PR. Defer until M2 is activated and at least one friend-user has real traffic.
-3. **User menu UI** — sign-out button + display-name in studio chrome. Small; tack onto any future UI pass.
-4. **M6 custom domain** — ~15 min owner action (IONOS DNS) + 5 min Vercel. Independent of M2.
-5. **M4/M5** — OG images, ToS, privacy, feedback form, Sentry, PostHog, CI. Defer until M2 activated + beta cohort using it.
+1. **M4 public polish** — ToS, Privacy, feedback form, 404/loading states, OG image. This is the next best track before inviting broader EU/public beta traffic.
+2. **M5 observability + CI** — Sentry, PostHog, auth/invite/quota tests, GitHub Actions.
+3. **M6 custom domain** — owner action in IONOS + Vercel domain setup. Current shareable fallback is `https://london-cuts.vercel.app/` or the direct reader URL.
+4. **Per-user AI quota** — new migration + `user_daily_ai_spend` table + tracker in ai-provider. Defer until friend-user traffic proves the need.
+5. **User menu UI** — sign-out button + display-name in studio chrome. Small; tack onto any future UI pass.
 
 First step for whichever track: read `tasks/HANDOFF.md` first — it's the canonical resume-point and has the M1 architecture diagram + seam map + gotchas + M2 activation flow.
 
@@ -47,6 +47,10 @@ _none_
   - **F-I038** mode-pill active-state color flipped to `var(--mode-bg)` — fixes cinema's amber-on-white wash.
   - **F-I039** mobile responsive: <900px drops spine, shows `<MobileStopSwitcher>` chip + fullscreen modal; <480px tightens Publish/mode-pill.
   - **M2 PRs 1-5** all shipped env-gated behind `M2_AUTH_ENABLED`. Migration, magic-link sign-in, onboarding + invite redemption, requireUser on AI + sync routes, user-scoped owner_id on sync. Rollback = one env toggle. See `tasks/deferred/M2-ENABLE-CHECKLIST.md`.
+- **Preview gate retired + public root** (2026-04-24T21:30Z):
+  - Removed `PREVIEW_PASSWORD` from Vercel envs.
+  - `/` now redirects to `/@ana-ishii/a-year-in-se1` so the main Vercel URL is shareable.
+  - Added `web/app/studio/layout.tsx` server guard so `/studio/*` redirects unauthenticated visitors to `/sign-in?next=/studio` and incomplete profiles to `/onboarding`.
 - **F-I029..F-I031 + M2 plan doc + proxy public-bypass** (2026-04-23T07:30Z) — M-iter **CLOSED**:
   - **F-I030** proxy.ts: `/@*/*` + `/atlas` reader pages are now password-free. Studio + `/api/ai/*` + `/api/sync/*` + `/api/migrate/*` stay gated until M2
   - **F-I031 VariantsRow** — the final deferred item. `/api/ai/pregen-variants` with atomic spend-cap pre-flight, 6 style chips, per-variant thumbs (Use-as-hero / Use-as-postcard / Regen / ×), MOCK instant

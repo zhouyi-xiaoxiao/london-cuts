@@ -6,7 +6,7 @@ Tags are stable; descriptions may drift — when in doubt, read the folder's own
 ## Top level
 
 ```
-web/             [active, product, nextjs-ts, pnpm]      The product. Entry: app/page.tsx.
+web/             [active, product, nextjs-ts, pnpm]      The product. Entry: app/page.tsx; live fallback: https://london-cuts.vercel.app/.
 design-system/   [canonical, tokens, assets, preview]    Design system — single source of truth.
 docs/            [prose, specs]                           Requirements, architecture, data model, plan.
 tasks/           [execution, agents]                      M0–M6 task system for AI coding agents.
@@ -18,13 +18,13 @@ scripts/         [tools, utilities]                       Python scripts + utili
 
 ## `web/`
 ```
-web/app/                 — Next 14 app-router pages
+web/app/                 — Next 16 app-router pages
 web/components/          — shared UI (scaffold stubs; real components land in M-fast)
 web/lib/                 — seam layer (storage, auth, ai-provider, email, analytics, env, errors)
-web/providers/           — React context providers (media provider adapter, demo store)
+web/app/studio/layout.tsx — M2 auth guard for /studio/*
 web/prototype/           — early scaffold prototype kept for reference
 web/stores/              — domain state (will land in M-fast, F-T002 split from legacy store.jsx)
-web/supabase/migrations/ — DB migrations (empty scaffold; filled in M1)
+web/supabase/migrations/ — Supabase DB migrations
 web/.env.example         — environment variable template (M0-P002)
 web/package.json         — pnpm, next 16, react 19
 web/CLAUDE.md            — local pointer to root CLAUDE.md
@@ -52,7 +52,7 @@ pitch/deck/                        — 7 JSX slides + seed photos + deck-stage.j
 docs/requirements.md               — CURRENT: requirements v1.0 (frozen)
 docs/architecture.md               — CURRENT: target architecture + seam layers
 docs/data-model.md                 — CURRENT: target DB schema + RLS
-docs/implementation-plan.md        — CURRENT: milestone roadmap (plan v2.0)
+docs/implementation-plan.md        — CURRENT: milestone roadmap (plan v2.1)
 docs/SECURITY.md                   — security notes / past incidents
 docs/brief-mission.md              — historical: mission / boundaries (kept for context)
 docs/brief-v1-readme.md            — historical: v1 brief
@@ -69,14 +69,14 @@ tasks/README.md                    — how the task system works
 tasks/AGENTS.md                    — agent protocol (claim → do → verify → log)
 tasks/STATE.md                     — live snapshot of all task status
 tasks/LOG.md                       — append-only event history
-tasks/M0-consolidation/            — M0 tasks (in progress)
-tasks/M-fast-feature-port/         — M-fast tasks (next, after M0)
-tasks/M1-supabase-data/            — POSTPONED (per plan v2.0)
-tasks/M2-auth-invites/             — POSTPONED (per plan v2.0)
+tasks/M0-consolidation/            — COMPLETE
+tasks/M-fast-feature-port/         — COMPLETE
+tasks/M1-supabase-data/            — COMPLETE
+tasks/M2-auth-invites/             — LIVE + VERIFIED
 tasks/M3-feature-parity/           — SUPERSEDED by M-fast
-tasks/M4-public-pages/             — POSTPONED
-tasks/M5-observability/            — POSTPONED
-tasks/M6-launch/                   — POSTPONED
+tasks/M4-public-pages/             — NEXT
+tasks/M5-observability/            — NEXT
+tasks/M6-launch/                   — pending custom domain / beta launch
 ```
 
 ## `assets/`

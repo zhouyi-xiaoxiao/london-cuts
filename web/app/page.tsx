@@ -1,10 +1,9 @@
-// For the M-preview build, the landing page just forwards to /studio
-// so the dashboard is the single entry surface. The scaffold's marketing
-// landing (still in web/components/public-pages.tsx as `LandingPage`)
-// is kept out of the router until M4 when it gets a proper re-skin.
+// After the preview-password gate was retired, `/` became the shareable
+// public entry. Until M4 ships a proper landing page, send visitors to
+// the strongest public reader demo.
 
 import { redirect } from "next/navigation";
 
 export default function Page() {
-  redirect("/studio");
+  redirect("/@ana-ishii/a-year-in-se1");
 }

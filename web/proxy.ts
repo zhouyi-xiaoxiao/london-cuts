@@ -1,12 +1,10 @@
-// Preview-stage password gate.
+// Retired preview-stage password gate.
 //
-// When PREVIEW_PASSWORD is set in the Vercel env, the listed write /
-// editor paths require a cookie with that password. Everything else is
-// public by default. This flip — from "default gated, explicit allow"
-// to "default public, explicit deny" — fixes the dogfood bug where
-// `/@handle/slug` links in public pages got URL-encoded to `/%40...`
-// and stopped matching the allow-list prefix. With the deny-list shape
-// we never depend on URL-encoding details.
+// PREVIEW_PASSWORD has been removed from Vercel, so proxy() now falls
+// through immediately and public pages are shareable. Keep this file as
+// a no-op emergency brake: if PREVIEW_PASSWORD is ever set again, the
+// listed write / editor paths require a cookie with that password while
+// everything else stays public by default.
 //
 // Why a denylist is OK here:
 //   - the public read pages are, by design, shareable to anyone
@@ -14,8 +12,8 @@
 //     and write surface (service_role backed sync). Those live on
 //     specific, stable path prefixes (/studio, /api/ai, /api/sync,
 //     /api/migrate) that never contain user-generated segments
-//   - the full gate goes away when M2 auth lands — see
-//     tasks/deferred/M2-auth-and-invites.md
+//   - M2 auth now protects /studio via app/studio/layout.tsx and protects
+//     write / AI routes via gateApiRequest()
 //
 // If you add a new sensitive prefix later, remember to add it to
 // GATED_PREFIXES below, and ship it in the same PR as the feature

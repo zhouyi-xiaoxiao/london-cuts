@@ -6,10 +6,9 @@
 // email" confirmation. Click the link in email → /auth/callback →
 // /onboarding or /studio depending on whether this is first login.
 //
-// This page is PUBLIC (not behind preview-password gate) so invitees
-// can reach it from their welcome message. It coexists with the
-// preview-password /gate — during beta either can let you into
-// /studio. Post-M2 the preview gate goes away.
+// This page is PUBLIC so invitees can reach it from their welcome
+// message. M2 auth is the studio gate; the old preview-password gate
+// has been retired.
 
 import { useState } from "react";
 
