@@ -16,7 +16,7 @@
 import "server-only";
 
 import { AuthRequiredError, OnboardingRequiredError, AdminRequiredError } from "./errors";
-import { getUserServerClient } from "./supabase";
+import { getUserServerClient } from "./supabase-server";
 
 export interface UserProfile {
   /** `public.users.id` — our internal UUID, used as owner_id on projects. */

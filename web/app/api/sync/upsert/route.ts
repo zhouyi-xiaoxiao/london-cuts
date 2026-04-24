@@ -22,7 +22,8 @@
 import { NextResponse } from "next/server";
 
 import { gateApiRequest, isM2Enabled } from "@/lib/api-auth";
-import { getServerClient, getUserServerClient } from "@/lib/supabase";
+import { getServerClient } from "@/lib/supabase";
+import { getUserServerClient } from "@/lib/supabase-server";
 
 // Default owner UUID (same as migrate/seed/route.ts). Used when M2 auth
 // is not enabled. When M2_AUTH_ENABLED=true we derive owner_id from the
