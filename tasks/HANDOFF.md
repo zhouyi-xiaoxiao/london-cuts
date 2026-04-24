@@ -125,21 +125,31 @@ Rollback = set env `M2_AUTH_ENABLED=false`. No DB rollback needed — migration 
 
 Owner hit `EMAIL RATE LIMIT EXCEEDED` on `/sign-in` while trying to send beta magic links. This is a Supabase default SMTP limitation, not a London Cuts app bug.
 
-Current mitigation:
+Initial mitigation:
 - `/api/auth/send-magic-link` maps rate-limit messages to HTTP 429 with `code:"email_rate_limited"` and a user-friendly message.
 - `/sign-in` now tells users to wait or ask the project owner for a direct beta link instead of surfacing the raw Supabase error.
 - `web/scripts/generate-magic-link.mjs` can generate admin magic links using `SUPABASE_SERVICE_ROLE_KEY` from gitignored `web/.env.local`:
   - `cd web && node scripts/generate-magic-link.mjs user@example.com`
   - Send the generated link manually from the owner's mailbox, plus invite code `beta-001` for first-time onboarding.
+- Owner preference (2026-04-24T23:50Z): do not rely on this workaround unless explicitly requested for a named recipient. The desired fix is custom SMTP + adjusted Supabase Auth rate limits so the normal `/sign-in` button works.
 
 Relay test done:
 - Gmail connector account: `zhouyixiaoxiao@gmail.com`.
 - Sent admin-generated links to `xiaoxiao.zhouyi@bristol.ac.uk` and `xiaoxiaozhouyi@gmail.com`.
 
-Permanent fix:
-- Configure Supabase Auth custom SMTP with a real transactional provider (recommended: Resend or Postmark) and a domain-owned From address such as `London Cuts <no-reply@auth.zhouyixiaoxiao.org>`.
+Permanent fix completed:
+- Supabase Auth custom SMTP is enabled through Resend with domain-owned sender `London Cuts <no-reply@auth.zhouyixiaoxiao.org>`.
 - Avoid using the Bristol mailbox or personal Gmail as the product's SMTP identity unless this is only for temporary testing. University Microsoft 365 SMTP often blocks app SMTP auth; Gmail SMTP requires app passwords and is not ideal for product auth deliverability.
-- After custom SMTP is live, increase Supabase Auth rate limits in Dashboard → Authentication → Rate Limits and test delivery to Gmail + Bristol addresses.
+- Supabase Auth email rate limit is `100 emails/h`; minimum interval per user remains `60 seconds`.
+- Production `/api/auth/send-magic-link` returned HTTP 200 for the previously failing Gmail address, and Resend Logs showed `POST /emails` HTTP 200.
+- Exact DNS and SMTP settings are in `tasks/deferred/auth-email-smtp-runbook.md`.
+- Important callback detail: Supabase Auth templates now use `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=signup|email`, and `/auth/callback/page.tsx` verifies those links with `verifyOtp`. Do not revert the templates to default `{{ .ConfirmationURL }}`; that shape reproduced the "Could not establish a session from this link" failure in the SSR/cookie setup.
+
+Resend setup progress:
+- Resend account/workspace created via Google login for `xiaoxiaozhouyi@gmail.com`.
+- Sending domain verified: `auth.zhouyixiaoxiao.org` (domain id `03d77d58-0fda-4a5e-ae32-e9d641e2fb11`, region `eu-west-1`).
+- Resend API key `supabase-auth-smtp` created with sending access and stored in macOS Keychain service `london-cuts-resend-smtp`, account `supabase-auth-smtp`.
+- IONOS DNS MCP and Supabase management API tokens are still not configured; the working fix used logged-in browser dashboards.
 
 ## Drag-drop network (added 2026-04-23, don't break)
 

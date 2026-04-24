@@ -42,7 +42,7 @@ export default function SignInPage() {
           kind: "error",
           message:
             body.code === "email_rate_limited"
-              ? "Email sending is temporarily limited. Wait a little, or ask the project owner for a direct beta link."
+              ? "Email sending is temporarily limited. Wait a little, then request a new magic link."
               : (body.error ?? "could not send magic link"),
         });
         return;

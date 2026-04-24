@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-24T22:45Z
+**Last updated:** 2026-04-25T00:20Z
 
 ## Plan version
 
@@ -28,7 +28,7 @@
 3. **M6 custom domain** — owner action in IONOS + Vercel domain setup. Current shareable fallback is `https://london-cuts.vercel.app/` or the direct reader URL.
 4. **Per-user AI quota** — new migration + `user_daily_ai_spend` table + tracker in ai-provider. Defer until friend-user traffic proves the need.
 5. **User menu UI** — sign-out button + display-name in studio chrome. Small; tack onto any future UI pass.
-6. **Custom SMTP for auth emails** — recommended before inviting more than a few testers. Supabase built-in mailer has very low rate limits; use Resend/Postmark with a domain-owned sender.
+6. **Invite/onboarding polish** — normal `/sign-in` mail now works via Resend SMTP; next polish is copy/templates and avoiding owner-only wording in beta emails.
 
 First step for whichever track: read `tasks/HANDOFF.md` first — it's the canonical resume-point and has the M1 architecture diagram + seam map + gotchas + M2 activation flow.
 
@@ -48,6 +48,13 @@ _none_
   - Added `web/scripts/generate-magic-link.mjs` for owner/admin emergency links while custom SMTP is pending.
   - Sent Gmail relay tests from `zhouyixiaoxiao@gmail.com` to `xiaoxiao.zhouyi@bristol.ac.uk` and `xiaoxiaozhouyi@gmail.com` with admin-generated links + invite `beta-001`.
   - Permanent recommendation: configure Supabase Auth custom SMTP via Resend/Postmark and a domain sender; avoid relying on Bristol/Gmail personal SMTP for product auth mail.
+- **Auth SMTP long-term fix completed** (2026-04-24T23:57Z):
+  - IONOS DNS records added for `auth.zhouyixiaoxiao.org`; external `dig` and Resend dashboard verified DKIM, return-path MX/SPF, and DMARC.
+  - Supabase Auth custom SMTP enabled with Resend: `London Cuts <no-reply@auth.zhouyixiaoxiao.org>`, `smtp.resend.com:465`, username `resend`, password from macOS Keychain.
+  - Supabase Auth email rate limit changed to `100 emails/h`; minimum interval per user remains `60 seconds`.
+  - Production `/api/auth/send-magic-link` returned HTTP 200 `{"ok":true}` for the previously failing Gmail address, and Resend Logs showed `POST /emails` HTTP 200.
+  - Follow-up session issue fixed by changing Supabase Auth templates to token-hash links and updating `/auth/callback` to verify them with `verifyOtp`; default `ConfirmationURL` links should not be restored without a new end-to-end test.
+  - IONOS MCP and Supabase management API tokens are still not configured; this fix was done through logged-in browser dashboards.
 - **OpenAI image2 safety-block fix** (2026-04-24T22:15Z):
   - Owner hit OpenAI 400 `moderation_blocked` while generating a postcard. API key/account/model were verified OK; the trigger was the old Anime prompt naming specific style references.
   - Kept `gpt-image-2`; replaced the Anime prompt with a generic animated-film travel-postcard prompt and added OpenAI `code/type/requestId` passthrough on image routes.

@@ -1,25 +1,28 @@
 "use client";
 
-// M2 auth callback — handles BOTH Supabase magic-link flow shapes:
+// M2 auth callback — handles the Supabase magic-link shapes we have used:
 //
-//  1. PKCE flow (kept for old links / local experiments): Supabase
+//  1. token_hash flow (current production email templates): Supabase
+//     sends users straight to /auth/callback?next=...&token_hash=...&type=...
+//     and we call verifyOtp to create the session cookie.
+//
+//  2. PKCE flow (kept for old links / local experiments): Supabase
 //     redirects us to /auth/callback?code=XYZ. We exchange the code
 //     for a session via the browser client.
 //
-//  2. Implicit / hash flow (current beta magic links + admin-generated
-//     links via auth.admin.generateLink): Supabase redirects us with
+//  3. Implicit / hash flow (admin-generated links via
+//     auth.admin.generateLink): Supabase redirects us with
 //     the session tokens in the URL FRAGMENT —
 //     /auth/callback#access_token=...&refresh_token=...
-//     The fragment never reaches the server, so this page must be a
-//     client component. The Supabase browser client, initialised with
-//     `detectSessionInUrl: true`, consumes the hash automatically
-//     when it boots. We just wait for the session and then redirect.
+//     The fragment never reaches the server, so this page parses it
+//     in the browser and stores it with setSession.
 //
 // Either way, once we have a session we check whether the user has a
 // profile row (first-time? → /onboarding; returning user? → /studio,
 // or whatever ?next= asks for).
 
 import { useEffect, useState } from "react";
+import type { EmailOtpType } from "@supabase/supabase-js";
 
 import { getBrowserClient } from "@/lib/supabase";
 
@@ -38,11 +41,29 @@ export default function AuthCallbackPage() {
         const supabase = getBrowserClient();
         const url = new URL(window.location.href);
 
-        // Flow A — PKCE. Kept for old links and local experiments, but
-        // beta invite emails now use implicit links to avoid the
-        // cross-browser "code verifier not found" failure mode.
+        // Flow A — token_hash. This is the preferred production email
+        // template shape for SSR/cookie auth:
+        // /auth/callback?token_hash=...&type=email|signup|magiclink
+        // It avoids relying on a PKCE code verifier stored in the
+        // browser that requested the email.
+        const tokenHash = url.searchParams.get("token_hash");
+        const otpType = url.searchParams.get("type");
+        if (tokenHash && otpType) {
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: otpType as EmailOtpType,
+          });
+          if (error) {
+            if (!cancelled) {
+              setState({ kind: "error", message: error.message });
+            }
+            return;
+          }
+        }
+
+        // Flow B — PKCE. Kept for old links and local experiments.
         const code = url.searchParams.get("code");
-        if (code) {
+        if (!tokenHash && code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) {
             if (!cancelled) {
@@ -57,14 +78,14 @@ export default function AuthCallbackPage() {
           }
         }
 
-        // Flow B — implicit / hash. Admin-generated magic links
+        // Flow C — implicit / hash. Admin-generated magic links
         // (auth.admin.generateLink) return the session in the URL
         // FRAGMENT: `#access_token=...&refresh_token=...`. The
         // `@supabase/ssr` browser client does NOT auto-parse this
         // shape (it targets PKCE), so we pull the tokens out of the
         // hash ourselves and hand them to setSession, which persists
         // into the same cookie store the server reads.
-        if (!code && window.location.hash) {
+        if (!tokenHash && !code && window.location.hash) {
           const hash = new URLSearchParams(window.location.hash.slice(1));
           const accessToken = hash.get("access_token");
           const refreshToken = hash.get("refresh_token");

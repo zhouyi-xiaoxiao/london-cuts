@@ -7,8 +7,8 @@
 // localhost dev, london-cuts.vercel.app, and the future custom domain
 // all route the magic link back to the same host that initiated it.
 //
-// M2 PR 2. No app-level per-user rate limiting yet. Supabase's built-in
-// SMTP has a very low project-level throttle; production needs custom SMTP.
+// M2 PR 2. Supabase Auth handles the actual per-recipient and project-level
+// email throttle. Production uses custom SMTP via Resend.
 
 import { NextResponse } from "next/server";
 
@@ -39,9 +39,9 @@ export async function POST(req: Request) {
     !body.next.startsWith("//")
       ? body.next
       : null;
-  const callbackUrl = next
-    ? `${origin}/auth/callback?next=${encodeURIComponent(next)}`
-    : `${origin}/auth/callback`;
+  const callbackUrl = `${origin}/auth/callback?next=${encodeURIComponent(
+    next ?? "/studio",
+  )}`;
 
   try {
     await sendMagicLink(email, callbackUrl);
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            "Email sending is temporarily limited. Please wait a little, or ask the project owner for a direct beta link.",
+            "Email sending is temporarily limited. Please wait a little, then request a new magic link.",
           code: "email_rate_limited",
         },
         { status: 429 },

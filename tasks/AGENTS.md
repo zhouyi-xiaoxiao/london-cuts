@@ -41,6 +41,14 @@ If `touches` overlap, the second agent picks a different task. When in doubt, tr
 ## Doing the work
 
 - Follow the task's `Steps`. Adapt as needed, but document deviations in `Trace`.
+- Treat every real follow-up action as part of the project record. If you
+  change production config, send/trigger real emails, create or test external
+  accounts, hit an external API limit, use an emergency/manual workaround, or
+  discover a non-obvious failure mode, record it before finishing:
+  - append one compact line to `tasks/LOG.md`;
+  - update `tasks/STATE.md` if it changes current status, next steps, or blockers;
+  - update `tasks/HANDOFF.md` when the detail would save a future agent from
+    re-learning the same integration path.
 - Do not exceed the task's scope. If you discover adjacent work, either:
   - Add a follow-up task and keep going within scope, OR
   - Ask the user if this is in-scope before expanding.
