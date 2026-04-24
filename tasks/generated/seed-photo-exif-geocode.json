@@ -1,0 +1,298 @@
+[
+  {
+    "file": "IMG_0294.jpg",
+    "lat": 51.51360833333333,
+    "lng": -0.14111944444444444,
+    "date": "2026-01-01T20:50:16.000Z",
+    "orientation": "Horizontal (normal)",
+    "place": {
+      "display_name": "COS, 222, Regent Street, East Marylebone, Mayfair, City of Westminster, Greater London, England, W1B 4NF, United Kingdom",
+      "address": {
+        "shop": "COS",
+        "house_number": "222",
+        "road": "Regent Street",
+        "quarter": "East Marylebone",
+        "suburb": "Mayfair",
+        "city": "City of Westminster",
+        "ISO3166-2-lvl8": "GB-WSM",
+        "state": "England",
+        "ISO3166-2-lvl4": "GB-ENG",
+        "postcode": "W1B 4NF",
+        "country": "United Kingdom",
+        "country_code": "gb"
+      }
+    }
+  },
+  {
+    "file": "IMG_3083.jpg",
+    "lat": 51.581452777777784,
+    "lng": -0.14645555555555556,
+    "date": "2025-08-21T13:51:02.000Z",
+    "orientation": "Rotate 90 CW",
+    "place": {
+      "display_name": "Muswell Hill Road, Muswell Hill, London Borough of Haringey, Greater London, England, N6 5UL, United Kingdom",
+      "address": {
+        "road": "Muswell Hill Road",
+        "suburb": "Muswell Hill",
+        "city_district": "London Borough of Haringey",
+        "ISO3166-2-lvl8": "GB-HRY",
+        "city": "Greater London",
+        "state": "England",
+        "ISO3166-2-lvl4": "GB-ENG",
+        "postcode": "N6 5UL",
+        "country": "United Kingdom",
+        "country_code": "gb"
+      }
+    }
+  },
+  {
+    "file": "IMG_3162.jpg",
+    "lat": 51.55670555555555,
+    "lng": -0.1380611111111111,
+    "date": "2025-08-23T13:35:02.000Z",
+    "orientation": "Horizontal (normal)",
+    "place": {
+      "display_name": "Tufnell Park, Brecknock Road, Archway, London Borough of Islington, Greater London, England, N19 5AA, United Kingdom",
+      "address": {
+        "railway": "Tufnell Park",
+        "road": "Brecknock Road",
+        "suburb": "Archway",
+        "city_district": "London Borough of Islington",
+        "ISO3166-2-lvl8": "GB-ISL",
+        "city": "Greater London",
+        "state": "England",
+        "ISO3166-2-lvl4": "GB-ENG",
+        "postcode": "N19 5AA",
+        "country": "United Kingdom",
+        "country_code": "gb"
+      }
+    }
+  },
+  {
+    "file": "IMG_3837.jpg",
+    "lat": 51.48426111111111,
+    "lng": -0.6037972222222222,
+    "date": "2025-09-09T08:39:57.000Z",
+    "orientation": "Rotate 90 CW",
+    "place": {
+      "display_name": "The Engine Court Shop, Moat Path, Windsor, Windsor and Maidenhead, England, SL4 1QF, United Kingdom",
+      "address": {
+        "shop": "The Engine Court Shop",
+        "road": "Moat Path",
+        "town": "Windsor",
+        "county": "Windsor and Maidenhead",
+        "ISO3166-2-lvl6": "GB-WNM",
+        "state": "England",
+        "ISO3166-2-lvl4": "GB-ENG",
+        "postcode": "SL4 1QF",
+        "country": "United Kingdom",
+        "country_code": "gb"
+      }
+    }
+  },
+  {
+    "file": "IMG_3884.jpg",
+    "lat": 51.48416388888889,
+    "lng": -0.6025944444444444,
+    "date": "2025-09-09T10:23:16.000Z",
+    "orientation": "Horizontal (normal)",
+    "place": {
+      "display_name": "Cornwall Tower, The Long Walk, Windsor, Windsor and Maidenhead, England, SL4 1LB, United Kingdom",
+      "address": {
+        "man_made": "Cornwall Tower",
+        "road": "The Long Walk",
+        "town": "Windsor",
+        "county": "Windsor and Maidenhead",
+        "ISO3166-2-lvl6": "GB-WNM",
+        "state": "England",
+        "ISO3166-2-lvl4": "GB-ENG",
+        "postcode": "SL4 1LB",
+        "country": "United Kingdom",
+        "country_code": "gb"
+      }
+    }
+  },
+  {
+    "file": "IMG_4151.jpg",
+    "lat": 51.50695,
+    "lng": -0.12066666666666667,
+    "date": "2025-09-11T15:05:07.000Z",
+    "orientation": "Horizontal (normal)",
+    "place": {
+      "display_name": "Golden Jubilee Bridge, Victoria Embankment, St Clement Danes, Westminster, Covent Garden, City of Westminster, Greater London, England, WC2N 6PB, United Kingdom",
+      "address": {
+        "man_made": "Golden Jubilee Bridge",
+        "road": "Victoria Embankment",
+        "neighbourhood": "St Clement Danes",
+        "quarter": "Westminster",
+        "suburb": "Covent Garden",
+        "city": "City of Westminster",
+        "ISO3166-2-lvl8": "GB-WSM",
+        "state": "England",
+        "ISO3166-2-lvl4": "GB-ENG",
+        "postcode": "WC2N 6PB",
+        "country": "United Kingdom",
+        "country_code": "gb"
+      }
+    }
+  },
+  {
+    "file": "IMG_4566.jpg",
+    "lat": 51.49140277777778,
+    "lng": -0.4110138888888889,
+    "date": "2025-09-13T17:08:31.000Z",
+    "orientation": "Horizontal (normal)",
+    "place": {
+      "display_name": "Rectory Hartlands, London Borough of Hounslow, Greater London, England, TW5 9GX, United Kingdom",
+      "address": {
+        "hamlet": "Rectory Hartlands",
+        "city_district": "London Borough of Hounslow",
+        "ISO3166-2-lvl8": "GB-HNS",
+        "city": "Greater London",
+        "state": "England",
+        "ISO3166-2-lvl4": "GB-ENG",
+        "postcode": "TW5 9GX",
+        "country": "United Kingdom",
+        "country_code": "gb"
+      }
+    }
+  },
+  {
+    "file": "IMG_5577.jpg",
+    "lat": 51.50199166666667,
+    "lng": -0.001152777777777778,
+    "date": "2025-09-27T18:31:44.000Z",
+    "orientation": "Horizontal (normal)",
+    "place": {
+      "display_name": "Drawdock Road, Greenwich Peninsula, Royal Borough of Greenwich, Greater London, England, SE10 0JH, United Kingdom",
+      "address": {
+        "road": "Drawdock Road",
+        "suburb": "Greenwich Peninsula",
+        "city_district": "Royal Borough of Greenwich",
+        "ISO3166-2-lvl8": "GB-GRE",
+        "city": "Greater London",
+        "state": "England",
+        "ISO3166-2-lvl4": "GB-ENG",
+        "postcode": "SE10 0JH",
+        "country": "United Kingdom",
+        "country_code": "gb"
+      }
+    }
+  },
+  {
+    "file": "IMG_7711.jpg",
+    "lat": 51.46995555555556,
+    "lng": -0.4474222222222222,
+    "date": "2025-11-20T18:03:38.000Z",
+    "orientation": "Horizontal (normal)",
+    "place": {
+      "display_name": "A17, Cranwell Road, London Borough of Hillingdon, Greater London, England, TW6 1FB, United Kingdom",
+      "address": {
+        "aeroway": "A17",
+        "road": "Cranwell Road",
+        "city_district": "London Borough of Hillingdon",
+        "ISO3166-2-lvl8": "GB-HIL",
+        "city": "Greater London",
+        "state": "England",
+        "ISO3166-2-lvl4": "GB-ENG",
+        "postcode": "TW6 1FB",
+        "country": "United Kingdom",
+        "country_code": "gb"
+      }
+    }
+  },
+  {
+    "file": "IMG_8469.jpg",
+    "lat": 51.535888888888884,
+    "lng": -0.12680833333333333,
+    "date": "2025-05-30T17:14:48.000Z",
+    "orientation": "Rotate 90 CW",
+    "place": {
+      "display_name": "Plaza Pastor, Regent's Canal towpath, King's Cross, London Borough of Camden, Greater London, England, N1C 4DQ, United Kingdom",
+      "address": {
+        "amenity": "Plaza Pastor",
+        "road": "Regent's Canal towpath",
+        "suburb": "King's Cross",
+        "city_district": "London Borough of Camden",
+        "ISO3166-2-lvl8": "GB-CMD",
+        "city": "Greater London",
+        "state": "England",
+        "ISO3166-2-lvl4": "GB-ENG",
+        "postcode": "N1C 4DQ",
+        "country": "United Kingdom",
+        "country_code": "gb"
+      }
+    }
+  },
+  {
+    "file": "IMG_8745.jpg",
+    "lat": 51.50875555555555,
+    "lng": -0.1374138888888889,
+    "date": "2026-04-17T22:05:36.000Z",
+    "orientation": "Horizontal (normal)",
+    "place": {
+      "display_name": "British Academy of Film and Television Arts, 195, Piccadilly, St. James's, Westminster, Mayfair, City of Westminster, Greater London, England, W1J 9HA, United Kingdom",
+      "address": {
+        "amenity": "British Academy of Film and Television Arts",
+        "house_number": "195",
+        "road": "Piccadilly",
+        "neighbourhood": "St. James's",
+        "quarter": "Westminster",
+        "suburb": "Mayfair",
+        "city": "City of Westminster",
+        "ISO3166-2-lvl8": "GB-WSM",
+        "state": "England",
+        "ISO3166-2-lvl4": "GB-ENG",
+        "postcode": "W1J 9HA",
+        "country": "United Kingdom",
+        "country_code": "gb"
+      }
+    }
+  },
+  {
+    "file": "IMG_8774.jpg",
+    "lat": 51.525013888888886,
+    "lng": -0.13278055555555557,
+    "date": "2026-04-18T18:23:48.000Z",
+    "orientation": "Horizontal (normal)",
+    "place": {
+      "display_name": "TeamUCL Gym, 15, Gordon Street, St Pancras, London Borough of Camden, Greater London, England, WC1H 0AH, United Kingdom",
+      "address": {
+        "leisure": "TeamUCL Gym",
+        "house_number": "15",
+        "road": "Gordon Street",
+        "suburb": "St Pancras",
+        "city_district": "London Borough of Camden",
+        "ISO3166-2-lvl8": "GB-CMD",
+        "city": "Greater London",
+        "state": "England",
+        "ISO3166-2-lvl4": "GB-ENG",
+        "postcode": "WC1H 0AH",
+        "country": "United Kingdom",
+        "country_code": "gb"
+      }
+    }
+  },
+  {
+    "file": "IMG_9931.jpg",
+    "lat": 51.56256388888889,
+    "lng": -0.10915277777777778,
+    "date": "2025-07-06T02:05:34.000Z",
+    "orientation": "Rotate 90 CW",
+    "place": {
+      "display_name": "Coleridge Road, Finsbury Park, London Borough of Islington, Greater London, England, N4 3NP, United Kingdom",
+      "address": {
+        "road": "Coleridge Road",
+        "suburb": "Finsbury Park",
+        "city_district": "London Borough of Islington",
+        "ISO3166-2-lvl8": "GB-ISL",
+        "city": "Greater London",
+        "state": "England",
+        "ISO3166-2-lvl4": "GB-ENG",
+        "postcode": "N4 3NP",
+        "country": "United Kingdom",
+        "country_code": "gb"
+      }
+    }
+  }
+]

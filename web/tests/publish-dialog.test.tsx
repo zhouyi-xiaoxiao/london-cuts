@@ -8,7 +8,7 @@ import { PublishDialog } from "@/components/studio/publish-dialog";
 import { useRootStore } from "@/stores/root";
 import type { BodyBlock, Stop } from "@/stores/types";
 
-// Seed state with all 12 stops fully passing (upload/hero/body-para/postcard).
+// Seed state with all stops fully passing (upload/hero/body-para/postcard).
 // Opens the dialog so the component renders.
 function seedAllReady() {
   useRootStore.getState().resetToSeed();
@@ -44,13 +44,14 @@ describe("F-T008 publish dialog", () => {
 
   it("renders the pre-flight checklist with one row per stop", () => {
     render(<PublishDialog />);
-    // 12 seed stops → 12 rows.
-    for (const n of ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]) {
+    const stopIds = useRootStore.getState().stops.map((s) => s.n);
+    for (const n of stopIds) {
       expect(screen.getByTestId(`publish-row-${n}`)).toBeDefined();
     }
-    // Counter reads 12/12 ready.
     const counter = screen.getByTestId("publish-counter");
-    expect(counter.textContent).toMatch(/12\s*\/\s*12 ready/);
+    expect(counter.textContent).toMatch(
+      new RegExp(`${stopIds.length}\\s*\\/\\s*${stopIds.length} ready`),
+    );
   });
 
   it("disables Publish when any stop is missing a body paragraph", () => {

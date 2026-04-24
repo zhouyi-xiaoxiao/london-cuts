@@ -28,8 +28,8 @@ import type { NarrativeMode } from "@/lib/storage";
 import {
   PROJECTS_FEED,
   SEED_ASSETS,
-  SEED_BODY_05,
-  SEED_POSTCARD_05,
+  SEED_BODIES,
+  SEED_POSTCARDS,
   SEED_PROJECT,
   SEED_PROJECT_REYKJAVIK,
   SEED_STOPS,
@@ -62,17 +62,19 @@ function seedStateFromDataModule(): RootState {
   }));
   const assetByStop = new Map<string, Asset>();
   for (const a of assetsPool) if (a.stop) assetByStop.set(a.stop, a);
-  const coverAsset = assetsPool.find((a) => a.id === "se1-cover") ?? null;
+  const coverAsset = assetsPool.find((a) => a.id === "se1-13") ?? null;
 
   const stops: Stop[] = SEED_STOPS.map((s) => {
-    const isStop05 = s.n === "05";
     const hero = assetByStop.get(s.n) ?? null;
     const hasHero = Boolean(hero?.imageUrl);
     return {
       ...s,
-      body: isStop05 ? SEED_BODY_05 : [],
-      postcard: isStop05
-        ? { ...SEED_POSTCARD_05 }
+      body: [...(SEED_BODIES[s.n] ?? [])],
+      postcard: SEED_POSTCARDS[s.n]
+        ? {
+            message: SEED_POSTCARDS[s.n].message,
+            recipient: { ...SEED_POSTCARDS[s.n].recipient },
+          }
         : { message: "", recipient: { ...DEFAULT_RECIPIENT } },
       heroAssetId: hero?.id ?? null,
       assetIds: hero ? [hero.id] : [],
@@ -92,7 +94,7 @@ function seedStateFromDataModule(): RootState {
     slug: SEED_PROJECT.slug,
     title: SEED_PROJECT.title,
     subtitle: SEED_PROJECT.subtitle,
-    locationName: "London SE1",
+    locationName: "London, Windsor and nearby",
     defaultMode: SEED_PROJECT.defaultMode,
     status: SEED_PROJECT.status,
     visibility: SEED_PROJECT.visibility,
@@ -243,11 +245,13 @@ export type RootStore = RootState & RootActions;
 
 // ─── The store ─────────────────────────────────────────────────────────
 
+// Bumped v5 → v6 on 2026-04-25 when the public seed was rebuilt from all
+// 13 EXIF-grounded photos and the cover moved from `se1-cover` to `se1-13`.
 // Bumped v4 → v5 on 2026-04-22 when SEED_ASSETS switched from legacy
 // `a-wb-*` ids to `se1-*` ids + real imageUrls (13 London photos in
 // public/seed-images/). Pre-v5 state has null imageUrls that would
 // keep the dashboard showing diagonal-stripe placeholders forever.
-const PERSIST_KEY = "lc_store_v5";
+const PERSIST_KEY = "lc_store_v6";
 
 // Lean a single asset so we don't put data URLs in localStorage.
 function leanAsset(a: Asset): Asset {

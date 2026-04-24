@@ -198,7 +198,7 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
   }
 
   /** Create exactly one stop per described photo. The legacy straight-through
-   *  flow. Fast, zero extra AI cost, but 12 photos = 12 stops with no grouping. */
+   *  flow. Fast, zero extra AI cost, but N photos = N stops with no grouping. */
   function createStopsOnePerPhoto() {
     if (describedPhotos.length === 0) return;
 

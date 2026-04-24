@@ -17,31 +17,31 @@ describe("F-T004 Workspace shell", () => {
     render(<Workspace />);
     const title = useRootStore.getState().project.title;
     expect(screen.getByText(title)).toBeDefined();
-    // 7/12 ready in seed data (stops with upload+hero+body all true).
+    // Seed summary is computed from the current EXIF-grounded stop set.
     expect(screen.getByText(/\d+\/\d+ STOPS READY/i)).toBeDefined();
   });
 
-  it("spine renders all 12 seed stops", () => {
+  it("spine renders all seed stops", () => {
     render(<Workspace />);
     const rows = screen.getAllByRole("option");
-    expect(rows).toHaveLength(12);
+    expect(rows).toHaveLength(useRootStore.getState().stops.length);
   });
 
   it("canvas shows the active stop's title (default stop 05)", () => {
     render(<Workspace />);
-    // Stop 05 title is "Waterloo bridge, facing east" — unique to canvas h1.
+    // Stop 05 title is unique to canvas h1.
     // The spine row shows it but in truncated style, so multiple matches
     // are fine; we assert at least one.
-    expect(screen.getAllByText(/Waterloo bridge, facing east/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/A Serene Retreat/i).length).toBeGreaterThan(0);
   });
 
   it("clicking a spine row selects that stop", () => {
     render(<Workspace />);
     const rows = screen.getAllByRole("option");
-    fireEvent.click(rows[0]); // stop 01 Borough Market
+    fireEvent.click(rows[0]); // stop 01 Regent Street
     expect(useRootStore.getState().ui.activeStopId).toBe("01");
     // Canvas h1 now shows the stop 01 title.
-    expect(screen.getAllByText(/Borough Market at opening/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Regent Street Illuminations/i).length).toBeGreaterThan(0);
   });
 
   it("mode pill cycles modes via click", () => {

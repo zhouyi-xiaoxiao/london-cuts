@@ -18,8 +18,8 @@ describe("F-T002 root store", () => {
   it("loads seed data", () => {
     const s = useRootStore.getState();
     expect(s.project.slug).toBe("a-year-in-se1");
-    expect(s.stops).toHaveLength(12);
-    expect(s.stops[4].n).toBe("05"); // Waterloo bridge
+    expect(s.stops).toHaveLength(13);
+    expect(s.stops[4].n).toBe("05"); // Windsor interior
     expect(s.stops[4].body.length).toBeGreaterThan(0); // populated for stop 05
     expect(s.mode).toBe("fashion");
   });

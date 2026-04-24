@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-24T23:25Z
+**Last updated:** 2026-04-24T23:45Z
 
 ## Plan version
 
@@ -12,7 +12,7 @@
 |---|---|---|
 | M0 Consolidation | ✅ complete | 9/9 tasks |
 | M-fast Feature port | ✅ 14/14 done — but scaffold-level | ~45% of legacy surface actually covered; see `AUDIT-WORKSPACE.md` |
-| M-preview Soft launch | ✅ **LIVE** at `london-cuts.vercel.app` | preview-password gate retired 2026-04-24T21:30Z; `/` now redirects to the public SE1 reader demo |
+| M-preview Soft launch | ✅ **LIVE** at `london-cuts.vercel.app` | preview-password gate retired 2026-04-24T21:30Z; `/` now redirects to the public reader demo. Seed rebuilt as 13 photo-grounded stops from EXIF + vision. |
 | M-iter UX polish | ✅ **COMPLETE** — F-I001..F-I031 shipped (F-I028 WONTFIX). VariantsRow + Polish-prose in. Public reader pages unlocked. | See `tasks/AUDIT.md` + `AUDIT-WORKSPACE.md` + `AUDIT-PUBLIC-PAGES.md` |
 | **M1 Supabase & data** | ✅ **complete (Phases 1+2+3 full + F-I012 verified)** — 2026-04-22/23 | Project `acymyvefnvydksxzzegw` / Frankfurt. 5 tables + RLS + Storage. SSR reads + "☁️ Sync to cloud" button + binary upload all live. F-I012 end-to-end verified against production |
 | M2 Auth & invites | 🟢 **LIVE + END-TO-END VERIFIED (2026-04-24)** | Migration applied, Auth configured, invite minted + redeemed, env flag ON, owner linked to seed `ana-ishii` (auth_user_id `d813b4cf-41b8-4b06-b10f-99ae4d6ef01a`), `/sign-in → /auth/callback → /studio → ☁️ Sync` full path verified in prod. Preview password removed; `/studio/*` is guarded by `web/app/studio/layout.tsx`. |
@@ -29,7 +29,7 @@
 4. **Per-user AI quota** — new migration + `user_daily_ai_spend` table + tracker in ai-provider. Defer until friend-user traffic proves the need.
 5. **User menu UI** — sign-out button + display-name in studio chrome. Small; tack onto any future UI pass.
 6. **Invite/onboarding polish** — normal `/sign-in` mail now works via Resend SMTP; next polish is copy/templates and avoiding owner-only wording in beta emails.
-7. **Seed demo rebuild from 13 photos** — user correctly flagged that the bundled 13 demo photos have GPS/content that do not match the hand-written SE1 stops. Uploads now preserve EXIF GPS/time; next step is a one-off seed rebuild that runs the same photo-grounded pipeline over all 13 seed images, then syncs the regenerated project to Supabase.
+7. **Seed sync smoke after deployment** — after any seed edit, run `/api/migrate/seed` with the migration secret or local service-role route, then verify the live reader shows 13 stops and real coordinates.
 
 First step for whichever track: read `tasks/HANDOFF.md` first — it's the canonical resume-point and has the M1 architecture diagram + seam map + gotchas + M2 activation flow.
 
@@ -43,6 +43,12 @@ _none_
 
 ## Recently completed
 
+- **Seed demo rebuilt from 13 photos** (2026-04-24T23:45Z):
+  - Confirmed all 13 bundled seed images and rebuilt the public demo as `A Year Around London` with 13 stops, 13 hero assets, 13 body blocks, and 13 postcards.
+  - Generated per-photo copy with OpenAI vision into `tasks/generated/seed-photo-copy.json`; EXIF + reverse-geocode evidence is in `tasks/generated/seed-photo-exif-geocode.json`.
+  - Old stop 04 guard photo (`IMG_3837`) and old stop 10 restaurant/server photo (`IMG_8469`) now display upright by resetting stale EXIF Orientation to normal while preserving GPS/time; stop 13 (`IMG_9931`) was corrected the same way.
+  - `web/app/api/migrate/seed/route.ts` now seeds cover from `se1-13`, writes all stop bodies/postcards, and no longer nulls `users.auth_user_id` during reruns.
+  - Verification before deploy/sync: `pnpm typecheck`, `pnpm test` (65/65).
 - **Auth email rate-limit mitigation** (2026-04-24T22:45Z):
   - Owner hit Supabase Auth `EMAIL RATE LIMIT EXCEEDED` while testing `/sign-in`.
   - Added API/UI handling so the raw error becomes a 429 `email_rate_limited` with a clearer user message.

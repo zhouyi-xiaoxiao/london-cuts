@@ -15,8 +15,8 @@ A creator tool for documenting a single-location trip (anywhere in the world) wi
 `docs/implementation-plan.md` is at **v2.1** — features-first ordering:
 M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)** → **M1 Supabase (LIVE)** → **M2 Auth+invites (LIVE + verified + preview gate retired)** → M4/M5/M6.
 
-**As of 2026-04-24T22:15Z**:
-- **M-preview LIVE, gate retired**: `https://london-cuts.vercel.app` serves commits on `main`. `/` redirects to the public reader demo `/@ana-ishii/a-year-in-se1`, so the main URL is shareable. 13 seed photos (SE1) + 1 cover render from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired. `PREVIEW_PASSWORD` has been removed from Vercel envs; `web/proxy.ts` is now only an emergency no-op brake if that env var is set again.
+**As of 2026-04-24T23:45Z**:
+- **M-preview LIVE, gate retired**: `https://london-cuts.vercel.app` serves commits on `main`. `/` redirects to the public reader demo `/@ana-ishii/a-year-in-se1`, so the main URL is shareable. The public demo is now `A Year Around London`: 13 static seed photos, 13 stops, and `se1-13` as cover from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired. `PREVIEW_PASSWORD` has been removed from Vercel envs; `web/proxy.ts` is now only an emergency no-op brake if that env var is set again.
 - **M-iter: 18/21+ shipped.** F-I001..F-I018. The 4-stream sprint on 2026-04-23 closed the biggest audit gaps. Still open: **VariantsRow only** (deferred to its own session per `tasks/AUDIT-WORKSPACE.md` M3 recommendation — 345-line AI-generation UI, real $ spend, needs undivided attention).
   - F-I001..F-I011: font swap / cinema letterbox / postcard flip / publish URL / atlas brightness / spine add-remove-move / per-mode postcard-front + chapter grammars / variant cache
   - F-I012: production sync end-to-end verified via curl (POST /api/sync/upsert → Supabase Storage CDN → HTTP 200)
@@ -30,7 +30,7 @@ M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)**
   - Project ref: `acymyvefnvydksxzzegw`, region Central EU (Frankfurt), Free tier, org "55".
   - Schema: 5 tables (`users` / `projects` / `stops` / `postcards` / `assets`) + RLS + storage bucket `assets`. Applied via Supabase SQL Editor; source of truth = `web/supabase/migrations/0001_initial.sql`.
   - Env vars set in BOTH `web/.env.local` AND Vercel (production + development): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Preview env skipped (we don't use preview branches).
-  - Seed data pushed via `/api/migrate/seed` → 1 user + 2 projects + 13 assets + 19 stops + 1 postcard.
+  - Seed data pushed via `/api/migrate/seed` → 1 user + 2 projects + 13 London assets + 20 stops (13 London + 7 Reykjavík) + 13 London postcards.
   - Public pages (project / chapter / postcard) fetch from Supabase server-side via `web/lib/public-lookup.ts` + pass `initialData` prop to client components (client components still fall back to local Zustand via `usePublicProjectLookup` if no server data).
   - **"☁️ Sync to cloud"** dashboard button POSTs current Zustand state → `/api/sync/upsert` → service_role upserts into Supabase. Phase 3 **full** now — binaries included. Assets with `data:` URLs get uploaded to Supabase Storage bucket `assets` at path `{ownerId}/{projectId}/{legacyId}.{ext}`; the returned public URL lands in `assets.storage_path`. Assets with a `/seed-images/*` URL pass through as-is. Response includes `assetsUploaded` + `assetsPassedThrough` counts; dashboard banner surfaces the uploaded count.
 - **Dep added**: `@supabase/supabase-js@2.104.0` (owner-approved).
@@ -61,7 +61,8 @@ M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)**
 - Production AI env is REAL (`AI_PROVIDER_MOCK=false`) and server-side only; do not expose or rotate `OPENAI_API_KEY` unless the owner explicitly confirms a new key action. Current key/account tested OK with text, vision, compose, polish, and `gpt-image-2` image edits.
 - Safety gotcha (2026-04-24): OpenAI rejected the old Anime prompt because it named specific style references (`Ghibli / Makoto Shinkai feel`). Keep style prompts generic; the current Anime prompt ("warm animated-film background painting for a travel postcard...") was live-tested successfully.
 - Pipeline verified end-to-end on 2026-04-24 after commit `ebfb115`: logged-in prod `/api/ai/generate` with `style:"anime"` returned HTTP 200, `mock:false`, PNG data URL, costCents=2. Prod `/api/ai/pregen-variants` for all 6 styles returned HTTP 200, `mock:false`, 6/6 `failed:false`, totalCostCents=12.
-- Photo-grounded upload status (2026-04-24): `VisionUpload` preserves EXIF `lat/lng/dateOriginal` from uploaded images. One-photo-per-stop uses the photo GPS/time directly; full-draft grouping sends GPS/time into `/api/ai/compose-project` and materialises each grouped stop at the hero/average photo coordinate instead of `0,0`. The bundled SE1 demo has 13 seed photos; they contain GPS, but the current published demo text/locations are still hand-written seed data and need a separate seed-rebuild pass before the public example is truly photo-grounded.
+- Photo-grounded upload status (2026-04-24): `VisionUpload` preserves EXIF `lat/lng/dateOriginal` from uploaded images. One-photo-per-stop uses the photo GPS/time directly; full-draft grouping sends GPS/time into `/api/ai/compose-project` and materialises each grouped stop at the hero/average photo coordinate instead of `0,0`.
+- Seed rebuild status (2026-04-24T23:45Z): bundled demo was rebuilt from all 13 seed photos using EXIF GPS/time + OpenAI vision output saved in `tasks/generated/seed-photo-copy.json`. `web/lib/seed.ts` now has 13 photo-grounded stops, body blocks and postcards. Orientation tags were reset to normal for old stop 04 (`IMG_3837` guards), old stop 10 (`IMG_8469` restaurant/server), and stop 13 (`IMG_9931` Finsbury Park sky) with GPS/date metadata preserved; helper script is `tasks/scripts/normalize-seed-orientation.mjs`.
 
 **Housekeeping done:** `web/providers/` removed. `web/lib/media-provider.ts` + `web/lib/seed-data.ts` deleted. `web/app/layout.tsx` simplified. Scaffold `studio-pages.tsx` + `public-pages.tsx` now read Zustand via `web/components/studio-pages.adapter.ts`. `web/lib/types.ts` still present (ui.tsx + routes.ts still import it).
 
@@ -93,7 +94,7 @@ All 5 M2 PRs shipped + activated + tested in prod.
 - /sign-in → email field → POST /api/auth/send-magic-link → email sent
 - /auth/callback?code= (PKCE) OR #access_token= (implicit) → client page parses either shape → setSession → cookies
 - /studio loads with owner session
-- ☁️ Sync to cloud clicked → green success banner "12 STOPS SYNCED · READERS ON OTHER DEVICES SEE THIS NOW"
+- ☁️ Sync to cloud clicked → green success banner. Historical M2 verification saw "12 STOPS SYNCED"; after the 13-photo seed rebuild the current seed count is 13.
 - Means: `/api/sync/upsert` passed `gateApiRequest()` (cookie session → profile id) + wrote via user-scoped RLS client → Supabase accepted the upsert as owner-scoped
 
 **Known gotchas during integration (don't re-learn)**:

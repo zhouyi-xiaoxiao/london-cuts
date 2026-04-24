@@ -14,8 +14,8 @@ import { NextResponse } from "next/server";
 import { getServerClient } from "@/lib/supabase";
 import {
   SEED_ASSETS,
-  SEED_BODY_05,
-  SEED_POSTCARD_05,
+  SEED_BODIES,
+  SEED_POSTCARDS,
   SEED_PROJECT,
   SEED_PROJECT_REYKJAVIK,
   SEED_STOPS,
@@ -53,12 +53,11 @@ export async function POST(req: Request) {
 
   try {
     // ─── 1. Owner user row ──────────────────────────────────────────
-    // M1 has no auth yet, so auth_user_id stays null. M2 will wire a
-    // sign-in trigger that attaches the real auth.users.id here.
+    // Preserve any M2 auth link. Older versions of this endpoint wrote
+    // auth_user_id:null, which could detach the demo owner from a real login.
     const { error: userErr } = await db.from("users").upsert(
       {
         id: OWNER_ID,
-        auth_user_id: null,
         handle: "ana-ishii",
         display_name: "Ana Ishii",
       },
@@ -92,8 +91,8 @@ export async function POST(req: Request) {
           title: SEED_PROJECT.title,
           subtitle: SEED_PROJECT.subtitle,
           cover_label: SEED_PROJECT.coverLabel,
-          location_name: "London SE1",
-          area: "Southwark",
+          location_name: "London, Windsor and nearby",
+          area: "London / Windsor",
           tags: Array.from(SEED_PROJECT.tags),
           default_mode: SEED_PROJECT.defaultMode,
           status: SEED_PROJECT.status,
@@ -128,7 +127,8 @@ export async function POST(req: Request) {
     step("✓ 2 projects (SE1, Reykjavík) upserted");
 
     // ─── 4. Assets ──────────────────────────────────────────────────
-    // All 13 seed photos for SE1. Reykjavík has none seeded (stock demo).
+    // All 13 seed photos for the London/Windsor demo. Reykjavík has none
+    // seeded (stock demo).
     // storage_path leaves Supabase Storage unused in Phase 1 — the
     // production public URL (/seed-images/*.jpg) stays canonical; Phase 2
     // will upload binaries + flip storage_path to the bucket path.
@@ -159,8 +159,8 @@ export async function POST(req: Request) {
       if (r.legacy_id) assetByLegacy.set(r.legacy_id, r.id as string);
     }
 
-    // Set SE1 project cover_asset_id to the se1-cover photo.
-    const coverUuid = assetByLegacy.get("se1-cover");
+    // Set SE1 project cover_asset_id to the 13th photo.
+    const coverUuid = assetByLegacy.get("se1-13");
     if (coverUuid) {
       await db
         .from("projects")
@@ -182,7 +182,7 @@ export async function POST(req: Request) {
       mood: s.mood,
       tone: s.tone === "punk" ? "punk" : s.tone === "cool" ? "cool" : "warm",
       display_label: s.label,
-      body_blocks: s.n === "05" ? SEED_BODY_05 : [],
+      body_blocks: SEED_BODIES[s.n] ?? [],
       status_json: s.status,
       lat: s.lat,
       lng: s.lng,
@@ -219,20 +219,25 @@ export async function POST(req: Request) {
     }
 
     // ─── 6. Postcards ───────────────────────────────────────────────
-    // Only stop 05 has a seed postcard today.
-    const stop05Id = stopByLegacy.get("se1-stop-05");
-    if (stop05Id) {
-      const { error: pcErr } = await db.from("postcards").insert({
-        stop_id: stop05Id,
-        back_message: SEED_POSTCARD_05.message,
-        recipient_name: SEED_POSTCARD_05.recipient.name,
-        recipient_line1: SEED_POSTCARD_05.recipient.line1,
-        recipient_line2: SEED_POSTCARD_05.recipient.line2,
-        recipient_country: SEED_POSTCARD_05.recipient.country,
-        orientation: "landscape",
-      });
+    const postcardRows = Object.entries(SEED_POSTCARDS)
+      .map(([n, postcard]) => {
+        const stopId = stopByLegacy.get(`se1-stop-${n}`);
+        if (!stopId) return null;
+        return {
+          stop_id: stopId,
+          back_message: postcard.message,
+          recipient_name: postcard.recipient.name,
+          recipient_line1: postcard.recipient.line1,
+          recipient_line2: postcard.recipient.line2,
+          recipient_country: postcard.recipient.country,
+          orientation: "landscape",
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row !== null);
+    if (postcardRows.length > 0) {
+      const { error: pcErr } = await db.from("postcards").insert(postcardRows);
       if (pcErr) throw new Error(`postcards.insert: ${pcErr.message}`);
-      step("✓ 1 postcard (stop 05) inserted");
+      step(`✓ ${postcardRows.length} postcards inserted`);
     }
 
     return NextResponse.json({ ok: true, log });

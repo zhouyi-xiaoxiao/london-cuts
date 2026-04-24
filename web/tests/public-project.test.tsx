@@ -108,25 +108,27 @@ describe("F-T009 PublicProjectPage", () => {
   });
 
   it("renders the seed project title in the top bar", () => {
-    const title = useRootStore.getState().project.title; // "A Year in SE1"
+    const title = useRootStore.getState().project.title;
     const slug = useRootStore.getState().project.slug;
     render(<PublicProjectPage authorHandle="@ana-ishii" slug={slug} />);
     expect(screen.getAllByText(title).length).toBeGreaterThan(0);
   });
 
-  it("renders one card for every seed stop (12)", () => {
+  it("renders one card for every seed stop", () => {
     const slug = useRootStore.getState().project.slug;
+    const stopCount = useRootStore.getState().stops.length;
     render(<PublicProjectPage authorHandle="@ana-ishii" slug={slug} />);
     const cards = screen.getAllByTestId("public-stop-card");
-    expect(cards).toHaveLength(12);
+    expect(cards).toHaveLength(stopCount);
   });
 
   it("clicking a stop card does not crash the page", () => {
     const slug = useRootStore.getState().project.slug;
+    const stopCount = useRootStore.getState().stops.length;
     render(<PublicProjectPage authorHandle="@ana-ishii" slug={slug} />);
     const cards = screen.getAllByTestId("public-stop-card");
     expect(() => fireEvent.click(cards[0])).not.toThrow();
     // Page still rendered after the click.
-    expect(screen.getAllByTestId("public-stop-card")).toHaveLength(12);
+    expect(screen.getAllByTestId("public-stop-card")).toHaveLength(stopCount);
   });
 });

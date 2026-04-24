@@ -29,8 +29,8 @@ describe("F-T003 ProjectsDashboard", () => {
 
   it("reports stop count in the CURRENT card footer", () => {
     render(<ProjectsDashboard />);
-    // Seed has 12 stops; footer reads "12 STOPS · …"
-    const footers = screen.getAllByText(/\b12 STOPS\b/i);
+    const stopCount = useRootStore.getState().stops.length;
+    const footers = screen.getAllByText(new RegExp(`\\b${stopCount} STOPS\\b`, "i"));
     expect(footers.length).toBeGreaterThan(0);
   });
 

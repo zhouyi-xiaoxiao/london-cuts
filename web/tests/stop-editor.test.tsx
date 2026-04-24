@@ -23,13 +23,13 @@ describe("F-T005 stop editor", () => {
 
   it("renders title input wired to the store", () => {
     render(<StopCanvas stop={activeStop()} />);
-    const inputs = screen.getAllByDisplayValue("Waterloo bridge, facing east");
+    const inputs = screen.getAllByDisplayValue("A Serene Retreat");
     expect(inputs.length).toBeGreaterThan(0);
   });
 
   it("title input writes through to the store", () => {
     render(<StopCanvas stop={activeStop()} />);
-    const input = screen.getAllByDisplayValue("Waterloo bridge, facing east")[0];
+    const input = screen.getAllByDisplayValue("A Serene Retreat")[0];
     fireEvent.change(input, { target: { value: "Rewritten" } });
     expect(
       useRootStore.getState().stops.find((s) => s.n === "05")?.title,
@@ -58,10 +58,10 @@ describe("F-T005 stop editor", () => {
 
   it("metadata code input writes through", () => {
     render(<StopCanvas stop={activeStop()} />);
-    const codeInput = screen.getByDisplayValue("SE1 7PB");
-    fireEvent.change(codeInput, { target: { value: "SE1 9PB" } });
+    const codeInput = screen.getAllByDisplayValue("SL4 1LB")[0];
+    fireEvent.change(codeInput, { target: { value: "SL4 1XX" } });
     expect(
       useRootStore.getState().stops.find((s) => s.n === "05")?.code,
-    ).toBe("SE1 9PB");
+    ).toBe("SL4 1XX");
   });
 });
