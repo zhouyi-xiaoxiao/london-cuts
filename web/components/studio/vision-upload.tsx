@@ -16,6 +16,15 @@ import type {
   ComposeProjectResult,
   VisionAnalysisResult,
 } from "@/lib/ai-provider";
+import {
+  codeFromLocationHint,
+  coordinateForPhoto,
+  coordinateForPhotos,
+  earliestCaptureIso,
+  sortPhotosByCapture,
+  timeLabelFromCapture,
+  type PhotoGrounding,
+} from "@/lib/photo-grounding";
 import { prepareImage } from "@/lib/utils/image";
 import { useAssetActions } from "@/stores/asset";
 import { useProjectActions } from "@/stores/project";
@@ -37,6 +46,7 @@ interface DescribedPhoto {
   id: string;
   fileName: string;
   dataUrl: string;
+  grounding: PhotoGrounding;
   description: VisionAnalysisResult & { mock: boolean };
 }
 
@@ -69,6 +79,7 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
     const results: Array<{
       id: string;
       dataUrl: string;
+      grounding: PhotoGrounding;
       description: VisionAnalysisResult & { mock: boolean };
       fileName: string;
     }> = [];
@@ -84,7 +95,14 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
           setItems((prev) =>
             prev.map((p, i) => (i === idx ? { ...p, status: "resizing" } : p)),
           );
-          const { dataUrl } = await prepareImage(file, { maxEdge: 1024 });
+          const { dataUrl, lat, lng, dateOriginal } = await prepareImage(file, {
+            maxEdge: 1024,
+          });
+          const grounding: PhotoGrounding = {
+            lat,
+            lng,
+            capturedAtIso: dateOriginal?.toISOString() ?? null,
+          };
 
           setItems((prev) =>
             prev.map((p, i) =>
@@ -118,6 +136,7 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
           results.push({
             id: `photo-${idx}-${Date.now().toString(36)}`,
             dataUrl,
+            grounding,
             description: {
               title: body.title,
               paragraph: body.paragraph,
@@ -175,7 +194,7 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
     // Park the described photos in state — the owner now picks between
     // "one stop per photo" (straight-through) and "✨ generate full draft"
     // (calls /api/ai/compose-project to group + add project metadata).
-    setDescribedPhotos(results);
+    setDescribedPhotos(sortPhotosByCapture(results));
   }
 
   /** Create exactly one stop per described photo. The legacy straight-through
@@ -220,15 +239,19 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
         tone: r.description.tone as StopTone,
         imageUrl: r.dataUrl,
       });
+      const coord = coordinateForPhoto(r) ?? { lat: 0, lng: 0 };
+      const time =
+        timeLabelFromCapture(r.grounding.capturedAtIso) ||
+        new Date().toTimeString().slice(0, 5);
       return {
         n,
-        code: r.description.locationHint.slice(0, 8) || "—",
+        code: codeFromLocationHint(r.description.locationHint),
         title: r.description.title,
-        time: new Date().toTimeString().slice(0, 5),
+        time,
         mood: r.description.mood,
         tone: r.description.tone as StopTone,
-        lat: 0,
-        lng: 0,
+        lat: coord.lat,
+        lng: coord.lng,
         label: (r.description.title || "").toUpperCase(),
         status: { upload: true, hero: true, body: true, media: "done" },
         heroAssetId: assetId,
@@ -266,6 +289,9 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
           photos: describedPhotos.map((p) => ({
             id: p.id,
             fileName: p.fileName,
+            lat: p.grounding.lat,
+            lng: p.grounding.lng,
+            capturedAtIso: p.grounding.capturedAtIso,
             description: p.description,
           })),
         }),
@@ -318,10 +344,12 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
         const n = String(i + 1).padStart(2, "0");
         const assetIds: string[] = [];
         let heroAssetId: string | null = null;
+        const groupedPhotos: DescribedPhoto[] = [];
 
         for (const photoId of cs.photoIds) {
           const photo = photoById.get(photoId);
           if (!photo) continue;
+          groupedPhotos.push(photo);
           const assetId = `asset-compose-${projectId}-${n}-${photoId}`;
           addAsset({
             id: assetId,
@@ -345,15 +373,28 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
           body.push({ type: "paragraph", content: paras[pi] });
         }
 
+        const heroPhoto = photoById.get(cs.heroPhotoId);
+        const coord =
+          (heroPhoto ? coordinateForPhoto(heroPhoto) : null) ??
+          coordinateForPhotos(groupedPhotos) ??
+          (typeof cs.lat === "number" && typeof cs.lng === "number"
+            ? { lat: cs.lat, lng: cs.lng }
+            : { lat: 0, lng: 0 });
+        const capturedAtIso = earliestCaptureIso(groupedPhotos);
+        const time =
+          timeLabelFromCapture(capturedAtIso) ||
+          cs.timeLabel ||
+          new Date().toTimeString().slice(0, 5);
+
         return {
           n,
           code: cs.code || "—",
           title: cs.title,
-          time: cs.timeLabel || new Date().toTimeString().slice(0, 5),
+          time,
           mood: cs.mood,
           tone: cs.tone,
-          lat: 0,
-          lng: 0,
+          lat: coord.lat,
+          lng: coord.lng,
           label: cs.title.toUpperCase(),
           status: {
             upload: assetIds.length > 0,
@@ -385,6 +426,9 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
   const done = items.filter((i) => i.status === "done").length;
   const failed = items.filter((i) => i.status === "failed").length;
   const total = items.length;
+  const groundedCount = describedPhotos.filter((p) =>
+    coordinateForPhoto(p),
+  ).length;
 
   return (
     <section
@@ -471,7 +515,8 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
           }}
         >
           <div className="eyebrow" style={{ marginBottom: 10 }}>
-            {describedPhotos.length} photos analysed — pick a mode
+            {describedPhotos.length} photos analysed
+            {groundedCount > 0 ? ` · ${groundedCount} GPS` : ""} — pick a mode
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button

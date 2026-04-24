@@ -375,6 +375,9 @@ export async function describePhoto(
 export interface ComposePhotoInput {
   id: string;
   fileName?: string;
+  lat?: number | null;
+  lng?: number | null;
+  capturedAtIso?: string | null;
   description: VisionAnalysisResult;
 }
 
@@ -392,6 +395,8 @@ export interface ComposedStop {
   pullQuote: string;
   postcardMessage: string;
   code: string;
+  lat?: number | null;
+  lng?: number | null;
 }
 
 export interface ComposeProjectResult {
@@ -431,6 +436,8 @@ function mockCompose(photos: readonly ComposePhotoInput[]): ComposeProjectResult
       postcardMessage:
         group[0].description.postcardMessage ?? "MOCK — a short note.",
       code: (first.description.locationHint || "").slice(0, 8).toUpperCase(),
+      lat: first.lat ?? null,
+      lng: first.lng ?? null,
     });
   }
   return {
@@ -456,6 +463,9 @@ async function realCompose(
   const digest = photos.map((p) => ({
     id: p.id,
     fileName: p.fileName,
+    lat: p.lat ?? null,
+    lng: p.lng ?? null,
+    capturedAtIso: p.capturedAtIso ?? null,
     title: p.description.title,
     paragraph: p.description.paragraph,
     pullQuote: p.description.pullQuote,
@@ -468,13 +478,15 @@ async function realCompose(
   const system = [
     "You compose a travel storytelling project from per-photo vision descriptions.",
     "Input: an array of photo digests with title / paragraph / mood / tone / locationHint.",
+    "Some photos also include lat/lng and capturedAtIso from EXIF. Treat those as ground truth.",
     "Output JSON only. Group related photos into 3–8 stops (not one stop per photo).",
-    "Grouping signals: locationHint, visual mood, paragraph content.",
+    "Grouping signals: EXIF location, capture chronology, locationHint, visual mood, paragraph content.",
     "Pick a project-level title (5–9 words), subtitle (one short evocative line), and a defaultMode:",
     '  "fashion" (editorial, sunlit, people) / "punk" (raw, graphic, protest, red) / "cinema" (dusk, interiors, moody).',
     "For each stop: assign the photo ids that belong, pick one as heroPhotoId,",
     "synthesise a title, mood (one evocative word), tone (warm|cool|punk),",
     "timeLabel (HH:MM), code (≤8 upper-case characters — a short place code),",
+    "lat/lng when the input photos for that stop have coordinates, preferably the hero photo or average of the group,",
     "paragraphs[] (keep 1–3 from the input verbatim, don't rewrite),",
     "pullQuote (one short evocative line, ≤ 15 words, pick from paragraph material),",
     "postcardMessage (1–2 first-person sentences to a friend).",
@@ -518,6 +530,8 @@ async function realCompose(
         pullQuote: s.pullQuote ?? "",
         postcardMessage: s.postcardMessage ?? "",
         code: (s.code ?? "").slice(0, 8).toUpperCase(),
+        lat: typeof s.lat === "number" ? s.lat : null,
+        lng: typeof s.lng === "number" ? s.lng : null,
       }))
     : [];
 

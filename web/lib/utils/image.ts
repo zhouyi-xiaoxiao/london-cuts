@@ -122,16 +122,16 @@ export async function resizeToDataUrl(
 export async function prepareImage(
   file: File,
   opts: { maxEdge?: number; quality?: number } = {},
-): Promise<ResizeResult & { orientation: ExifMeta["orientation"] }> {
+): Promise<ResizeResult & ExifMeta> {
   const { readExif } = await import("./exif");
-  const { orientation } = await readExif(file);
+  const exif = await readExif(file);
   const result = await resizeToDataUrl(
     file,
-    orientation,
+    exif.orientation,
     opts.maxEdge,
     opts.quality,
   );
-  return { ...result, orientation };
+  return { ...result, ...exif };
 }
 
 /**

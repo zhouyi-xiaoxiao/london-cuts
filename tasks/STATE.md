@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-25T00:25Z
+**Last updated:** 2026-04-24T23:25Z
 
 ## Plan version
 
@@ -29,6 +29,7 @@
 4. **Per-user AI quota** — new migration + `user_daily_ai_spend` table + tracker in ai-provider. Defer until friend-user traffic proves the need.
 5. **User menu UI** — sign-out button + display-name in studio chrome. Small; tack onto any future UI pass.
 6. **Invite/onboarding polish** — normal `/sign-in` mail now works via Resend SMTP; next polish is copy/templates and avoiding owner-only wording in beta emails.
+7. **Seed demo rebuild from 13 photos** — user correctly flagged that the bundled 13 demo photos have GPS/content that do not match the hand-written SE1 stops. Uploads now preserve EXIF GPS/time; next step is a one-off seed rebuild that runs the same photo-grounded pipeline over all 13 seed images, then syncs the regenerated project to Supabase.
 
 First step for whichever track: read `tasks/HANDOFF.md` first — it's the canonical resume-point and has the M1 architecture diagram + seam map + gotchas + M2 activation flow.
 
@@ -55,6 +56,11 @@ _none_
   - Production `/api/auth/send-magic-link` returned HTTP 200 `{"ok":true}` for the previously failing Gmail address, and Resend Logs showed `POST /emails` HTTP 200.
   - Follow-up session issue fixed by changing Supabase Auth templates to token-hash links and updating `/auth/callback` to verify them with `verifyOtp`; production test with a fresh Gmail plus-address reached `/onboarding`, so the normal built-in magic-link flow works end to end. Default `ConfirmationURL` links should not be restored without a new end-to-end test.
   - IONOS MCP and Supabase management API tokens are still not configured; this fix was done through logged-in browser dashboards.
+- **Photo-grounded upload metadata connected** (2026-04-24T23:25Z):
+  - Confirmed bundled demo uses 13 seed photos, all with readable GPS EXIF.
+  - `prepareImage()` now returns full EXIF metadata, not just orientation.
+  - `VisionUpload` carries `lat/lng/dateOriginal` through the describe and compose flows; one-photo-per-stop uses the photo GPS/time, and full-draft stops use hero/average coordinates for grouped photos.
+  - Added tests covering 13-photo seed count, coordinate averaging, capture-time ordering, and compact location codes.
 - **OpenAI image2 safety-block fix** (2026-04-24T22:15Z):
   - Owner hit OpenAI 400 `moderation_blocked` while generating a postcard. API key/account/model were verified OK; the trigger was the old Anime prompt naming specific style references.
   - Kept `gpt-image-2`; replaced the Anime prompt with a generic animated-film travel-postcard prompt and added OpenAI `code/type/requestId` passthrough on image routes.
