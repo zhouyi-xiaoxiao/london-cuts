@@ -48,7 +48,7 @@ _none_
   - Generated per-photo copy with OpenAI vision into `tasks/generated/seed-photo-copy.json`; EXIF + reverse-geocode evidence is in `tasks/generated/seed-photo-exif-geocode.json`.
   - Old stop 04 guard photo (`IMG_3837`) and old stop 10 restaurant/server photo (`IMG_8469`) now display upright by resetting stale EXIF Orientation to normal while preserving GPS/time; stop 13 (`IMG_9931`) was corrected the same way.
   - `web/app/api/migrate/seed/route.ts` now seeds cover from `se1-13`, writes all stop bodies/postcards, and no longer nulls `users.auth_user_id` during reruns.
-  - Verification before deploy/sync: `pnpm typecheck`, `pnpm test` (65/65).
+  - Verification: `pnpm typecheck`, `pnpm test` (65/65), `pnpm build`, local `/api/migrate/seed` Supabase sync, and live reader/image EXIF spot-checks after Vercel picked up commit `44e614c`.
 - **Auth email rate-limit mitigation** (2026-04-24T22:45Z):
   - Owner hit Supabase Auth `EMAIL RATE LIMIT EXCEEDED` while testing `/sign-in`.
   - Added API/UI handling so the raw error becomes a 429 `email_rate_limited` with a clearer user message.
