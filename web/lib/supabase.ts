@@ -17,14 +17,25 @@
 // `web/lib/*.ts` or component must use these factories so we can swap
 // backends without fan-out.
 
+import { createBrowserClient } from "@supabase/ssr";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let browserClient: SupabaseClient | null = null;
 
 /**
  * Browser client (anon key). Respects RLS. Cached per module load.
- * Call from "use client" components only. M2 flipped this to persist
- * sessions + detect callback codes so magic-link sign-in works.
+ * Call from "use client" components only.
+ *
+ * Uses `createBrowserClient` from `@supabase/ssr` so the session is
+ * stored as COOKIES — not localStorage. This is required so the
+ * server-side `getUserServerClient()` (which reads cookies) can see
+ * the same session. If we used plain `createClient` with the default
+ * localStorage store, /api/* routes would see null user and the M2
+ * auth gate would reject every authenticated request with 401.
+ *
+ * `detectSessionInUrl: true` makes the client automatically consume
+ * #access_token=... hash fragments on page load, which is how our
+ * /auth/callback client page picks up admin-generated magic links.
  */
 export function getBrowserClient(): SupabaseClient {
   if (browserClient) return browserClient;
@@ -35,13 +46,7 @@ export function getBrowserClient(): SupabaseClient {
       "getBrowserClient: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set",
     );
   }
-  browserClient = createClient(url, anonKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-    },
-  });
+  browserClient = createBrowserClient(url, anonKey);
   return browserClient;
 }
 
