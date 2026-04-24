@@ -36,12 +36,11 @@ export default function AuthCallbackPage() {
     (async () => {
       try {
         const supabase = getBrowserClient();
-
-        // For the PKCE flow the URL has `?code=...`. The browser
-        // client's `detectSessionInUrl` + auto-exchange handles it on
-        // init, but for belt + braces we explicitly exchange if the
-        // code is present.
         const url = new URL(window.location.href);
+
+        // Flow A — PKCE. Supabase redirected with ?code=... in the
+        // query. Our server routes the click via signInWithOtp would
+        // get this shape.
         const code = url.searchParams.get("code");
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -53,10 +52,32 @@ export default function AuthCallbackPage() {
           }
         }
 
-        // For the implicit/hash flow the browser client has already
-        // parsed the fragment during its init (detectSessionInUrl).
-        // Either way, give it a beat to settle, then fetch the
-        // current session. If still nothing, we failed.
+        // Flow B — implicit / hash. Admin-generated magic links
+        // (auth.admin.generateLink) return the session in the URL
+        // FRAGMENT: `#access_token=...&refresh_token=...`. The
+        // `@supabase/ssr` browser client does NOT auto-parse this
+        // shape (it targets PKCE), so we pull the tokens out of the
+        // hash ourselves and hand them to setSession, which persists
+        // into the same cookie store the server reads.
+        if (!code && window.location.hash) {
+          const hash = new URLSearchParams(window.location.hash.slice(1));
+          const accessToken = hash.get("access_token");
+          const refreshToken = hash.get("refresh_token");
+          if (accessToken && refreshToken) {
+            const { error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            if (error) {
+              if (!cancelled) {
+                setState({ kind: "error", message: error.message });
+              }
+              return;
+            }
+          }
+        }
+
+        // Poll briefly for the session to settle into local state.
         let session = null;
         for (let i = 0; i < 10; i++) {
           const { data } = await supabase.auth.getSession();
