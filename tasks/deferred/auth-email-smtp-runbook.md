@@ -121,6 +121,12 @@ Dashboard verification on 2026-04-25:
 - Magic link and Confirm sign up templates were reloaded in Supabase Dashboard and both persisted `token_hash` links.
 - The Magic link template had one stray trailing `>` after manual editing; it was removed and reloaded cleanly.
 
+Production verification on 2026-04-25:
+- A fresh Gmail plus-address test sent through `https://london-cuts.vercel.app/api/auth/send-magic-link` returned HTTP 200.
+- The received email contained an HTML callback href on `https://london-cuts.vercel.app/auth/callback` with `next`, `token_hash`, and `type=signup`.
+- Opening that link established a Supabase session and redirected to `/onboarding` for the new test account, proving the session callback path works.
+- The one-time link was consumed for testing and deleted from `/tmp`; do not store one-time auth links in repo docs.
+
 ## Temporary Link Policy
 
 Do not send admin-generated direct magic links to external testers as the default fix. The owner wants the built-in `/sign-in` flow repaired by configuring custom SMTP and rate limits. Direct links are only an explicit, one-off emergency workaround when the owner asks for that specific recipient.
