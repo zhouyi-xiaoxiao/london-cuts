@@ -15,6 +15,8 @@
 
 import "server-only";
 
+import { createClient } from "@supabase/supabase-js";
+
 import { AuthRequiredError, OnboardingRequiredError, AdminRequiredError } from "./errors";
 import { getUserServerClient } from "./supabase-server";
 
@@ -101,12 +103,37 @@ export async function requireAdmin(): Promise<
  * Send a magic link to the given email. Wraps Supabase Auth OTP sign-in.
  * The `emailRedirectTo` is where the link in the email points — the
  * callback route resolves the code into a session.
+ *
+ * Important beta detail: do NOT use `getUserServerClient()` here. The
+ * `@supabase/ssr` client hardcodes PKCE; those links only work if the
+ * recipient opens the email in the exact browser/storage context that
+ * requested the link. External beta invites often open mail links in a
+ * different browser, which surfaces "PKCE code verifier not found".
+ *
+ * Use Supabase's implicit OTP flow for emailed links instead. The
+ * callback page already handles the resulting `#access_token=...` hash
+ * and persists the session into SSR cookies via `setSession()`.
  */
 export async function sendMagicLink(
   email: string,
   emailRedirectTo: string,
 ): Promise<void> {
-  const supabase = await getUserServerClient();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) {
+    throw new Error(
+      "sendMagicLink: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set",
+    );
+  }
+
+  const supabase = createClient(url, anonKey, {
+    auth: {
+      flowType: "implicit",
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: { emailRedirectTo },

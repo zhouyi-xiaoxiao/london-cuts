@@ -2,13 +2,13 @@
 
 // M2 auth callback — handles BOTH Supabase magic-link flow shapes:
 //
-//  1. PKCE flow (default for signInWithOtp from the client): Supabase
+//  1. PKCE flow (kept for old links / local experiments): Supabase
 //     redirects us to /auth/callback?code=XYZ. We exchange the code
 //     for a session via the browser client.
 //
-//  2. Implicit / hash flow (admin-generated links via
-//     auth.admin.generateLink): Supabase redirects us with the
-//     session tokens in the URL FRAGMENT —
+//  2. Implicit / hash flow (current beta magic links + admin-generated
+//     links via auth.admin.generateLink): Supabase redirects us with
+//     the session tokens in the URL FRAGMENT —
 //     /auth/callback#access_token=...&refresh_token=...
 //     The fragment never reaches the server, so this page must be a
 //     client component. The Supabase browser client, initialised with
@@ -38,15 +38,20 @@ export default function AuthCallbackPage() {
         const supabase = getBrowserClient();
         const url = new URL(window.location.href);
 
-        // Flow A — PKCE. Supabase redirected with ?code=... in the
-        // query. Our server routes the click via signInWithOtp would
-        // get this shape.
+        // Flow A — PKCE. Kept for old links and local experiments, but
+        // beta invite emails now use implicit links to avoid the
+        // cross-browser "code verifier not found" failure mode.
         const code = url.searchParams.get("code");
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) {
             if (!cancelled) {
-              setState({ kind: "error", message: error.message });
+              setState({
+                kind: "error",
+                message: error.message.includes("code verifier")
+                  ? "This older sign-in link cannot be completed in this browser. Please request a new magic link and open the newest email."
+                  : error.message,
+              });
             }
             return;
           }
