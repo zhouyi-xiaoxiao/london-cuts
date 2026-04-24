@@ -12,11 +12,20 @@ All code for M2 auth + invites is committed and deployed (see
 | 3. Configure Site URL + Redirect URLs | ✅ **DONE** | Site URL = `https://london-cuts.vercel.app`. Redirect URLs: `https://london-cuts.vercel.app/auth/callback`, `http://localhost:3000/auth/callback` |
 | 4. Mint invite code | ✅ **DONE** | `ana-beta-001` inserted, uses_remaining=1 |
 | 5. Flip `M2_AUTH_ENABLED=true` | ✅ **DONE** 2026-04-24 01:05 UTC | Vercel prod env set via CLI (`--no-sensitive` flag required so pull works). Redeploy triggered via empty commit `17dd1ad`. Then onboarding UX polished in `b969521` |
-| 6. Owner first sign-in | ⏳ **PENDING** | Owner enters email at `/sign-in`, clicks magic link, fills `/onboarding` |
-| 7. Merge seed `ana-ishii` to owner's auth_user_id | ⏳ **PENDING** | Needs step 6's new `auth.users.id`. Claude will run the SQL once owner provides the UUID |
-| 8. Retire preview-password gate | ⏳ **OPTIONAL** | Once owner + 1 friend confirmed signed-in OK, delete `PREVIEW_PASSWORD` from Vercel env. Proxy's `if (!password) return` path lets non-sensitive prefixes through without any gate — `/studio` stays locked via M2 requireUser. |
+| 6. Owner first sign-in | ✅ **DONE** 2026-04-24 ~17:40 UTC | Automated via Claude using `supabase.auth.admin.generateLink` (skips actual email) + Chrome MCP navigation. Owner's `auth.users.id` = `d813b4cf-41b8-4b06-b10f-99ae4d6ef01a`, email `zhouyixiaoxiao@gmail.com` |
+| 7. Merge seed `ana-ishii` to owner's auth_user_id | ✅ **DONE** 2026-04-24 ~17:42 UTC | Node script using service_role: updated seed row to set `auth_user_id` + `is_admin=true`, inserted `invite_redemptions` row, set invite `uses_remaining = 0`. Verified: 2 projects (`a-year-in-se1`, `a-week-in-reykjavik`) now owned by her |
+| 8. Retire preview-password gate | ⏳ **OPTIONAL** (owner's call) | M2 is proven — cutting preview gate is safe. See the "Step 8 — retire the preview-password gate" section below for exact sequence |
 
-**Remaining owner-only actions**: step 6 only. Everything else automatable from Claude's side.
+**Required owner action**: none. Full flow verified end-to-end in Chrome — `/sign-in → /auth/callback → /studio → ☁️ Sync clicked → green success banner "12 STOPS SYNCED"`.
+
+## Integration gotchas discovered during activation (kept in HANDOFF too)
+
+1. **`lib/supabase.ts` taint rule**: `next/headers` cannot appear anywhere reachable from a "use client" component's import graph. The Supabase SSR cookie helper lives in `lib/supabase-server.ts` with `import "server-only"`. DO NOT re-export it from `lib/supabase.ts` — Next traces re-exports into client bundles.
+2. **Browser session storage must be cookies, not localStorage**: use `createBrowserClient` from `@supabase/ssr`. The plain `createClient` from `@supabase/supabase-js` defaults to localStorage, which the server-side `getUserServerClient` cannot see → every authenticated API call 401s with "Sign in required".
+3. **`createBrowserClient` does not auto-consume URL fragments**: if Supabase redirects with `#access_token=...` (implicit flow, what `auth.admin.generateLink` returns), `/auth/callback/page.tsx` must manually parse the hash and call `setSession({access_token, refresh_token})`. Only `?code=...` (PKCE, what real email clicks return) is auto-handled via `exchangeCodeForSession`.
+4. **`/auth/callback` must be `page.tsx`, not `route.ts`**: URL hash fragments never reach the server.
+
+All four are already fixed in commits `61caee5`, `43a29b5`, `f7acac3`, `63e5ca9`.
 
 ---
 

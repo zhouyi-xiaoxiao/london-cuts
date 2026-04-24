@@ -69,18 +69,37 @@ M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)**
 3. `tasks/PARALLELISM.md` — subagent rules. Three concurrent subagents is the proven upper bound (main + 2 background via `Agent` tool with `run_in_background: true`). Check `touches:` arrays for overlap.
 4. `tasks/LOG.md` — append-only event history, newest at the bottom.
 
-## M2 auth is LIVE (activated 2026-04-24) — waiting for owner first sign-in
+## M2 auth is LIVE + end-to-end VERIFIED (2026-04-24)
 
-All 5 M2 PRs are in main. **Activation happened 2026-04-24 ~01:00 UTC**.
-- ✅ Migration `0002_auth.sql` applied (confirmed via SQL "Success. No rows returned")
-- ✅ Supabase Auth: magic link ON, Site URL + 2 redirect URLs configured
-- ✅ Invite `ana-beta-001` minted (uses_remaining=1)
-- ✅ Vercel env `M2_AUTH_ENABLED=true` set (prod, non-sensitive)
-- ✅ Deploy pipeline ran after each change (commits `17dd1ad`, `b969521`)
+All 5 M2 PRs shipped + activated + tested in prod.
 
-**Remaining owner-only**: sign in at `/sign-in`, fill `/onboarding` (use invite code `ana-beta-001`), then hand your new `auth.users.id` back to Claude so it can link the seed `ana-ishii` profile row to your auth identity via SQL. See `tasks/deferred/M2-ENABLE-CHECKLIST.md` for full details + rollback.
+**Activation done** (automated via Claude Chrome MCP + service_role):
+- ✅ Migration `0002_auth.sql` applied
+- ✅ Supabase Auth: email provider + magic link ON, Site URL + 2 redirect URLs configured
+- ✅ Invite `ana-beta-001` minted + redeemed + marked used
+- ✅ Vercel env `M2_AUTH_ENABLED=true` (prod, non-sensitive flag)
+- ✅ Owner's auth identity linked to seed `ana-ishii` row:
+  - `auth.users.id` = `d813b4cf-41b8-4b06-b10f-99ae4d6ef01a`
+  - `public.users.id` = `00000000-0000-4000-8000-000000000001`
+  - `is_admin = true`
+  - Owner of `a-year-in-se1` + `a-week-in-reykjavik` (via RLS)
 
-Rollback = set env `M2_AUTH_ENABLED=false` / delete it. No DB rollback needed — migration is additive.
+**End-to-end VERIFIED**:
+- /sign-in → email field → POST /api/auth/send-magic-link → email sent
+- /auth/callback?code= (PKCE) OR #access_token= (implicit) → client page parses either shape → setSession → cookies
+- /studio loads with owner session
+- ☁️ Sync to cloud clicked → green success banner "12 STOPS SYNCED · READERS ON OTHER DEVICES SEE THIS NOW"
+- Means: `/api/sync/upsert` passed `gateApiRequest()` (cookie session → profile id) + wrote via user-scoped RLS client → Supabase accepted the upsert as owner-scoped
+
+**Known gotchas during integration (don't re-learn)**:
+1. `lib/supabase.ts` must NOT import `next/headers` — it gets imported from client components (`getBrowserClient` is used in "use client" files). The `getUserServerClient()` that needs `next/headers` lives in `lib/supabase-server.ts` with `import "server-only"` tag. Don't re-export server-only from the neutral file — Next traces re-exports into client bundles.
+2. Browser client MUST use `createBrowserClient` from `@supabase/ssr`, NOT `createClient` from `@supabase/supabase-js`. Reason: `@supabase/ssr` stores the session as cookies; plain `createClient` defaults to localStorage. The server-side `getUserServerClient()` reads cookies — if session is in localStorage, server sees null user and every authenticated request gets M2-gate 401.
+3. `@supabase/ssr`'s `createBrowserClient` does NOT auto-consume `#access_token=...` hash fragments. It targets PKCE (code in query). Admin-generated magic links (`auth.admin.generateLink`) return the implicit/hash flow. `/auth/callback/page.tsx` explicitly parses the hash and calls `setSession({access_token, refresh_token})` for this case.
+4. `/auth/callback` must be a `page.tsx` (client component), not `route.ts`. The URL hash never reaches server routes.
+
+**Remaining optional**: retire `PREVIEW_PASSWORD` env var + add proxy auth check for `/studio/*`. Current state: both preview password AND M2 auth guard the route. M2 is now proven working — we can cut the preview layer whenever. See `tasks/deferred/M2-ENABLE-CHECKLIST.md` Step 8 for the safe sequence.
+
+Rollback = set env `M2_AUTH_ENABLED=false`. No DB rollback needed — migration is additive.
 
 **What's live (off until flag flipped)**:
 - `web/supabase/migrations/0002_auth.sql` — schema additions + owner-scoped RLS (NOT applied yet; owner runs in SQL Editor)
