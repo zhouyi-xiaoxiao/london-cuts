@@ -4,21 +4,15 @@
 //
 // User arrives here after clicking the magic link in their email (the
 // auth callback routes first-time sign-ins to /onboarding). They pick
-// a handle, enter a display name, and paste their invite code. On
-// submit we POST to /api/invites/redeem which:
-//   1. creates their public.users row
-//   2. records the redemption
-//   3. decrements the invite counter
+// a page-URL, enter their name, and paste their invite code. On submit
+// we POST to /api/invites/redeem which creates their public.users row,
+// records the redemption, and decrements the invite counter.
 //
-// On success we hard-redirect to /studio. Soft client-side router
-// navigation would race the fresh session cookie; a full reload lets
-// the middleware + studio-level requireUser re-read the session cleanly.
-//
-// If the visitor is NOT signed in we show a sign-in CTA instead of the
-// form — we detect this via GET /api/me on mount.
-//
-// Visual: mirrors /sign-in — centered card, eyebrow, big serif h1,
-// labeled inputs stacked, solid submit button.
+// Copy + UX designed for non-technical readers. "Handle" / "Display
+// name" renamed to "Your page address" / "Your name". Page address
+// gets a live URL preview so the user sees exactly what the share link
+// will look like. Both fields auto-fill from the signed-in email on
+// mount (editable before submit).
 
 import { useEffect, useState } from "react";
 
@@ -45,14 +39,40 @@ interface MeResponse {
   } | null;
 }
 
+/** Email → suggested handle. Strips +tags, keeps [a-z0-9-] only,
+ *  trims to 32 chars. */
+function suggestHandle(email: string): string {
+  const local = email.split("@")[0] ?? "";
+  const clean = local
+    .split("+")[0]
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 32);
+  return clean.length >= 2 ? clean : "";
+}
+
+/** Email → suggested display name (Title Case from local part). */
+function suggestDisplayName(email: string): string {
+  const local = email.split("@")[0] ?? "";
+  const clean = local.split("+")[0].replace(/[._-]+/g, " ").trim();
+  return clean
+    .split(/\s+/)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : ""))
+    .join(" ")
+    .slice(0, DISPLAY_MAX);
+}
+
 export default function OnboardingPage() {
   const [auth, setAuth] = useState<AuthState>({ kind: "checking" });
   const [handle, setHandle] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [code, setCode] = useState("");
+  const [handleTouched, setHandleTouched] = useState(false);
   const [state, setState] = useState<SubmitState>({ kind: "idle" });
 
-  // Check auth on mount.
+  // Check auth + pre-fill from email on mount.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -72,6 +92,9 @@ export default function OnboardingPage() {
           return;
         }
         setAuth({ kind: "signed-in", email: body.user.email });
+        // Pre-fill both fields from email — user can edit.
+        setHandle(suggestHandle(body.user.email));
+        setDisplayName(suggestDisplayName(body.user.email));
       } catch {
         if (!cancelled) setAuth({ kind: "signed-out" });
       }
@@ -83,7 +106,6 @@ export default function OnboardingPage() {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // Normalize client-side (server re-normalizes — belt + braces).
     const h = handle.trim().toLowerCase();
     const d = displayName.trim();
     const c = code.trim();
@@ -92,19 +114,23 @@ export default function OnboardingPage() {
       setState({
         kind: "error",
         message:
-          "Handle must be 2–32 characters using lowercase letters, digits, or hyphens.",
+          "Your page address can only use lowercase letters, digits, and hyphens (2–32 chars). Try again.",
       });
       return;
     }
     if (d.length < DISPLAY_MIN || d.length > DISPLAY_MAX) {
       setState({
         kind: "error",
-        message: `Display name must be ${DISPLAY_MIN}–${DISPLAY_MAX} characters.`,
+        message: `Your name should be ${DISPLAY_MIN}–${DISPLAY_MAX} characters.`,
       });
       return;
     }
     if (!c) {
-      setState({ kind: "error", message: "Invite code is required." });
+      setState({
+        kind: "error",
+        message:
+          "Paste the invite code you received. If you don't have one, ask the person who invited you.",
+      });
       return;
     }
 
@@ -117,13 +143,16 @@ export default function OnboardingPage() {
       });
       const body = (await res.json()) as { ok?: true; error?: string };
       if (!res.ok || !body.ok) {
-        setState({
-          kind: "error",
-          message: body.error ?? "Could not complete onboarding.",
-        });
+        const raw = body.error ?? "Could not complete setup.";
+        // Friendlier remaps for the common 409s from the server.
+        const friendly = raw.includes("handle")
+          ? "That page address is taken. Try another, or add a number."
+          : raw.includes("invite") || raw.includes("code")
+            ? "That invite code doesn't work — it might be wrong, used up, or expired."
+            : raw;
+        setState({ kind: "error", message: friendly });
         return;
       }
-      // Success — hard reload so the session + new profile propagate.
       window.location.href = "/studio";
     } catch (err) {
       setState({
@@ -132,6 +161,14 @@ export default function OnboardingPage() {
       });
     }
   }
+
+  const handleValid = handle ? HANDLE_RE.test(handle) : null;
+  const previewUrl =
+    handle && handleValid
+      ? `london-cuts.vercel.app/@${handle}/…`
+      : handle
+        ? "(only lowercase letters, digits, hyphens)"
+        : "";
 
   return (
     <main
@@ -148,14 +185,14 @@ export default function OnboardingPage() {
       <section
         style={{
           width: "100%",
-          maxWidth: 460,
+          maxWidth: 480,
           padding: 36,
           border: "1px solid var(--rule)",
           background: "var(--paper)",
         }}
       >
         <div className="eyebrow" style={{ marginBottom: 10 }}>
-          London Cuts · Finish signing in
+          London Cuts · Welcome
         </div>
         <h1
           style={{
@@ -166,7 +203,7 @@ export default function OnboardingPage() {
             letterSpacing: "-0.01em",
           }}
         >
-          Pick a handle.
+          Set up your travel journal.
         </h1>
 
         {auth.kind === "checking" && (
@@ -187,8 +224,7 @@ export default function OnboardingPage() {
         {auth.kind === "signed-out" && (
           <div style={{ marginTop: 18 }}>
             <p style={{ fontSize: 15, lineHeight: 1.55, margin: 0 }}>
-              Sign in first. You&apos;ll be bounced back here after the magic
-              link completes.
+              Sign in first. We&apos;ll bounce you back here after.
             </p>
             <a
               href="/sign-in?next=/onboarding"
@@ -210,7 +246,7 @@ export default function OnboardingPage() {
         {auth.kind === "already-onboarded" && (
           <div style={{ marginTop: 18 }}>
             <p style={{ fontSize: 15, lineHeight: 1.55, margin: 0 }}>
-              You&apos;re already signed in as{" "}
+              You&apos;re already set up as{" "}
               <strong>@{auth.handle}</strong>.
             </p>
             <a
@@ -225,90 +261,60 @@ export default function OnboardingPage() {
                 justifyContent: "center",
               }}
             >
-              Go to the studio
+              Open your studio
             </a>
           </div>
         )}
 
         {auth.kind === "signed-in" && (
-          <form onSubmit={onSubmit} style={{ marginTop: 18 }}>
+          <form onSubmit={onSubmit} style={{ marginTop: 16 }}>
             <p
-              className="mono-sm"
               style={{
                 marginTop: 0,
-                marginBottom: 20,
-                fontSize: 11,
-                lineHeight: 1.6,
-                opacity: 0.62,
-                textTransform: "none",
-                letterSpacing: "0",
+                marginBottom: 22,
+                fontSize: 14,
+                lineHeight: 1.55,
+                opacity: 0.82,
               }}
             >
-              Signed in as <strong>{auth.email}</strong>. Pick a public handle
-              (appears in your share URLs, e.g. <code>/@you/trip-slug</code>)
-              and paste your invite code.
+              Signed in as <strong>{auth.email}</strong>. Just three quick
+              things before you start writing.
             </p>
 
-            <label style={{ display: "block", marginBottom: 18 }}>
+            {/* Field 1 — Your name */}
+            <label style={{ display: "block", marginBottom: 22 }}>
               <span
-                className="mono-sm"
                 style={{
-                  fontSize: 10,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  opacity: 0.62,
+                  display: "block",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  marginBottom: 4,
                 }}
               >
-                Handle
+                Your name
               </span>
-              <input
-                type="text"
-                value={handle}
-                onChange={(e) =>
-                  setHandle(e.target.value.toLowerCase().replace(/\s+/g, ""))
-                }
-                placeholder="your-handle"
-                required
-                autoFocus
-                autoComplete="off"
-                spellCheck={false}
-                disabled={state.kind === "submitting"}
-                maxLength={32}
-                style={{
-                  marginTop: 8,
-                  width: "100%",
-                  padding: "10px 0",
-                  fontSize: 16,
-                  borderBottom: "1px solid var(--rule)",
-                  background: "transparent",
-                  fontFamily: "var(--f-mono, monospace)",
-                }}
-              />
-            </label>
-
-            <label style={{ display: "block", marginBottom: 18 }}>
               <span
-                className="mono-sm"
                 style={{
-                  fontSize: 10,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
+                  display: "block",
+                  fontSize: 12,
                   opacity: 0.62,
+                  marginBottom: 8,
+                  lineHeight: 1.45,
                 }}
               >
-                Display name
+                Shown on your published pages, like a byline. Can be
+                changed later.
               </span>
               <input
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Your Name"
+                placeholder="Ana Ishii"
                 required
                 autoComplete="name"
                 disabled={state.kind === "submitting"}
                 maxLength={DISPLAY_MAX}
                 style={{
-                  marginTop: 8,
                   width: "100%",
                   padding: "10px 0",
                   fontSize: 16,
@@ -319,29 +325,130 @@ export default function OnboardingPage() {
               />
             </label>
 
+            {/* Field 2 — Your page address */}
+            <label style={{ display: "block", marginBottom: 22 }}>
+              <span
+                style={{
+                  display: "block",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  marginBottom: 4,
+                }}
+              >
+                Your page address
+              </span>
+              <span
+                style={{
+                  display: "block",
+                  fontSize: 12,
+                  opacity: 0.62,
+                  marginBottom: 8,
+                  lineHeight: 1.45,
+                }}
+              >
+                The short name that goes in the link when you share a
+                trip. Lowercase letters, digits, or hyphens.
+              </span>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  gap: 4,
+                  borderBottom: "1px solid var(--rule)",
+                  padding: "10px 0",
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "var(--f-mono, monospace)",
+                    fontSize: 14,
+                    opacity: 0.5,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  @
+                </span>
+                <input
+                  type="text"
+                  value={handle}
+                  onChange={(e) => {
+                    setHandleTouched(true);
+                    setHandle(
+                      e.target.value.toLowerCase().replace(/\s+/g, ""),
+                    );
+                  }}
+                  placeholder="ana"
+                  required
+                  autoFocus
+                  autoComplete="off"
+                  spellCheck={false}
+                  disabled={state.kind === "submitting"}
+                  maxLength={32}
+                  style={{
+                    flex: 1,
+                    padding: 0,
+                    fontSize: 16,
+                    borderBottom: "none",
+                    background: "transparent",
+                    fontFamily: "var(--f-mono, monospace)",
+                  }}
+                />
+              </div>
+              <div
+                style={{
+                  marginTop: 8,
+                  fontSize: 11,
+                  opacity: handleValid === false && handleTouched ? 0.9 : 0.55,
+                  color:
+                    handleValid === false && handleTouched
+                      ? "var(--mode-accent, #b8360a)"
+                      : undefined,
+                  fontFamily: "var(--f-mono, monospace)",
+                  lineHeight: 1.5,
+                }}
+              >
+                {handle
+                  ? handleValid
+                    ? `Your link: ${previewUrl}`
+                    : previewUrl
+                  : "Pre-filled from your email — edit if you like."}
+              </div>
+            </label>
+
+            {/* Field 3 — Invite code */}
             <label style={{ display: "block" }}>
               <span
-                className="mono-sm"
                 style={{
-                  fontSize: 10,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  opacity: 0.62,
+                  display: "block",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  marginBottom: 4,
                 }}
               >
                 Invite code
               </span>
+              <span
+                style={{
+                  display: "block",
+                  fontSize: 12,
+                  opacity: 0.62,
+                  marginBottom: 8,
+                  lineHeight: 1.45,
+                }}
+              >
+                The code from whoever invited you. Each code is for one
+                person — enter it here to activate your account.
+              </span>
               <input
                 type="text"
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="paste-your-code"
+                onChange={(e) => setCode(e.target.value.trim())}
+                placeholder="e.g. ana-beta-001"
                 required
                 autoComplete="off"
                 spellCheck={false}
                 disabled={state.kind === "submitting"}
                 style={{
-                  marginTop: 8,
                   width: "100%",
                   padding: "10px 0",
                   fontSize: 16,
@@ -359,32 +466,44 @@ export default function OnboardingPage() {
                 state.kind === "submitting" || !handle || !displayName || !code
               }
               style={{
-                marginTop: 24,
+                marginTop: 28,
                 width: "100%",
-                padding: "12px 18px",
+                padding: "14px 18px",
                 fontSize: 12,
                 letterSpacing: "0.14em",
                 justifyContent: "center",
               }}
             >
-              {state.kind === "submitting" ? "Creating…" : "Create my studio"}
+              {state.kind === "submitting" ? "Setting up…" : "Start writing"}
             </button>
 
             {state.kind === "error" && (
               <div
                 role="alert"
-                className="mono-sm"
                 style={{
-                  marginTop: 14,
-                  padding: "8px 12px",
+                  marginTop: 16,
+                  padding: "10px 12px",
                   background: "var(--mode-accent, #b8360a)",
                   color: "var(--paper)",
-                  fontSize: 11,
+                  fontSize: 13,
+                  lineHeight: 1.45,
                 }}
               >
                 {state.message}
               </div>
             )}
+
+            <p
+              style={{
+                marginTop: 20,
+                fontSize: 11,
+                opacity: 0.5,
+                lineHeight: 1.5,
+              }}
+            >
+              None of this is public yet. You control what gets shared
+              when you publish a trip.
+            </p>
           </form>
         )}
       </section>
