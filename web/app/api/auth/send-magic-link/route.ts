@@ -7,9 +7,8 @@
 // localhost dev, london-cuts.vercel.app, and the future custom domain
 // all route the magic link back to the same host that initiated it.
 //
-// M2 PR 2. No per-user rate limiting yet (Supabase has its own throttle
-// at ~3 mails/hour per address). PR 4 adds the per-user daily caps for
-// the AI surface.
+// M2 PR 2. No app-level per-user rate limiting yet. Supabase's built-in
+// SMTP has a very low project-level throttle; production needs custom SMTP.
 
 import { NextResponse } from "next/server";
 
@@ -49,6 +48,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "send failed";
+    if (msg.toLowerCase().includes("rate limit")) {
+      return NextResponse.json(
+        {
+          error:
+            "Email sending is temporarily limited. Please wait a little, or ask the project owner for a direct beta link.",
+          code: "email_rate_limited",
+        },
+        { status: 429 },
+      );
+    }
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

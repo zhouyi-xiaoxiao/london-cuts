@@ -32,11 +32,18 @@ export default function SignInPage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email, next: "/studio" }),
       });
-      const body = (await res.json()) as { ok?: true; error?: string };
+      const body = (await res.json()) as {
+        ok?: true;
+        error?: string;
+        code?: string;
+      };
       if (!res.ok || !body.ok) {
         setState({
           kind: "error",
-          message: body.error ?? "could not send magic link",
+          message:
+            body.code === "email_rate_limited"
+              ? "Email sending is temporarily limited. Wait a little, or ask the project owner for a direct beta link."
+              : (body.error ?? "could not send magic link"),
         });
         return;
       }

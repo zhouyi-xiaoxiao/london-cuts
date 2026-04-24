@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-24T22:15Z
+**Last updated:** 2026-04-24T22:45Z
 
 ## Plan version
 
@@ -28,6 +28,7 @@
 3. **M6 custom domain** — owner action in IONOS + Vercel domain setup. Current shareable fallback is `https://london-cuts.vercel.app/` or the direct reader URL.
 4. **Per-user AI quota** — new migration + `user_daily_ai_spend` table + tracker in ai-provider. Defer until friend-user traffic proves the need.
 5. **User menu UI** — sign-out button + display-name in studio chrome. Small; tack onto any future UI pass.
+6. **Custom SMTP for auth emails** — recommended before inviting more than a few testers. Supabase built-in mailer has very low rate limits; use Resend/Postmark with a domain-owned sender.
 
 First step for whichever track: read `tasks/HANDOFF.md` first — it's the canonical resume-point and has the M1 architecture diagram + seam map + gotchas + M2 activation flow.
 
@@ -41,6 +42,12 @@ _none_
 
 ## Recently completed
 
+- **Auth email rate-limit mitigation** (2026-04-24T22:45Z):
+  - Owner hit Supabase Auth `EMAIL RATE LIMIT EXCEEDED` while testing `/sign-in`.
+  - Added API/UI handling so the raw error becomes a 429 `email_rate_limited` with a clearer user message.
+  - Added `web/scripts/generate-magic-link.mjs` for owner/admin emergency links while custom SMTP is pending.
+  - Sent Gmail relay tests from `zhouyixiaoxiao@gmail.com` to `xiaoxiao.zhouyi@bristol.ac.uk` and `xiaoxiaozhouyi@gmail.com` with admin-generated links + invite `beta-001`.
+  - Permanent recommendation: configure Supabase Auth custom SMTP via Resend/Postmark and a domain sender; avoid relying on Bristol/Gmail personal SMTP for product auth mail.
 - **OpenAI image2 safety-block fix** (2026-04-24T22:15Z):
   - Owner hit OpenAI 400 `moderation_blocked` while generating a postcard. API key/account/model were verified OK; the trigger was the old Anime prompt naming specific style references.
   - Kept `gpt-image-2`; replaced the Anime prompt with a generic animated-film travel-postcard prompt and added OpenAI `code/type/requestId` passthrough on image routes.
