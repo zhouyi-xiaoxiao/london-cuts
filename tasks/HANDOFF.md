@@ -69,9 +69,18 @@ M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)**
 3. `tasks/PARALLELISM.md` — subagent rules. Three concurrent subagents is the proven upper bound (main + 2 background via `Agent` tool with `run_in_background: true`). Check `touches:` arrays for overlap.
 4. `tasks/LOG.md` — append-only event history, newest at the bottom.
 
-## M2 auth is shipped but OFF (2026-04-23)
+## M2 auth is LIVE (activated 2026-04-24) — waiting for owner first sign-in
 
-All 5 M2 PRs are in main. **Nothing changes at runtime until the owner activates** by following `tasks/deferred/M2-ENABLE-CHECKLIST.md`. The flag is `M2_AUTH_ENABLED` in Vercel env. Rollback = set it to `false` / delete. No DB rollback needed — migration `0002_auth.sql` is additive.
+All 5 M2 PRs are in main. **Activation happened 2026-04-24 ~01:00 UTC**.
+- ✅ Migration `0002_auth.sql` applied (confirmed via SQL "Success. No rows returned")
+- ✅ Supabase Auth: magic link ON, Site URL + 2 redirect URLs configured
+- ✅ Invite `ana-beta-001` minted (uses_remaining=1)
+- ✅ Vercel env `M2_AUTH_ENABLED=true` set (prod, non-sensitive)
+- ✅ Deploy pipeline ran after each change (commits `17dd1ad`, `b969521`)
+
+**Remaining owner-only**: sign in at `/sign-in`, fill `/onboarding` (use invite code `ana-beta-001`), then hand your new `auth.users.id` back to Claude so it can link the seed `ana-ishii` profile row to your auth identity via SQL. See `tasks/deferred/M2-ENABLE-CHECKLIST.md` for full details + rollback.
+
+Rollback = set env `M2_AUTH_ENABLED=false` / delete it. No DB rollback needed — migration is additive.
 
 **What's live (off until flag flipped)**:
 - `web/supabase/migrations/0002_auth.sql` — schema additions + owner-scoped RLS (NOT applied yet; owner runs in SQL Editor)

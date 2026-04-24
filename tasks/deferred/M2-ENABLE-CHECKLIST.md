@@ -1,8 +1,26 @@
 # M2 — Flip-the-switch checklist
 
 All code for M2 auth + invites is committed and deployed (see
-`tasks/deferred/M2-auth-and-invites.md` for the full design). Nothing
-changes at runtime until the owner works through this checklist.
+`tasks/deferred/M2-auth-and-invites.md` for the full design).
+
+## Live activation status (2026-04-24)
+
+| Step | Status | Notes |
+|---|---|---|
+| 1. Apply `0002_auth.sql` | ✅ **DONE** 2026-04-24 01:00 UTC | Ran via Supabase SQL Editor (driven by Claude Chrome MCP). "Success. No rows returned." |
+| 2. Enable Magic Link provider | ✅ **DONE** | Already on by default; Email OTP exp 3600s, length 8 digits |
+| 3. Configure Site URL + Redirect URLs | ✅ **DONE** | Site URL = `https://london-cuts.vercel.app`. Redirect URLs: `https://london-cuts.vercel.app/auth/callback`, `http://localhost:3000/auth/callback` |
+| 4. Mint invite code | ✅ **DONE** | `ana-beta-001` inserted, uses_remaining=1 |
+| 5. Flip `M2_AUTH_ENABLED=true` | ✅ **DONE** 2026-04-24 01:05 UTC | Vercel prod env set via CLI (`--no-sensitive` flag required so pull works). Redeploy triggered via empty commit `17dd1ad`. Then onboarding UX polished in `b969521` |
+| 6. Owner first sign-in | ⏳ **PENDING** | Owner enters email at `/sign-in`, clicks magic link, fills `/onboarding` |
+| 7. Merge seed `ana-ishii` to owner's auth_user_id | ⏳ **PENDING** | Needs step 6's new `auth.users.id`. Claude will run the SQL once owner provides the UUID |
+| 8. Retire preview-password gate | ⏳ **OPTIONAL** | Once owner + 1 friend confirmed signed-in OK, delete `PREVIEW_PASSWORD` from Vercel env. Proxy's `if (!password) return` path lets non-sensitive prefixes through without any gate — `/studio` stays locked via M2 requireUser. |
+
+**Remaining owner-only actions**: step 6 only. Everything else automatable from Claude's side.
+
+---
+
+## Instructions (original — kept for reference)
 
 ## Step 1 — apply the migration
 

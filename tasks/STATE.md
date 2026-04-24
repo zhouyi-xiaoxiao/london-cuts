@@ -15,7 +15,7 @@
 | M-preview Soft launch | ✅ **LIVE** at `london-cuts.vercel.app` | password-gated via `web/proxy.ts` + Vercel `PREVIEW_PASSWORD` |
 | M-iter UX polish | ✅ **COMPLETE** — F-I001..F-I031 shipped (F-I028 WONTFIX). VariantsRow + Polish-prose in. Public reader pages unlocked. | See `tasks/AUDIT.md` + `AUDIT-WORKSPACE.md` + `AUDIT-PUBLIC-PAGES.md` |
 | **M1 Supabase & data** | ✅ **complete (Phases 1+2+3 full + F-I012 verified)** — 2026-04-22/23 | Project `acymyvefnvydksxzzegw` / Frankfurt. 5 tables + RLS + Storage. SSR reads + "☁️ Sync to cloud" button + binary upload all live. F-I012 end-to-end verified against production |
-| M2 Auth & invites | ✅ **code shipped, env-gated** — see `tasks/deferred/M2-ENABLE-CHECKLIST.md` | All 5 PRs committed. Owner flips `M2_AUTH_ENABLED=true` + applies `0002_auth.sql` + mints invite to activate. Rollback = one env toggle. |
+| M2 Auth & invites | 🟢 **LIVE as of 2026-04-24** | Migration applied, Auth configured, invite minted (`ana-beta-001`), env flag ON. Only remaining: owner first sign-in + SQL merge to seed `ana-ishii`. Onboarding UX polished in `b969521`. See `tasks/deferred/M2-ENABLE-CHECKLIST.md` for the live status table. |
 | M3 Feature parity | 🗄 superseded by M-fast + M-iter | |
 | M4 Public pages polish | ⏳ not started | OG images, ToS, privacy, feedback form |
 | M5 Observability | ⏳ not started | Sentry / PostHog / GitHub Actions CI |
