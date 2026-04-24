@@ -109,6 +109,20 @@ export async function POST(req: Request) {
       );
     }
     const msg = err instanceof Error ? err.message : "generation failed";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    const maybeOpenAI = err as {
+      status?: number;
+      code?: string;
+      type?: string;
+      request_id?: string;
+    };
+    return NextResponse.json(
+      {
+        error: msg,
+        code: maybeOpenAI.code,
+        type: maybeOpenAI.type,
+        requestId: maybeOpenAI.request_id,
+      },
+      { status: maybeOpenAI.status ?? 500 },
+    );
   }
 }

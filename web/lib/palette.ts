@@ -48,7 +48,7 @@ export const POSTCARD_STYLES: readonly StyleMeta[] = [
     label: "Anime background",
     emoji: "🌸",
     prompt:
-      "Reimagine as an anime film background painting (Ghibli / Makoto Shinkai feel). Soft atmospheric perspective, warm clouds, saturated yet painterly colours, simplified architecture, magical-realist lighting. No characters. Painterly, not photographic.",
+      "Reimagine this scene as a warm animated-film background painting for a travel postcard. Use soft atmospheric perspective, luminous clouds, saturated but painterly colours, simplified architecture, and gentle magical-realistic lighting. No characters, no text, no logos, not photorealistic.",
   },
   {
     id: "artnouveau",
