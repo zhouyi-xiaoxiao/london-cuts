@@ -7,6 +7,7 @@
 // At narrow widths the drawer collapses to an overlay.
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 import { useProject, useProjectActions } from "@/stores/project";
 import { useActiveStop, useActiveStopId, useStops, useStopActions } from "@/stores/stop";
@@ -142,14 +143,14 @@ export function Workspace() {
             flex: isMobile ? 1 : undefined,
           }}
         >
-          <a
+          <Link
             href="/studio"
             className="mono-sm"
             style={{ opacity: 0.6, textDecoration: "none", flexShrink: 0 }}
             aria-label="Back to projects"
           >
             {isMobile ? "←" : "← Projects"}
-          </a>
+          </Link>
           <span
             className="roundel"
             style={{

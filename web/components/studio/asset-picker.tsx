@@ -277,7 +277,6 @@ function PickerSection({
               }}
             >
               {a.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={a.imageUrl}
                   alt={a.id}

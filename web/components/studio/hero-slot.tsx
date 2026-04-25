@@ -345,6 +345,7 @@ function HeroDraggable({ src, alt, focus, onFocusChange }: HeroDraggableProps) {
   // (switching stops, another tab, rotate action). Skipped while the user is
   // actively dragging so their in-flight pan doesn't get clobbered.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!dragging) setLocal(focus);
     // We intentionally depend on focus.x/focus.y only to avoid
     // referential-identity re-runs when the store returns a new object.

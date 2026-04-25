@@ -484,7 +484,6 @@ function AssetThumbnail({
         overflow: "hidden",
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={asset.imageUrl}
         alt={asset.id}

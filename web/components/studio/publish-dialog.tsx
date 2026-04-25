@@ -107,6 +107,7 @@ export function PublishDialog() {
   // don't leak stale slug/visibility values.
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSlug(project.slug || derivedSlug);
       setVisibility(project.visibility ?? "public");
     }

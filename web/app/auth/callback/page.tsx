@@ -22,6 +22,7 @@
 // or whatever ?next= asks for).
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import type { EmailOtpType } from "@supabase/supabase-js";
 
 import { getBrowserClient } from "@/lib/supabase";
@@ -213,7 +214,7 @@ export default function AuthCallbackPage() {
             >
               {state.message}
             </p>
-            <a
+            <Link
               href="/sign-in"
               className="btn btn-solid"
               style={{
@@ -224,7 +225,7 @@ export default function AuthCallbackPage() {
               }}
             >
               Try again
-            </a>
+            </Link>
           </>
         )}
       </section>

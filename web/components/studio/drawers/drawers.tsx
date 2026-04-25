@@ -166,7 +166,6 @@ function AssetsDrawer() {
             imageUrl: dataUrl,
           });
         } catch (err) {
-          // eslint-disable-next-line no-console
           console.warn("[AssetsDrawer] upload failed", err);
         } finally {
           setUploadingCount((n) => Math.max(0, n - 1));
@@ -174,7 +173,6 @@ function AssetsDrawer() {
       }
     } catch (err) {
       // prepareImage import failure — release the whole batch
-      // eslint-disable-next-line no-console
       console.warn("[AssetsDrawer] prepareImage load failed", err);
       setUploadingCount((n) => Math.max(0, n - list.length));
     }

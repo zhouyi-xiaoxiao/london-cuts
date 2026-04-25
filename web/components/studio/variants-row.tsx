@@ -107,13 +107,12 @@ export function VariantsRow({ stop }: VariantsRowProps) {
     const existing = variantByStyle.get(style);
     if (existing) removeAsset(existing.id);
 
-    const newAssetId = `variant-${stop.n}-${style}-${cacheHit ? "cached-" : ""}${Date.now().toString(36)}`;
+    const newAssetId = `variant-${stop.n}-${style}-${cacheHit ? "cached" : "generated"}`;
     addAsset({
       id: newAssetId,
       stop: stop.n,
       tone: stop.tone,
       imageUrl: imageDataUrl,
-      generatedAt: Date.now(),
       prompt,
       styleId: style,
       styleLabel: meta.label,
@@ -129,7 +128,6 @@ export function VariantsRow({ stop }: VariantsRowProps) {
           prompt,
           styleLabel: meta.label,
           styleId: style,
-          generatedAt: Date.now(),
         });
       } catch (e) {
         console.warn("[variants-row] cache write failed", e);
@@ -241,7 +239,7 @@ export function VariantsRow({ stop }: VariantsRowProps) {
 
   // ─── Per-thumb actions ─────────────────────────────────────────────
 
-  const useAsHero = (asset: Asset) => {
+  const applyAsHero = (asset: Asset) => {
     updateStop(stop.n, {
       heroAssetId: asset.id,
       heroFocus: DEFAULT_HERO_FOCUS,
@@ -249,7 +247,7 @@ export function VariantsRow({ stop }: VariantsRowProps) {
     });
   };
 
-  const useAsPostcard = (asset: Asset) => {
+  const applyAsPostcard = (asset: Asset) => {
     if (!asset.styleId) return;
     updatePostcard(stop.n, {
       frontAssetId: asset.id,
@@ -389,8 +387,8 @@ export function VariantsRow({ stop }: VariantsRowProps) {
               isHero={Boolean(variant && variant.id === stop.heroAssetId)}
               isPostcard={Boolean(variant && variant.id === frontAssetId)}
               onGenerate={() => runPregen([meta.id])}
-              onUseAsHero={() => variant && useAsHero(variant)}
-              onUseAsPostcard={() => variant && useAsPostcard(variant)}
+              onUseAsHero={() => variant && applyAsHero(variant)}
+              onUseAsPostcard={() => variant && applyAsPostcard(variant)}
               onRegen={() => onRegenOne(meta.id)}
               onDelete={() => variant && deleteVariant(variant)}
               onRetry={() => retryFailure(meta.id)}

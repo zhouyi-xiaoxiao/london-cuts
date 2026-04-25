@@ -15,6 +15,7 @@
 // mount (editable before submit).
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 const HANDLE_RE = /^[a-z0-9-]{2,32}$/;
 const DISPLAY_MIN = 2;
@@ -226,7 +227,7 @@ export default function OnboardingPage() {
             <p style={{ fontSize: 15, lineHeight: 1.55, margin: 0 }}>
               Sign in first. We&apos;ll bounce you back here after.
             </p>
-            <a
+            <Link
               href="/sign-in?next=/onboarding"
               className="btn btn-solid"
               style={{
@@ -239,7 +240,7 @@ export default function OnboardingPage() {
               }}
             >
               Go to sign-in
-            </a>
+            </Link>
           </div>
         )}
 
@@ -249,7 +250,7 @@ export default function OnboardingPage() {
               You&apos;re already set up as{" "}
               <strong>@{auth.handle}</strong>.
             </p>
-            <a
+            <Link
               href="/studio"
               className="btn btn-solid"
               style={{
@@ -262,7 +263,7 @@ export default function OnboardingPage() {
               }}
             >
               Open your studio
-            </a>
+            </Link>
           </div>
         )}
 

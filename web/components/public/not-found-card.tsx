@@ -38,10 +38,10 @@ export function NotFoundCard({ what, hint }: NotFoundCardProps) {
           margin: 0,
         }}
       >
-        {what} isn't in this browser.
+        {what} isn&apos;t in this browser.
       </h1>
       <p style={{ lineHeight: 1.7, opacity: 0.8, maxWidth: "46ch" }}>
-        London Cuts is in its early public-beta phase — every reader's
+        London Cuts is in its early public-beta phase — every reader&apos;s
         projects live in their own browser until we switch on the cloud
         backend. If someone shared this link with you, ask them to
         publish (or re-publish) from their device.

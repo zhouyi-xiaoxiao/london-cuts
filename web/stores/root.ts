@@ -52,6 +52,9 @@ const DEFAULT_RECIPIENT = {
   country: "",
 };
 
+const SEED_CREATED_AT = "2026-04-24T00:00:00.000Z";
+const REYKJAVIK_ARCHIVED_AT = Date.parse("2026-04-17T00:00:00.000Z");
+
 function seedStateFromDataModule(): RootState {
   // Build assetsPool first — stops below reference these by id.
   const assetsPool: Asset[] = SEED_ASSETS.map((a) => ({
@@ -103,8 +106,8 @@ function seedStateFromDataModule(): RootState {
     visibility: SEED_PROJECT.visibility,
     coverAssetId: coverAsset?.id ?? null,
     publishedAt: SEED_PROJECT.published,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: SEED_CREATED_AT,
+    updatedAt: SEED_CREATED_AT,
     // Legacy-facing extras
     author: SEED_PROJECT.author,
     tags: SEED_PROJECT.tags,
@@ -137,8 +140,8 @@ function seedStateFromDataModule(): RootState {
     visibility: SEED_PROJECT_REYKJAVIK.visibility,
     coverAssetId: null,
     publishedAt: SEED_PROJECT_REYKJAVIK.published,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: SEED_CREATED_AT,
+    updatedAt: SEED_CREATED_AT,
     author: SEED_PROJECT_REYKJAVIK.author,
     tags: SEED_PROJECT_REYKJAVIK.tags,
     published: SEED_PROJECT_REYKJAVIK.published,
@@ -156,7 +159,7 @@ function seedStateFromDataModule(): RootState {
     projectsArchive: {
       "seed-a-week-in-reykjavik": {
         id: "seed-a-week-in-reykjavik",
-        createdAt: Date.now() - 7 * 24 * 60 * 60 * 1000, // a week ago
+        createdAt: REYKJAVIK_ARCHIVED_AT,
         project: reykjavikProject,
         stops: reykjavikStops,
         assetsPool: [],
@@ -546,7 +549,6 @@ async function persistAssetsNow() {
       if (!current.has(k)) await idbDeleteAsset(k);
     }
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.warn("[stores] IDB persist failed", err);
   }
 }
@@ -568,7 +570,6 @@ export async function idbHydrate(): Promise<void> {
     );
     useRootStore.setState({ assetsPool: hydratedPool, hydrated: true });
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.warn("[stores] IDB hydrate failed", err);
     useRootStore.setState({ hydrated: true });
   }
