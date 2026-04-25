@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-25T22:43Z
+**Last updated:** 2026-04-25T23:10Z
 
 ## Plan version
 
@@ -44,6 +44,13 @@ _none_
 
 ## Recently completed
 
+- **Full-web QA pass + Studio hydration fix** (2026-04-25T23:10Z):
+  - Ran full automated checks: `pnpm lint`, `pnpm typecheck`, `pnpm test` (70/70), and `pnpm build`.
+  - Fixed full-lint blockers: unescaped public copy, Next internal links, unused eslint-disable comments, VariantRow helper names/purity warnings, and documented set-state-in-effect exceptions.
+  - Found a real authenticated Studio issue in Chrome: `/studio` dashboard emitted React hydration error #418 on desktop/phone/320px because seed timestamps were generated with `new Date()` / `Date.now()` during SSR/client render. Fixed `web/stores/root.ts` to use deterministic seed timestamps.
+  - Production smoke after deploy: public routes, auth routes, unauthenticated guards, protected API 401s, migrate 403, public responsive Chrome sweep, authenticated Studio dashboard/editor/upload/publish at 1440/390/320px.
+  - Magic-link smoke: sent to `zhouyixiaoxiao+lcqa20260425225721@gmail.com`, `/api/auth/send-magic-link` returned 200, and Gmail search confirmed the message arrived.
+  - Commit `3a21d15` pushed to `origin/main`; Vercel deployment `dpl_2EoRMubiASWJoDoacCMuYJtYYhUY` is Ready on `https://london-cuts.vercel.app`.
 - **Owner new-signup notification hook** (2026-04-25T22:43Z):
   - Added Resend HTTP transactional helper `sendOwnerNewSignupEmail()` in `web/lib/email.ts`.
   - `/api/invites/redeem` now sends the owner a best-effort email after successful invite redemption/onboarding; failures or missing env vars are logged but never block onboarding.
