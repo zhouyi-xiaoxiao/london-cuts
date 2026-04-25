@@ -225,11 +225,13 @@ export async function POST(req: Request) {
         if (!stopId) return null;
         return {
           stop_id: stopId,
+          front_asset_id: assetByLegacy.get(`se1-${n}`) ?? null,
           back_message: postcard.message,
           recipient_name: postcard.recipient.name,
           recipient_line1: postcard.recipient.line1,
           recipient_line2: postcard.recipient.line2,
           recipient_country: postcard.recipient.country,
+          style_id: null,
           orientation: "landscape",
         };
       })

@@ -11,10 +11,19 @@
 // seed images. This button reads the current hero with vision + fills
 // in title + mood + tone + a seed paragraph in the body.
 
-import { useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type DragEvent,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 
 import { PostcardEditor } from "@/components/postcard/postcard-editor";
 import { useAssetActions, useAssetsByStop } from "@/stores/asset";
+import { usePostcardActions } from "@/stores/postcard";
 import { useStops, useStopActions } from "@/stores/stop";
 import type { Asset, BodyBlock, Stop, StopTone } from "@/stores/types";
 
@@ -279,6 +288,7 @@ interface AssetStripProps {
 function AssetStrip({ stop }: AssetStripProps) {
   const stopAssets = useAssetsByStop(stop.n);
   const { updateStop } = useStopActions();
+  const { updatePostcard } = usePostcardActions();
   const { addAsset, updateAsset } = useAssetActions();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -301,6 +311,13 @@ function AssetStrip({ stop }: AssetStripProps) {
     });
   };
 
+  const setAsPostcardFront = (assetId: string) => {
+    updatePostcard(stop.n, {
+      frontAssetId: assetId,
+      style: null,
+    });
+  };
+
   const detachFromStop = (assetId: string) => {
     if (
       !confirm(
@@ -316,6 +333,9 @@ function AssetStrip({ stop }: AssetStripProps) {
         heroAssetId: null,
         status: { ...stop.status, hero: false },
       });
+    }
+    if (stop.postcard.frontAssetId === assetId) {
+      updatePostcard(stop.n, { frontAssetId: null });
     }
   };
 
@@ -371,7 +391,9 @@ function AssetStrip({ stop }: AssetStripProps) {
           key={asset.id}
           asset={asset}
           isHero={asset.id === stop.heroAssetId}
+          isPostcard={asset.id === stop.postcard.frontAssetId}
           onSetHero={() => setAsHero(asset.id)}
+          onSetPostcard={() => setAsPostcardFront(asset.id)}
           onDetach={() => detachFromStop(asset.id)}
         />
       ))}
@@ -414,14 +436,25 @@ function AssetStrip({ stop }: AssetStripProps) {
 interface AssetCellProps {
   asset: Asset;
   isHero: boolean;
+  isPostcard: boolean;
   onSetHero: () => void;
+  onSetPostcard: () => void;
   onDetach: () => void;
 }
 
-function AssetCell({ asset, isHero, onSetHero, onDetach }: AssetCellProps) {
+function AssetCell({
+  asset,
+  isHero,
+  isPostcard,
+  onSetHero,
+  onSetPostcard,
+  onDetach,
+}: AssetCellProps) {
   const [hovered, setHovered] = useState(false);
+  const canUseOriginalAsPostcard =
+    !isPostcard && Boolean(asset.imageUrl) && !asset.styleId;
 
-  const onDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+  const onDragStart = (e: DragEvent<HTMLDivElement>) => {
     e.dataTransfer.setData(MIME_ASSET_ID, asset.id);
     e.dataTransfer.effectAllowed = "copyMove";
   };
@@ -429,15 +462,12 @@ function AssetCell({ asset, isHero, onSetHero, onDetach }: AssetCellProps) {
   return (
     <div
       draggable
+      data-testid={`asset-cell-${asset.id}`}
       onDragStart={onDragStart}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={isHero ? undefined : onSetHero}
-      title={
-        isHero
-          ? "Current hero"
-          : "Click to make this the hero · drag to move between stops"
-      }
+      title="Click to make this the hero · hover for postcard / detach actions · drag to move between stops"
       style={{
         flexShrink: 0,
         width: 72,
@@ -447,7 +477,7 @@ function AssetCell({ asset, isHero, onSetHero, onDetach }: AssetCellProps) {
           ? "2px solid var(--mode-accent, #b8360a)"
           : "1px solid var(--rule)",
         background: "var(--paper-2)",
-        cursor: isHero ? "default" : "pointer",
+        cursor: "pointer",
         overflow: "hidden",
       }}
     >
@@ -498,33 +528,104 @@ function AssetCell({ asset, isHero, onSetHero, onDetach }: AssetCellProps) {
         </div>
       )}
 
-      {hovered && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDetach();
+      {isPostcard && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 3,
+            left: 3,
+            padding: "1px 5px",
+            background: "var(--ink)",
+            color: "var(--paper)",
+            fontFamily: "var(--f-mono)",
+            fontSize: 8,
+            letterSpacing: "0.1em",
           }}
-          aria-label="Detach asset from this stop"
-          title="Detach from stop (keeps the photo in your library)"
+        >
+          CARD
+        </div>
+      )}
+
+      {hovered && (
+        <div
+          role="group"
+          aria-label={`Actions for asset ${asset.id}`}
           style={{
             position: "absolute",
             top: 3,
             right: 3,
-            width: 18,
-            height: 18,
-            padding: 0,
-            border: "1px solid var(--rule)",
-            background: "var(--paper)",
-            fontSize: 10,
-            lineHeight: 1,
-            cursor: "pointer",
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
           }}
         >
-          ×
-        </button>
+          {canUseOriginalAsPostcard && (
+            <AssetHoverButton
+              onClick={(e) => {
+                e.stopPropagation();
+                onSetPostcard();
+              }}
+              testId={`asset-card-${asset.id}`}
+              title="Use this original photo on the postcard front"
+            >
+              Card
+            </AssetHoverButton>
+          )}
+          <AssetHoverButton
+            onClick={(e) => {
+              e.stopPropagation();
+              onDetach();
+            }}
+            title="Detach from stop (keeps the photo in your library)"
+            ariaLabel="Detach asset from this stop"
+            destructive
+          >
+            ×
+          </AssetHoverButton>
+        </div>
       )}
     </div>
+  );
+}
+
+function AssetHoverButton({
+  children,
+  onClick,
+  title,
+  testId,
+  ariaLabel,
+  destructive = false,
+}: {
+  children: ReactNode;
+  onClick: (e: MouseEvent<HTMLButtonElement>) => void;
+  title: string;
+  testId?: string;
+  ariaLabel?: string;
+  destructive?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      data-testid={testId}
+      onClick={onClick}
+      aria-label={ariaLabel}
+      title={title}
+      className="mono-sm"
+      style={{
+        minWidth: 28,
+        height: 20,
+        padding: "0 5px",
+        border: "1px solid var(--rule)",
+        background: destructive ? "var(--mode-accent)" : "var(--paper)",
+        color: destructive ? "var(--paper)" : "var(--ink)",
+        fontSize: 9,
+        lineHeight: 1,
+        cursor: "pointer",
+        letterSpacing: "0.08em",
+      }}
+    >
+      {children}
+    </button>
   );
 }
 

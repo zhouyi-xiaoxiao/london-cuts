@@ -10,7 +10,13 @@
 // projects and their children.
 
 import { getBrowserClient, hasSupabaseConfig } from "./supabase";
-import type { Asset, Project, Stop, BodyBlock } from "@/stores/types";
+import type {
+  Asset,
+  Project,
+  Stop,
+  BodyBlock,
+  PostcardStyle,
+} from "@/stores/types";
 
 export interface PublicProjectPayload {
   project: Project;
@@ -68,12 +74,31 @@ export async function fetchPublicProjectByHandleAndSlug(
     .order("order_index", { ascending: true });
   if (stopsErr) return null;
 
-  // 4. Assets owned by this user and attached to this project. Plus any
-  //    loose cover photo that the project references.
+  // 4. Postcards for those stops. They live in their own table so public
+  //    readers can render the saved front image, style and address fields.
+  const stopIds = (stopsRows ?? []).map((s) => s.id as string);
+  const { data: postcardRows, error: postcardErr } =
+    stopIds.length > 0
+      ? await db
+          .from("postcards")
+          .select("*")
+          .in("stop_id", stopIds)
+          .is("deleted_at", null)
+      : { data: [], error: null };
+  if (postcardErr) return null;
+  const postcardByStopId = new Map<string, Record<string, unknown>>();
+  for (const p of postcardRows ?? []) {
+    if (p.stop_id) postcardByStopId.set(p.stop_id as string, p);
+  }
+
+  // 5. Assets owned by this user and attached to this project. Plus any
+  //    loose cover photo / postcard front that the project references.
   const assetIds = new Set<string>();
   if (proj.cover_asset_id) assetIds.add(proj.cover_asset_id as string);
   for (const s of stopsRows ?? []) {
     if (s.hero_asset_id) assetIds.add(s.hero_asset_id as string);
+    const pc = postcardByStopId.get(s.id as string);
+    if (pc?.front_asset_id) assetIds.add(pc.front_asset_id as string);
   }
   const { data: assetsRows, error: assetsErr } =
     assetIds.size > 0
@@ -87,7 +112,9 @@ export async function fetchPublicProjectByHandleAndSlug(
 
   return {
     project: toProject(proj, user),
-    stops: (stopsRows ?? []).map(toStop),
+    stops: (stopsRows ?? []).map((s) =>
+      toStop(s, postcardByStopId.get(s.id as string)),
+    ),
     assets: (assetsRows ?? []).map(toAsset),
   };
 }
@@ -133,12 +160,19 @@ function toProject(
   };
 }
 
-function toStop(row: Record<string, unknown>): Stop {
+function toStop(
+  row: Record<string, unknown>,
+  postcardRow?: Record<string, unknown>,
+): Stop {
   const r = row as any;
+  const pc = postcardRow as any;
   const body: readonly BodyBlock[] = Array.isArray(r.body_blocks)
     ? r.body_blocks
     : [];
   const status = r.status_json ?? {};
+  const assetIds = new Set<string>();
+  if (r.hero_asset_id) assetIds.add(r.hero_asset_id);
+  if (pc?.front_asset_id) assetIds.add(pc.front_asset_id);
   return {
     n: r.legacy_n ?? String(r.order_index ?? ""),
     code: r.code ?? "",
@@ -152,16 +186,24 @@ function toStop(row: Record<string, unknown>): Stop {
     label: r.display_label ?? "",
     body,
     postcard: {
-      message: r.back_message ?? "",
+      message: pc?.back_message ?? "",
       recipient: {
-        name: "",
-        line1: "",
-        line2: "",
-        country: "",
+        name: pc?.recipient_name ?? "",
+        line1: pc?.recipient_line1 ?? "",
+        line2: pc?.recipient_line2 ?? "",
+        country: pc?.recipient_country ?? "",
       },
+      orientation:
+        pc?.orientation === "portrait"
+          ? "portrait"
+          : pc?.orientation === "landscape"
+            ? "landscape"
+            : undefined,
+      frontAssetId: pc?.front_asset_id ?? null,
+      style: toPostcardStyle(pc?.style_id) ?? null,
     },
     heroAssetId: r.hero_asset_id ?? null,
-    assetIds: Array.isArray(r.asset_ids) ? r.asset_ids : [],
+    assetIds: Array.from(assetIds),
     status: {
       upload: Boolean(status.upload),
       hero: Boolean(status.hero),
@@ -183,5 +225,19 @@ function toAsset(row: Record<string, unknown>): Asset {
     // to a full Supabase Storage URL.
     imageUrl:
       typeof r.storage_path === "string" ? r.storage_path : null,
+    styleId: toPostcardStyle(r.style_id) ?? undefined,
+    styleLabel: r.style_id ?? undefined,
+    prompt: r.prompt ?? undefined,
   };
+}
+
+function toPostcardStyle(value: unknown): PostcardStyle | undefined {
+  return value === "illustration" ||
+    value === "poster" ||
+    value === "riso" ||
+    value === "inkwash" ||
+    value === "anime" ||
+    value === "artnouveau"
+    ? value
+    : undefined;
 }

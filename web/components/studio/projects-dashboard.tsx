@@ -100,6 +100,7 @@ export function ProjectsDashboard() {
       const referencedAssetIds = new Set<string>();
       for (const s of stops) {
         if (s.heroAssetId) referencedAssetIds.add(s.heroAssetId);
+        if (s.postcard.frontAssetId) referencedAssetIds.add(s.postcard.frontAssetId);
       }
       if (project.coverAssetId) referencedAssetIds.add(project.coverAssetId);
 

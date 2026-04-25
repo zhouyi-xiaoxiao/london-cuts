@@ -64,4 +64,21 @@ describe("F-T005 stop editor", () => {
       useRootStore.getState().stops.find((s) => s.n === "05")?.code,
     ).toBe("SL4 1XX");
   });
+
+  it("can use an original stop photo as the postcard front", () => {
+    const assetId = useRootStore.getState().stops.find((s) => s.n === "05")
+      ?.heroAssetId;
+    expect(assetId).toBeTruthy();
+    useRootStore.getState().updatePostcard("05", {
+      frontAssetId: null,
+      style: "illustration",
+    });
+    render(<StopCanvas stop={activeStop()} />);
+    fireEvent.mouseEnter(screen.getByTestId(`asset-cell-${assetId}`));
+    fireEvent.click(screen.getByTestId(`asset-card-${assetId}`));
+    expect(
+      useRootStore.getState().stops.find((s) => s.n === "05")?.postcard
+        .frontAssetId,
+    ).toBe(assetId);
+  });
 });

@@ -15,7 +15,7 @@ A creator tool for documenting a single-location trip (anywhere in the world) wi
 `docs/implementation-plan.md` is at **v2.1** — features-first ordering:
 M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)** → **M1 Supabase (LIVE)** → **M2 Auth+invites (LIVE + verified + preview gate retired)** → M4/M5/M6.
 
-**As of 2026-04-24T23:45Z**:
+**As of 2026-04-25T00:00Z**:
 - **M-preview LIVE, gate retired**: `https://london-cuts.vercel.app` serves commits on `main`. `/` redirects to the public reader demo `/@ana-ishii/a-year-in-se1`, so the main URL is shareable. The public demo is now `A Year Around London`: 13 static seed photos, 13 stops, and `se1-13` as cover from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired. `PREVIEW_PASSWORD` has been removed from Vercel envs; `web/proxy.ts` is now only an emergency no-op brake if that env var is set again.
 - **M-iter: 18/21+ shipped.** F-I001..F-I018. The 4-stream sprint on 2026-04-23 closed the biggest audit gaps. Still open: **VariantsRow only** (deferred to its own session per `tasks/AUDIT-WORKSPACE.md` M3 recommendation — 345-line AI-generation UI, real $ spend, needs undivided attention).
   - F-I001..F-I011: font swap / cinema letterbox / postcard flip / publish URL / atlas brightness / spine add-remove-move / per-mode postcard-front + chapter grammars / variant cache
@@ -25,14 +25,14 @@ M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)**
   - F-I015: AssetsPoolDrawer full rewrite — thumbnails + drag-source + hover-× delete + hover-⇥ detach + multi-file upload (per-section) + "Loose + N more" cap
   - F-I016: Atlas pin-hover MapLibre Popup (mode-token-aware, 220px card, heroUrl thumb + title + mood/time eyebrow)
   - F-I017: Spine row drop target (MIME_ASSET_ID + files → reassign asset to stop; auto-promote to hero if none)
-  - F-I018: CanvasHeader (Google/Apple Maps deep-links + 📋 copy-coords + body/media counters) + per-stop AssetStrip (thumbnails with HERO badge, click-to-promote, hover-× detach, draggable)
+  - F-I018: CanvasHeader (Google/Apple Maps deep-links + 📋 copy-coords + body/media counters) + per-stop AssetStrip (thumbnails with HERO/CARD badges, click-to-promote hero, hover Card to use original photo as postcard front, hover-× detach, draggable)
 - **M1 LIVE (Phases 1+2+3 full)**: Supabase backend is real, complete.
   - Project ref: `acymyvefnvydksxzzegw`, region Central EU (Frankfurt), Free tier, org "55".
   - Schema: 5 tables (`users` / `projects` / `stops` / `postcards` / `assets`) + RLS + storage bucket `assets`. Applied via Supabase SQL Editor; source of truth = `web/supabase/migrations/0001_initial.sql`.
   - Env vars set in BOTH `web/.env.local` AND Vercel (production + development): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Preview env skipped (we don't use preview branches).
   - Seed data pushed via `/api/migrate/seed` → 1 user + 2 projects + 13 London assets + 20 stops (13 London + 7 Reykjavík) + 13 London postcards.
   - Public pages (project / chapter / postcard) fetch from Supabase server-side via `web/lib/public-lookup.ts` + pass `initialData` prop to client components (client components still fall back to local Zustand via `usePublicProjectLookup` if no server data).
-  - **"☁️ Sync to cloud"** dashboard button POSTs current Zustand state → `/api/sync/upsert` → service_role upserts into Supabase. Phase 3 **full** now — binaries included. Assets with `data:` URLs get uploaded to Supabase Storage bucket `assets` at path `{ownerId}/{projectId}/{legacyId}.{ext}`; the returned public URL lands in `assets.storage_path`. Assets with a `/seed-images/*` URL pass through as-is. Response includes `assetsUploaded` + `assetsPassedThrough` counts; dashboard banner surfaces the uploaded count.
+  - **"☁️ Sync to cloud"** dashboard button POSTs current Zustand state → `/api/sync/upsert` → service_role upserts into Supabase. Phase 3 **full** now — binaries included. Assets with `data:` URLs get uploaded to Supabase Storage bucket `assets` at path `{ownerId}/{projectId}/{legacyId}.{ext}`; the returned public URL lands in `assets.storage_path`. Assets with a `/seed-images/*` URL pass through as-is. The sync payload includes hero assets and postcard-front assets, so original uploaded photos can be used as postcard fronts. Response includes `assetsUploaded` + `assetsPassedThrough` counts; dashboard banner surfaces the uploaded count.
 - **Dep added**: `@supabase/supabase-js@2.104.0` (owner-approved).
 
 **M-fast: COMPLETE 14/14.** In order:
@@ -63,6 +63,7 @@ M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)**
 - Pipeline verified end-to-end on 2026-04-24 after commit `ebfb115`: logged-in prod `/api/ai/generate` with `style:"anime"` returned HTTP 200, `mock:false`, PNG data URL, costCents=2. Prod `/api/ai/pregen-variants` for all 6 styles returned HTTP 200, `mock:false`, 6/6 `failed:false`, totalCostCents=12.
 - Photo-grounded upload status (2026-04-24): `VisionUpload` preserves EXIF `lat/lng/dateOriginal` from uploaded images. One-photo-per-stop uses the photo GPS/time directly; full-draft grouping sends GPS/time into `/api/ai/compose-project` and materialises each grouped stop at the hero/average photo coordinate instead of `0,0`.
 - Seed rebuild status (2026-04-24T23:45Z): bundled demo was rebuilt from all 13 seed photos using EXIF GPS/time + OpenAI vision output saved in `tasks/generated/seed-photo-copy.json`. `web/lib/seed.ts` now has 13 photo-grounded stops, body blocks and postcards. Orientation tags were reset to normal for old stop 04 (`IMG_3837` guards), old stop 10 (`IMG_8469` restaurant/server), and stop 13 (`IMG_9931` Finsbury Park sky) with GPS/date metadata preserved; helper script is `tasks/scripts/normalize-seed-orientation.mjs`.
+- Original-photo postcard fronts (2026-04-25T00:00Z): users can choose any uploaded/original stop photo as the postcard front from AssetStrip hover `Card`, or choose the current hero via `PostcardEditor` → `Use original hero`. This writes `postcard.frontAssetId` with `style:null`; `/api/sync/upsert` persists `front_asset_id`, `style_id`, and `orientation`; `web/lib/public-lookup.ts` reads `postcards` and pulls postcard-front assets for public pages. Seed migration sets each SE1 postcard front to its original `se1-N` photo.
 
 **Housekeeping done:** `web/providers/` removed. `web/lib/media-provider.ts` + `web/lib/seed-data.ts` deleted. `web/app/layout.tsx` simplified. Scaffold `studio-pages.tsx` + `public-pages.tsx` now read Zustand via `web/components/studio-pages.adapter.ts`. `web/lib/types.ts` still present (ui.tsx + routes.ts still import it).
 

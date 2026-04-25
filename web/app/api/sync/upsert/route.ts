@@ -8,7 +8,7 @@
 // What syncs:
 //   ✓ Project row (title, subtitle, default_mode, etc.)
 //   ✓ Stops (ordered, body_blocks, status_json)
-//   ✓ Postcard back_message + recipient per stop
+//   ✓ Postcard front_asset_id + style/orientation + back_message + recipient per stop
 //   ✓ Assets — metadata AND binaries. For assets with a data: URL the
 //     server uploads the bytes to Supabase Storage bucket `assets` at
 //     path `{owner_id}/{project_id}/{legacyId}.{ext}` and stores the
@@ -57,6 +57,9 @@ interface SyncStop {
   heroAssetId?: string | null;
   postcard?: {
     message?: string;
+    frontAssetId?: string | null;
+    style?: string | null;
+    orientation?: "portrait" | "landscape" | null;
     recipient?: {
       name?: string;
       line1?: string;
@@ -293,14 +296,31 @@ export async function POST(req: Request) {
         const stopId = stopByLegacy.get(`${stopLegacyPrefix}${s.n}`);
         if (!stopId) continue;
         const pc = s.postcard;
-        if (!pc || (!pc.message && !pc.recipient?.name)) continue;
+        if (!pc) continue;
+        const frontAssetId = pc.frontAssetId
+          ? (assetByLegacy.get(pc.frontAssetId) ?? null)
+          : null;
+        const hasPostcardData = Boolean(
+          pc.message ||
+            pc.recipient?.name ||
+            pc.recipient?.line1 ||
+            pc.recipient?.line2 ||
+            pc.recipient?.country ||
+            frontAssetId ||
+            pc.style ||
+            pc.orientation,
+        );
+        if (!hasPostcardData) continue;
         postcardRows.push({
           stop_id: stopId,
+          front_asset_id: frontAssetId,
           back_message: pc.message ?? null,
           recipient_name: pc.recipient?.name ?? null,
           recipient_line1: pc.recipient?.line1 ?? null,
           recipient_line2: pc.recipient?.line2 ?? null,
           recipient_country: pc.recipient?.country ?? null,
+          style_id: pc.style ?? null,
+          orientation: pc.orientation === "portrait" ? "portrait" : "landscape",
         });
       }
       if (postcardRows.length > 0) {

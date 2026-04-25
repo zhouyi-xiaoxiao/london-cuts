@@ -74,6 +74,9 @@ function seedStateFromDataModule(): RootState {
         ? {
             message: SEED_POSTCARDS[s.n].message,
             recipient: { ...SEED_POSTCARDS[s.n].recipient },
+            orientation: "landscape",
+            frontAssetId: hero?.id ?? null,
+            style: null,
           }
         : { message: "", recipient: { ...DEFAULT_RECIPIENT } },
       heroAssetId: hero?.id ?? null,

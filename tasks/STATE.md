@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-24T23:45Z
+**Last updated:** 2026-04-25T00:00Z
 
 ## Plan version
 
@@ -43,6 +43,12 @@ _none_
 
 ## Recently completed
 
+- **Original photos can be postcard fronts** (2026-04-25T00:00Z):
+  - Studio AssetStrip thumbnails now have a hover `Card` action that sets any uploaded/original stop photo as `postcard.frontAssetId`; selected photos show a `CARD` badge and detach clears stale postcard-front references.
+  - Postcard editor now has a `Use original hero` button beside `Re-imagine`, so users can keep the real photo instead of generating AI art.
+  - Cloud sync now includes postcard `frontAssetId`, `style`, and `orientation`, and the dashboard includes postcard-front assets in the upload/sync payload.
+  - Public Supabase lookup now reads `postcards` rows and includes postcard `front_asset_id` assets, so shared postcard pages can render saved original-photo fronts on fresh browsers.
+  - Seed migration and local seed state now default each SE1 postcard front to its original photo. Verification: `pnpm typecheck`, `pnpm test` (66/66), `pnpm build`.
 - **Seed demo rebuilt from 13 photos** (2026-04-24T23:45Z):
   - Confirmed all 13 bundled seed images and rebuilt the public demo as `A Year Around London` with 13 stops, 13 hero assets, 13 body blocks, and 13 postcards.
   - Generated per-photo copy with OpenAI vision into `tasks/generated/seed-photo-copy.json`; EXIF + reverse-geocode evidence is in `tasks/generated/seed-photo-exif-geocode.json`.

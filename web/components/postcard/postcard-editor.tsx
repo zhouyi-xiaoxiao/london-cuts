@@ -178,6 +178,22 @@ export function PostcardEditor({ stop, totalStops }: PostcardEditorProps) {
     }
   }
 
+  function useOriginalHeroAsFront() {
+    if (!heroAsset?.imageUrl) {
+      setGeneration({
+        kind: "error",
+        message: "Set a hero image first — original postcards use it as the front.",
+      });
+      return;
+    }
+    updatePostcard(stop.n, {
+      frontAssetId: heroAsset.id,
+      style: null,
+      orientation,
+    });
+    setGeneration({ kind: "idle" });
+  }
+
   async function onDownloadFrontPng() {
     const node = cardRef.current?.frontNode();
     if (!node) return;
@@ -194,7 +210,7 @@ export function PostcardEditor({ stop, totalStops }: PostcardEditorProps) {
     if (!frontAsset?.imageUrl) {
       setGeneration({
         kind: "error",
-        message: "Generate a front image first before exporting PDF.",
+        message: "Choose or generate a front image first before exporting PDF.",
       });
       return;
     }
@@ -320,8 +336,21 @@ export function PostcardEditor({ stop, totalStops }: PostcardEditorProps) {
             ? `Generating ${getStyleMeta(generation.style).label}…`
             : "Re-imagine"}
         </button>
+        <button
+          type="button"
+          className="btn"
+          onClick={useOriginalHeroAsFront}
+          disabled={!heroAsset?.imageUrl}
+          title={
+            heroAsset?.imageUrl
+              ? "Use the current hero photo as the postcard front"
+              : "Set a hero image first"
+          }
+        >
+          Use original hero
+        </button>
         <span className="mono-sm" style={{ opacity: 0.55, fontSize: 11 }}>
-          {POSTCARD_STYLES.length} styles available · mock mode uses a tinted placeholder
+          {POSTCARD_STYLES.length} styles available · or keep the original photo
         </span>
       </div>
 
