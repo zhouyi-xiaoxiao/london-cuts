@@ -147,7 +147,7 @@ export function PostcardPage({
           style={{
             maxWidth: 1180,
             margin: "0 auto",
-            padding: "14px 40px",
+            padding: "14px clamp(20px, 6vw, 40px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -163,6 +163,9 @@ export function PostcardPage({
               fontSize: 20,
               textDecoration: "none",
               color: "inherit",
+              display: "inline-flex",
+              alignItems: "center",
+              minHeight: 40,
             }}
           >
             ← Back to chapter
@@ -212,7 +215,8 @@ export function PostcardPage({
         style={{
           maxWidth: 960,
           margin: "0 auto",
-          padding: "56px 40px 80px",
+          padding:
+            "clamp(36px, 9vw, 56px) clamp(20px, 6vw, 40px) 80px",
         }}
       >
         <div
@@ -234,6 +238,7 @@ export function PostcardPage({
             fontSize: "clamp(32px, 5vw, 52px)",
             lineHeight: 1.02,
             margin: "0 0 36px",
+            overflowWrap: "break-word",
           }}
         >
           {stop.title}

@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-25T00:00Z
+**Last updated:** 2026-04-25T00:21Z
 
 ## Plan version
 
@@ -43,6 +43,12 @@ _none_
 
 ## Recently completed
 
+- **Responsive public/mobile QA pass** (2026-04-25T00:21Z):
+  - Swept public project, chapter, postcard, sign-in, and unauthenticated studio redirect across 1440 desktop, 768 tablet, 390 iPhone, 360 narrow phone, and 320 iPhone SE viewports.
+  - Fixed mobile chapter overflow by using responsive gutters and smaller phone h1 floors; verified the `Regent Street Illuminations` title no longer breaks awkwardly on 320px.
+  - Raised public/export/mode/flip tap targets and made postcard flip caption wrap instead of squeezing on mobile.
+  - Added `web/tests/responsive.test.tsx` for mobile workspace switcher behavior and postcard flip touch-size guardrails.
+  - Verification: `pnpm typecheck`, `pnpm test` (68/68), `pnpm build`, targeted ESLint on touched files, and a Playwright-core viewport sweep with 25/25 combinations green. Full `pnpm lint` still has pre-existing lint debt outside this pass.
 - **Original photos can be postcard fronts** (2026-04-25T00:00Z):
   - Studio AssetStrip thumbnails now have a hover `Card` action that sets any uploaded/original stop photo as `postcard.frontAssetId`; selected photos show a `CARD` badge and detach clears stale postcard-front references.
   - Postcard editor now has a `Use original hero` button beside `Re-imagine`, so users can keep the real photo instead of generating AI art.

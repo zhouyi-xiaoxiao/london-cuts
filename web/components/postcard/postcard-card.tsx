@@ -136,6 +136,7 @@ export const PostcardCard = forwardRef<PostcardCardHandle, PostcardCardProps>(
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            flexWrap: "wrap",
             gap: 12,
           }}
         >
@@ -155,7 +156,8 @@ export const PostcardCard = forwardRef<PostcardCardHandle, PostcardCardProps>(
               fontSize: 10,
               letterSpacing: "0.12em",
               textTransform: "uppercase",
-              padding: "4px 10px",
+              minHeight: 40,
+              padding: "8px 12px",
               border: "1px solid var(--rule)",
               background: "var(--paper)",
               color: "var(--ink)",

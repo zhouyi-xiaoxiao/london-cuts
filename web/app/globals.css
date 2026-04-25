@@ -244,7 +244,7 @@ body[data-mode="cinema"] {
 .btn-solid:hover { background: var(--mode-accent, var(--accent)); border-color: var(--mode-accent, var(--accent)); color: var(--mode-bg, white); }
 .btn-ghost { border-color: transparent; }
 .btn-ghost:hover { background: transparent; color: var(--accent); }
-.btn-sm { padding: 6px 10px; font-size: 10px; }
+.btn-sm { min-height: 36px; padding: 8px 12px; font-size: 10px; }
 
 /* Chip / tag */
 .chip {
@@ -398,9 +398,11 @@ body[data-mode="cinema"] {
 /* Mode pill (top bar variant) */
 .mode-pill {
   display: inline-flex;
+  align-items: stretch;
   border: 1px solid oklch(from currentColor l c h / 0.35);
 }
 .mode-pill button {
+  min-height: 36px;
   padding: 6px 14px;
   font-family: var(--f-mono);
   font-size: 10px; letter-spacing: 0.14em;

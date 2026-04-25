@@ -81,7 +81,8 @@ function grammarFor(mode: NarrativeMode): ModeGrammar {
   if (mode === "fashion") {
     return {
       articleMaxWidth: 1080,
-      articlePadding: "80px 40px 96px",
+      articlePadding:
+        "clamp(48px, 10vw, 80px) clamp(20px, 6vw, 40px) clamp(72px, 12vw, 96px)",
       heroAspect: "16 / 9",
       heroFigureStyle: {
         margin: "48px 0 28px",
@@ -91,12 +92,13 @@ function grammarFor(mode: NarrativeMode): ModeGrammar {
         fontFamily: "var(--mode-display-font, var(--f-fashion, serif))",
         fontStyle: "var(--mode-italic, italic)",
         fontWeight: 300,
-        fontSize: "clamp(48px, 8vw, 96px)",
+        fontSize: "clamp(40px, 8vw, 96px)",
         lineHeight: 1.0,
         letterSpacing: "-0.02em",
         margin: "12px 0 0",
         textAlign: "center",
         textTransform: "var(--mode-uppercase, none)" as React.CSSProperties["textTransform"],
+        overflowWrap: "break-word",
       },
       eyebrowStyle: {
         fontFamily: "var(--f-mono)",
@@ -138,7 +140,8 @@ function grammarFor(mode: NarrativeMode): ModeGrammar {
   if (mode === "punk") {
     return {
       articleMaxWidth: 1240,
-      articlePadding: "32px 40px 80px",
+      articlePadding:
+        "clamp(28px, 7vw, 32px) clamp(20px, 6vw, 40px) 80px",
       heroAspect: "16 / 9",
       heroFigureStyle: {
         margin: "32px 0",
@@ -150,11 +153,12 @@ function grammarFor(mode: NarrativeMode): ModeGrammar {
         fontFamily: "var(--mode-display-font, var(--f-display, sans-serif))",
         fontStyle: "var(--mode-italic, normal)",
         fontWeight: 900,
-        fontSize: "clamp(56px, 12vw, 132px)",
+        fontSize: "clamp(42px, 12vw, 132px)",
         lineHeight: 0.9,
         letterSpacing: "-0.02em",
         margin: "16px 0 24px",
         textTransform: "var(--mode-uppercase, uppercase)" as React.CSSProperties["textTransform"],
+        overflowWrap: "break-word",
       },
       eyebrowStyle: {
         display: "inline-block",
@@ -201,7 +205,8 @@ function grammarFor(mode: NarrativeMode): ModeGrammar {
   // cinema
   return {
     articleMaxWidth: 1100,
-    articlePadding: "40px 40px 96px",
+    articlePadding:
+      "clamp(36px, 8vw, 40px) clamp(20px, 6vw, 40px) clamp(72px, 12vw, 96px)",
     heroAspect: "21 / 9",
     heroFigureStyle: {
       margin: "32px 0 36px",
@@ -213,12 +218,13 @@ function grammarFor(mode: NarrativeMode): ModeGrammar {
       fontFamily: "var(--mode-display-font, var(--f-serif, serif))",
       fontStyle: "var(--mode-italic, normal)",
       fontWeight: 400,
-      fontSize: "clamp(40px, 6.5vw, 88px)",
+      fontSize: "clamp(36px, 6.5vw, 88px)",
       lineHeight: 1.0,
       letterSpacing: "-0.01em",
       margin: "8px 0 14px",
       textTransform:
         "var(--mode-uppercase, none)" as React.CSSProperties["textTransform"],
+      overflowWrap: "break-word",
     },
     eyebrowStyle: {
       fontFamily: "var(--f-mono)",
@@ -325,7 +331,7 @@ export function ChapterPage({
           style={{
             maxWidth: 1180,
             margin: "0 auto",
-            padding: "14px 40px",
+            padding: "14px clamp(20px, 6vw, 40px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -342,6 +348,10 @@ export function ChapterPage({
               fontSize: 22,
               textDecoration: "none",
               color: "inherit",
+              display: "inline-flex",
+              alignItems: "center",
+              minHeight: 40,
+              overflowWrap: "anywhere",
             }}
           >
             ← {project.title}
@@ -372,7 +382,6 @@ export function ChapterPage({
             the body doesn't crash up against the title. */}
         {hero?.imageUrl ? (
           <figure style={grammar.heroFigureStyle}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={hero.imageUrl}
               alt={stop.label ?? stop.title}
@@ -473,7 +482,7 @@ function ChapterNav({
           "1px solid color-mix(in oklab, currentColor 15%, transparent)",
       }}
     >
-      <div style={{ minWidth: 0, flex: 1 }}>
+      <div style={{ minWidth: 0, flex: "1 1 220px" }}>
         {prev ? (
           <Link
             href={`/${authorHandle}/${projectSlug}/chapter/${stopSlugFrom(prev.title)}`}
@@ -484,7 +493,11 @@ function ChapterNav({
               letterSpacing: "0.08em",
               textDecoration: "none",
               color: "inherit",
-              display: "block",
+              display: "flex",
+              alignItems: "center",
+              minHeight: 44,
+              lineHeight: 1.45,
+              overflowWrap: "anywhere",
             }}
           >
             ← Stop {prev.n} · {prev.title}
@@ -500,13 +513,16 @@ function ChapterNav({
               textDecoration: "none",
               color: "inherit",
               opacity: 0.72,
+              display: "inline-flex",
+              alignItems: "center",
+              minHeight: 44,
             }}
           >
             ← Back to project
           </Link>
         )}
       </div>
-      <div style={{ minWidth: 0, flex: 1, textAlign: "right" }}>
+      <div style={{ minWidth: 0, flex: "1 1 220px", textAlign: "right" }}>
         {next ? (
           <Link
             href={`/${authorHandle}/${projectSlug}/chapter/${stopSlugFrom(next.title)}`}
@@ -517,7 +533,12 @@ function ChapterNav({
               letterSpacing: "0.08em",
               textDecoration: "none",
               color: "inherit",
-              display: "block",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              minHeight: 44,
+              lineHeight: 1.45,
+              overflowWrap: "anywhere",
             }}
           >
             Stop {next.n} · {next.title} →
@@ -692,7 +713,6 @@ function BlockView({
             ...(isHero ? grammar.heroFigureStyle : null),
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={url}
             alt={block.caption}

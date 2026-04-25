@@ -121,7 +121,7 @@ export function PublicProjectPage({
           style={{
             maxWidth: 1280,
             margin: "0 auto",
-            padding: "16px 40px",
+            padding: "16px clamp(20px, 6vw, 40px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -163,7 +163,8 @@ export function PublicProjectPage({
         style={{
           maxWidth: 1280,
           margin: "0 auto",
-          padding: "48px 40px 32px",
+          padding:
+            "clamp(36px, 9vw, 48px) clamp(20px, 6vw, 40px) 32px",
         }}
       >
         {coverUrl && (
@@ -262,6 +263,7 @@ export function PublicProjectPage({
             letterSpacing: "-0.01em",
             margin: 0,
             maxWidth: "18ch",
+            overflowWrap: "break-word",
             textTransform: "var(--mode-uppercase, none)" as React.CSSProperties["textTransform"],
           }}
         >
@@ -275,7 +277,7 @@ export function PublicProjectPage({
         style={{
           maxWidth: 1280,
           margin: "0 auto",
-          padding: "16px 40px 40px",
+          padding: "16px clamp(20px, 6vw, 40px) 40px",
         }}
       >
         <Atlas stops={atlasStops} height={360} onStopClick={onAtlasStop} />
@@ -287,7 +289,7 @@ export function PublicProjectPage({
         style={{
           maxWidth: 1280,
           margin: "0 auto",
-          padding: "16px 40px 64px",
+          padding: "16px clamp(20px, 6vw, 40px) 64px",
         }}
       >
         <div
@@ -331,7 +333,7 @@ export function PublicProjectPage({
         style={{
           borderTop:
             "1px solid color-mix(in oklab, currentColor 15%, transparent)",
-          padding: "28px 40px",
+          padding: "28px clamp(20px, 6vw, 40px)",
           textAlign: "center",
         }}
       >
@@ -344,6 +346,9 @@ export function PublicProjectPage({
             letterSpacing: "0.12em",
             textTransform: "uppercase",
             opacity: 0.72,
+            display: "inline-flex",
+            alignItems: "center",
+            minHeight: 40,
           }}
         >
           Published via London Cuts
@@ -396,7 +401,6 @@ function StopCard({
         }}
       >
         {thumb ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={thumb}
             alt={stop.label ?? stop.title}
