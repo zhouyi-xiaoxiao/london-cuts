@@ -11,6 +11,10 @@ export const env = {
   /** "true" = return mock placeholder images, never call OpenAI. */
   AI_PROVIDER_MOCK: process.env.AI_PROVIDER_MOCK ?? "true",
   RESEND_API_KEY: process.env.RESEND_API_KEY ?? "",
+  OWNER_NOTIFY_EMAIL: process.env.OWNER_NOTIFY_EMAIL ?? "",
+  TRANSACTIONAL_FROM_EMAIL:
+    process.env.TRANSACTIONAL_FROM_EMAIL ??
+    "London Cuts <no-reply@auth.zhouyixiaoxiao.org>",
   POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "",
   POSTHOG_HOST:
     process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.posthog.com",

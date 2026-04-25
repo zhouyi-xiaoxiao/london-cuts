@@ -15,7 +15,7 @@ A creator tool for documenting a single-location trip (anywhere in the world) wi
 `docs/implementation-plan.md` is at **v2.1** — features-first ordering:
 M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)** → **M1 Supabase (LIVE)** → **M2 Auth+invites (LIVE + verified + preview gate retired)** → M4/M5/M6.
 
-**As of 2026-04-25T00:21Z**:
+**As of 2026-04-25T22:37Z**:
 - **M-preview LIVE, gate retired**: `https://london-cuts.vercel.app` serves commits on `main`. `/` redirects to the public reader demo `/@ana-ishii/a-year-in-se1`, so the main URL is shareable. The public demo is now `A Year Around London`: 13 static seed photos, 13 stops, and `se1-13` as cover from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired. `PREVIEW_PASSWORD` has been removed from Vercel envs; `web/proxy.ts` is now only an emergency no-op brake if that env var is set again.
 - **M-iter: 18/21+ shipped.** F-I001..F-I018. The 4-stream sprint on 2026-04-23 closed the biggest audit gaps. Still open: **VariantsRow only** (deferred to its own session per `tasks/AUDIT-WORKSPACE.md` M3 recommendation — 345-line AI-generation UI, real $ spend, needs undivided attention).
   - F-I001..F-I011: font swap / cinema letterbox / postcard flip / publish URL / atlas brightness / spine add-remove-move / per-mode postcard-front + chapter grammars / variant cache
@@ -34,6 +34,13 @@ M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)**
   - Public pages (project / chapter / postcard) fetch from Supabase server-side via `web/lib/public-lookup.ts` + pass `initialData` prop to client components (client components still fall back to local Zustand via `usePublicProjectLookup` if no server data).
   - **"☁️ Sync to cloud"** dashboard button POSTs current Zustand state → `/api/sync/upsert` → service_role upserts into Supabase. Phase 3 **full** now — binaries included. Assets with `data:` URLs get uploaded to Supabase Storage bucket `assets` at path `{ownerId}/{projectId}/{legacyId}.{ext}`; the returned public URL lands in `assets.storage_path`. Assets with a `/seed-images/*` URL pass through as-is. The sync payload includes hero assets and postcard-front assets, so original uploaded photos can be used as postcard fronts. Response includes `assetsUploaded` + `assetsPassedThrough` counts; dashboard banner surfaces the uploaded count.
 - **Dep added**: `@supabase/supabase-js@2.104.0` (owner-approved).
+
+**Fresh-agent start checklist (do this first if memory/chat history is gone):**
+1. `cd /Users/ae23069/Library/CloudStorage/OneDrive-UniversityofBristol/Desktop/london-cuts`
+2. Read `tasks/STATE.md`, this `tasks/HANDOFF.md`, and the bottom of `tasks/LOG.md`.
+3. Run `git status --short`; never revert unrelated user/agent edits.
+4. If the task is production-facing, verify live state before answering: `https://london-cuts.vercel.app/`, `/sign-in`, `/studio` redirect, and the direct reader URL.
+5. If the task involves secrets, check env variable names only. Do not print API keys, SMTP passwords, one-time magic links, or invite tokens into docs/chat.
 
 **M-fast: COMPLETE 14/14.** In order:
 - F-T000 POC (style picker)
@@ -154,6 +161,25 @@ Resend setup progress:
 - Sending domain verified: `auth.zhouyixiaoxiao.org` (domain id `03d77d58-0fda-4a5e-ae32-e9d641e2fb11`, region `eu-west-1`).
 - Resend API key `supabase-auth-smtp` created with sending access and stored in macOS Keychain service `london-cuts-resend-smtp`, account `supabase-auth-smtp`.
 - IONOS DNS MCP and Supabase management API tokens are still not configured; the working fix used logged-in browser dashboards.
+
+### Owner notifications for new signups (2026-04-25T22:37Z)
+
+Implemented and production env is configured; active after the code commit deploys:
+- `POST /api/invites/redeem` now sends a best-effort owner notification after a user finishes onboarding and redeems an invite.
+- Helper: `web/lib/email.ts` → `sendOwnerNewSignupEmail()`.
+- Transport: Resend HTTP API `POST https://api.resend.com/emails`.
+- Required env vars: `RESEND_API_KEY` and `OWNER_NOTIFY_EMAIL`.
+- Optional env var: `TRANSACTIONAL_FROM_EMAIL`, defaulting to `London Cuts <no-reply@auth.zhouyixiaoxiao.org>`.
+- Vercel Production now has all three env vars (`RESEND_API_KEY`, `OWNER_NOTIFY_EMAIL`, `TRANSACTIONAL_FROM_EMAIL`) and `vercel env ls production` shows them as encrypted. Values were not printed into docs/chat.
+- Owner notification target currently set in Vercel: `zhouyixiaoxiao@gmail.com`.
+- Local gitignored env files were checked by key name only: they do not contain the notification keys, so local onboarding tests still skip notification unless local env is intentionally populated.
+- Missing notification env does NOT block onboarding. The route logs a warning and still returns success.
+- Tests: `web/tests/email.test.ts` covers both skipped and sent paths.
+
+To verify after deployment:
+1. Live-smoke with a fresh plus-address: sign in, redeem an invite, finish onboarding.
+2. Confirm `zhouyixiaoxiao@gmail.com` receives "London Cuts new signup: @handle".
+3. If the owner wants a different inbox later, change `OWNER_NOTIFY_EMAIL` in Vercel Production and redeploy.
 
 ## Drag-drop network (added 2026-04-23, don't break)
 

@@ -27,6 +27,7 @@
 import { NextResponse } from "next/server";
 
 import { requireUser } from "@/lib/auth";
+import { sendOwnerNewSignupEmail } from "@/lib/email";
 import { AuthRequiredError } from "@/lib/errors";
 import { getServerClient } from "@/lib/supabase";
 
@@ -249,6 +250,28 @@ export async function POST(req: Request) {
     // Log-only. Onboarding succeeds either way.
     console.warn(
       `[invites/redeem] decrement failed for code=${code}: ${decrementErr.message}`,
+    );
+  }
+
+  try {
+    const result = await sendOwnerNewSignupEmail({
+      email: session.email,
+      handle: inserted.handle as string,
+      displayName: inserted.display_name as string | null,
+      inviteCode: code,
+      profileId: newUserId,
+    });
+    if (result === "skipped") {
+      console.warn(
+        "[invites/redeem] owner signup notification skipped; set OWNER_NOTIFY_EMAIL and RESEND_API_KEY to enable it",
+      );
+    }
+  } catch (err) {
+    // Never fail onboarding because owner notification email failed.
+    console.warn(
+      `[invites/redeem] owner signup notification failed: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
     );
   }
 
