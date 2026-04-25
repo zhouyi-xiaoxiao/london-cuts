@@ -15,7 +15,7 @@ A creator tool for documenting a single-location trip (anywhere in the world) wi
 `docs/implementation-plan.md` is at **v2.1** — features-first ordering:
 M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)** → **M1 Supabase (LIVE)** → **M2 Auth+invites (LIVE + verified + preview gate retired)** → M4/M5/M6.
 
-**As of 2026-04-25T22:37Z**:
+**As of 2026-04-25T22:43Z**:
 - **M-preview LIVE, gate retired**: `https://london-cuts.vercel.app` serves commits on `main`. `/` redirects to the public reader demo `/@ana-ishii/a-year-in-se1`, so the main URL is shareable. The public demo is now `A Year Around London`: 13 static seed photos, 13 stops, and `se1-13` as cover from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired. `PREVIEW_PASSWORD` has been removed from Vercel envs; `web/proxy.ts` is now only an emergency no-op brake if that env var is set again.
 - **M-iter: 18/21+ shipped.** F-I001..F-I018. The 4-stream sprint on 2026-04-23 closed the biggest audit gaps. Still open: **VariantsRow only** (deferred to its own session per `tasks/AUDIT-WORKSPACE.md` M3 recommendation — 345-line AI-generation UI, real $ spend, needs undivided attention).
   - F-I001..F-I011: font swap / cinema letterbox / postcard flip / publish URL / atlas brightness / spine add-remove-move / per-mode postcard-front + chapter grammars / variant cache
@@ -162,9 +162,9 @@ Resend setup progress:
 - Resend API key `supabase-auth-smtp` created with sending access and stored in macOS Keychain service `london-cuts-resend-smtp`, account `supabase-auth-smtp`.
 - IONOS DNS MCP and Supabase management API tokens are still not configured; the working fix used logged-in browser dashboards.
 
-### Owner notifications for new signups (2026-04-25T22:37Z)
+### Owner notifications for new signups (2026-04-25T22:43Z)
 
-Implemented and production env is configured; active after the code commit deploys:
+Implemented, deployed, and production env is configured:
 - `POST /api/invites/redeem` now sends a best-effort owner notification after a user finishes onboarding and redeems an invite.
 - Helper: `web/lib/email.ts` → `sendOwnerNewSignupEmail()`.
 - Transport: Resend HTTP API `POST https://api.resend.com/emails`.
@@ -175,6 +175,9 @@ Implemented and production env is configured; active after the code commit deplo
 - Local gitignored env files were checked by key name only: they do not contain the notification keys, so local onboarding tests still skip notification unless local env is intentionally populated.
 - Missing notification env does NOT block onboarding. The route logs a warning and still returns success.
 - Tests: `web/tests/email.test.ts` covers both skipped and sent paths.
+- Code commit: `f70dbad feat(auth): notify owner on new signups`, pushed to `origin/main`.
+- Vercel production deployment: `dpl_9ugLgbfphVMWiBYvWz4LuxQYpBkv`, Ready, aliased to `https://london-cuts.vercel.app`.
+- Non-account live smoke after deploy: `/` redirects to `/@ana-ishii/a-year-in-se1`, public reader returns 200, `/sign-in` returns 200, unauthenticated `/studio` redirects to `/sign-in?next=/studio`.
 
 To verify after deployment:
 1. Live-smoke with a fresh plus-address: sign in, redeem an invite, finish onboarding.

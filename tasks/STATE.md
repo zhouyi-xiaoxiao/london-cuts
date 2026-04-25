@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-25T22:37Z
+**Last updated:** 2026-04-25T22:43Z
 
 ## Plan version
 
@@ -25,7 +25,7 @@
 
 1. **M4 public polish** — ToS, Privacy, feedback form, 404/loading states, OG image. This is the next best track before inviting broader EU/public beta traffic.
 2. **M5 observability + CI** — Sentry, PostHog, auth/invite/quota tests, GitHub Actions.
-3. **Live-smoke owner signup notifications after deploy** — code is implemented and Vercel Production now has `RESEND_API_KEY`, `OWNER_NOTIFY_EMAIL`, and `TRANSACTIONAL_FROM_EMAIL`; after push/deploy, test a fresh onboarding and confirm the owner email arrives.
+3. **Live-smoke owner signup notification with a real fresh beta account** — code is implemented, deployed, and Vercel Production has `RESEND_API_KEY`, `OWNER_NOTIFY_EMAIL`, and `TRANSACTIONAL_FROM_EMAIL`; remaining optional check is to onboard a fresh plus-address and confirm the owner email arrives.
 4. **M6 custom domain** — owner action in IONOS + Vercel domain setup. Current shareable fallback is `https://london-cuts.vercel.app/` or the direct reader URL.
 5. **Per-user AI quota** — new migration + `user_daily_ai_spend` table + tracker in ai-provider. Defer until friend-user traffic proves the need.
 6. **User menu UI** — sign-out button + display-name in studio chrome. Small; tack onto any future UI pass.
@@ -44,13 +44,15 @@ _none_
 
 ## Recently completed
 
-- **Owner new-signup notification hook** (2026-04-25T22:37Z):
+- **Owner new-signup notification hook** (2026-04-25T22:43Z):
   - Added Resend HTTP transactional helper `sendOwnerNewSignupEmail()` in `web/lib/email.ts`.
   - `/api/invites/redeem` now sends the owner a best-effort email after successful invite redemption/onboarding; failures or missing env vars are logged but never block onboarding.
   - Added `OWNER_NOTIFY_EMAIL` and `TRANSACTIONAL_FROM_EMAIL` to env config/example; `RESEND_API_KEY` is reused from transactional email setup.
   - Vercel Production now has `RESEND_API_KEY`, `OWNER_NOTIFY_EMAIL`, and `TRANSACTIONAL_FROM_EMAIL` configured as encrypted env vars. Owner notification target is `zhouyixiaoxiao@gmail.com`.
   - Local gitignored env files were checked by key name only and still do not include the notification keys, so local onboarding tests skip notification unless local env is populated.
   - Verification: `pnpm typecheck`, targeted ESLint on touched code/test files, `pnpm test -- tests/email.test.ts` (Vitest ran the full suite, 70/70 green), and `pnpm build`.
+  - Commit `f70dbad` pushed to `origin/main`; Vercel deployment `dpl_9ugLgbfphVMWiBYvWz4LuxQYpBkv` is Ready on `https://london-cuts.vercel.app`.
+  - Live smoke after deploy: `/` 307 to the reader, public reader 200, `/sign-in` 200, unauthenticated `/studio` 307 to `/sign-in?next=/studio`.
 - **Responsive public/mobile QA pass** (2026-04-25T00:21Z):
   - Swept public project, chapter, postcard, sign-in, and unauthenticated studio redirect across 1440 desktop, 768 tablet, 390 iPhone, 360 narrow phone, and 320 iPhone SE viewports.
   - Fixed mobile chapter overflow by using responsive gutters and smaller phone h1 floors; verified the `Regent Street Illuminations` title no longer breaks awkwardly on 320px.
