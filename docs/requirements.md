@@ -112,6 +112,13 @@ This is the single source of truth for what we are building. If a task, plan, or
 - PostHog (product analytics, free tier)
 - Key events logged: signup, publish, AI failure
 
+### NFR10 AI-native access and discovery
+- Public content has stable machine-readable DTOs and markdown citation packs
+- Public API v1 and OpenAPI are available for agents
+- MCP endpoint exposes public read resources/tools and authenticated AI/write tools
+- AI discovery files (`llms.txt`, `llms-full.txt`) describe public surfaces and citation rules
+- Traditional SEO discovery includes sitemap, robots, canonical metadata, OG metadata, and JSON-LD
+
 ### NFR6 Developer experience
 - Maintained: `CLAUDE.md`, `docs/architecture.md`, `docs/data-model.md`, `tasks/`
 - Self-explanatory file/folder names
@@ -158,7 +165,6 @@ This is the single source of truth for what we are building. If a task, plan, or
 - Multi-language UI
 - Offline mode
 - Collaborative editing
-- SEO optimisation
 - User-facing data export
 - Custom admin dashboard (use Supabase Dashboard for beta)
 
@@ -171,3 +177,4 @@ This is the single source of truth for what we are building. If a task, plan, or
 ## Changelog
 
 - **2026-04-20 v1.0** — Initial confirmed requirements, frozen for M0–M6
+- **2026-04-26 v1.1** — Added AI-native API/MCP/discovery requirements and moved SEO/GEO from out-of-scope to beta infrastructure.

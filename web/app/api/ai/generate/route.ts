@@ -30,7 +30,7 @@ const VALID_STYLES: readonly PostcardStyle[] = [
 ];
 
 export async function POST(req: Request) {
-  const gate = await gateApiRequest();
+  const gate = await gateApiRequest(req, "ai:run");
   if (!gate.allowed) return gate.response;
 
   let body: Partial<GeneratePostcardInput>;

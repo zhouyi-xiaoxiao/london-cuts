@@ -18,6 +18,11 @@
 
 import { NextResponse } from "next/server";
 
+import {
+  AgentAuthError,
+  requireAgentAccess,
+  type AgentScope,
+} from "@/lib/agent-auth";
 import { requireOnboardedUser } from "@/lib/auth";
 import {
   AuthRequiredError,
@@ -32,6 +37,7 @@ export interface GateAllow {
   /** true when M2 auth is actively enforced. Routes MAY use this to
    *  decide whether to apply per-user-scoped RLS in subsequent DB calls. */
   authEnforced: boolean;
+  authKind: "legacy" | "session" | "agent_token";
 }
 
 export interface GateBlock {
@@ -56,9 +62,40 @@ function m2Enabled(): boolean {
  *     if (!gate.allowed) return gate.response;
  *     const userId = gate.profileId ?? (body.userId ?? "local");
  */
-export async function gateApiRequest(): Promise<GateResult> {
+export async function gateApiRequest(
+  req?: Request,
+  requiredScope?: AgentScope,
+): Promise<GateResult> {
   if (!m2Enabled()) {
-    return { allowed: true, profileId: null, authEnforced: false };
+    return {
+      allowed: true,
+      profileId: null,
+      authEnforced: false,
+      authKind: "legacy",
+    };
+  }
+
+  if (req && requiredScope) {
+    try {
+      const access = await requireAgentAccess(req, requiredScope);
+      return {
+        allowed: true,
+        profileId: access.ownerId,
+        authEnforced: true,
+        authKind: access.kind,
+      };
+    } catch (err) {
+      if (err instanceof AgentAuthError) {
+        return {
+          allowed: false,
+          response: NextResponse.json(
+            { error: err.message, code: err.code },
+            { status: err.status },
+          ),
+        };
+      }
+      // Fall through to the legacy session-only error shape below.
+    }
   }
 
   try {
@@ -67,6 +104,7 @@ export async function gateApiRequest(): Promise<GateResult> {
       allowed: true,
       profileId: user.profile.id,
       authEnforced: true,
+      authKind: "session",
     };
   } catch (err) {
     if (err instanceof AuthRequiredError) {

@@ -17,6 +17,7 @@ M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)**
 
 **As of 2026-04-25T23:10Z**:
 - **M-preview LIVE, gate retired**: `https://london-cuts.vercel.app` serves commits on `main`. `/` redirects to the public reader demo `/@ana-ishii/a-year-in-se1`, so the main URL is shareable. The public demo is now `A Year Around London`: 13 static seed photos, 13 stops, and `se1-13` as cover from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired. `PREVIEW_PASSWORD` has been removed from Vercel envs; `web/proxy.ts` is now only an emergency no-op brake if that env var is set again.
+- **M7 AI-native discovery/API/MCP implemented locally (2026-04-26)**: new canonical public DTO seam `web/lib/public-content.ts`; public REST API v1 at `/api/v1/projects`; OpenAPI at `/api/openapi.json`; minimal MCP JSON-RPC endpoint at `/mcp`; discovery files `/llms.txt`, `/llms-full.txt`, `/robots.txt`, `/sitemap.xml`; dynamic metadata + JSON-LD for public project/chapter/postcard pages; machine-token auth seam `web/lib/agent-auth.ts`; migration `web/supabase/migrations/0003_api_tokens.sql`. Production migration was NOT applied and no real API token was issued.
 - **M-iter: 18/21+ shipped.** F-I001..F-I018. The 4-stream sprint on 2026-04-23 closed the biggest audit gaps. Still open: **VariantsRow only** (deferred to its own session per `tasks/AUDIT-WORKSPACE.md` M3 recommendation — 345-line AI-generation UI, real $ spend, needs undivided attention).
   - F-I001..F-I011: font swap / cinema letterbox / postcard flip / publish URL / atlas brightness / spine add-remove-move / per-mode postcard-front + chapter grammars / variant cache
   - F-I012: production sync end-to-end verified via curl (POST /api/sync/upsert → Supabase Storage CDN → HTTP 200)
@@ -41,6 +42,7 @@ M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)**
 3. Run `git status --short`; never revert unrelated user/agent edits.
 4. If the task is production-facing, verify live state before answering: `https://london-cuts.vercel.app/`, `/sign-in`, `/studio` redirect, and the direct reader URL.
 5. If the task involves secrets, check env variable names only. Do not print API keys, SMTP passwords, one-time magic links, or invite tokens into docs/chat.
+6. If the task involves AI/search/agent access, read `docs/agent-manifest.md`, `docs/api-contract.md`, and `docs/ai-discovery.md`; prefer `/api/v1/*`, `/api/openapi.json`, `/mcp`, and markdown citation packs over browser scraping.
 
 **M-fast: COMPLETE 14/14.** In order:
 - F-T000 POC (style picker)
@@ -132,6 +134,28 @@ Rollback = set env `M2_AUTH_ENABLED=false`. No DB rollback needed — migration 
 - Sign-out button in studio chrome
 - Handle live-validation on onboarding form
 - External SMTP: Supabase built-in mailer is only for testing and can throttle at a very low project-level rate.
+
+## AI-native API/MCP/GEO status (2026-04-26)
+
+Implemented locally:
+- Public REST API v1:
+  - `GET /api/v1/projects`
+  - `GET /api/v1/projects/{handle}/{slug}`
+  - `GET /api/v1/projects/{handle}/{slug}/stops/{stop}`
+  - `GET /api/v1/projects/{handle}/{slug}/markdown`
+- Authenticated API v1 wrappers:
+  - `POST /api/v1/ai/describe-photo` (`ai:run`)
+  - `POST /api/v1/ai/compose-project` (`ai:run`)
+  - `POST /api/v1/ai/generate-postcard` (`ai:run`)
+  - `POST /api/v1/projects/sync` (`project:write`)
+- MCP endpoint `/mcp`: supports `initialize`, `resources/list`, `resources/read`, `tools/list`, `tools/call`, `prompts/list`, and `prompts/get`.
+- Discovery: `/llms.txt`, `/llms-full.txt`, `/api/openapi.json`, `/robots.txt`, `/sitemap.xml`, plus public-page metadata and JSON-LD.
+- API tokens: migration `0003_api_tokens.sql`, prefix `lc_pat_`, scopes `public:read`, `ai:run`, `project:write`, token hash only.
+
+Not done automatically:
+- Production DB migration `0003_api_tokens.sql` has not been applied.
+- No API token was issued.
+- Production smoke for M7 should run after deployment.
 
 ### Auth email delivery status (2026-04-24)
 

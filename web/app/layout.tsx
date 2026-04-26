@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
 
 import { HtmlModeAttr } from "@/components/mode-switcher";
+import { getAppBaseUrl } from "@/lib/public-content";
 
 import "@/app/globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getAppBaseUrl()),
   title: "London Cuts",
   description:
     "An AI-native London storytelling demo with public stories, atlas browsing, creator studio, postcards, and a swappable media adapter.",
+  alternates: {
+    canonical: getAppBaseUrl(),
+  },
 };
 
 // Google Fonts matching the legacy prototype (was loaded via a <link>

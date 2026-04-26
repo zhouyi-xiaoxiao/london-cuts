@@ -31,14 +31,16 @@ This describes where we are going. For the current as-is legacy layout, see `REA
 │  Next.js server (Vercel)                                        │
 │  ┌────────────────┐  ┌──────────────┐  ┌───────────────────┐  │
 │  │ RSC / Pages    │  │ API routes   │  │ Edge middleware   │  │
-│  │ (SSR content)  │  │ (ai, admin)  │  │ (auth gate)       │  │
+│  │ (SSR content)  │  │ (ai, API,    │  │ (auth gate)       │  │
+│  │                │  │  MCP)        │  │                   │  │
 │  └───────┬────────┘  └──────┬───────┘  └──────────┬────────┘  │
 └──────────┼─────────────────┼─────────────────────┼─────────────┘
            │                 │                     │
            ▼                 ▼                     ▼
   ┌────────────────┐  ┌──────────────┐  ┌──────────────────────┐
   │ lib/storage.ts │  │ lib/ai-      │  │ lib/auth.ts          │
-  │ lib/auth.ts    │  │ provider.ts  │  │ lib/email.ts         │
+  │ lib/public-    │  │ provider.ts  │  │ lib/agent-auth.ts    │
+  │ content.ts     │  │              │  │ lib/email.ts         │
   │ (seams)        │  │              │  │ lib/analytics.ts     │
   └───────┬────────┘  └──────┬───────┘  └──────────┬───────────┘
           │                  │                     │
@@ -71,8 +73,11 @@ london-cuts/
 │   │   │   └── sign-up/
 │   │   ├── api/
 │   │   │   ├── ai/generate/    # POST — server-side OpenAI call
+│   │   │   ├── v1/             # stable public/agent API
+│   │   │   ├── openapi.json/   # OpenAPI 3.1 document
 │   │   │   ├── invites/verify/
 │   │   │   └── webhooks/
+│   │   ├── mcp/                # MCP JSON-RPC endpoint
 │   │   ├── layout.tsx
 │   │   └── page.tsx
 │   ├── components/
@@ -84,6 +89,8 @@ london-cuts/
 │   ├── lib/                    # SEAMS — everything external goes through here
 │   │   ├── storage.ts          # Data access (Supabase client wrapper)
 │   │   ├── auth.ts             # Current user + session
+│   │   ├── agent-auth.ts       # API token scopes for agents
+│   │   ├── public-content.ts   # canonical public DTOs / markdown / metadata
 │   │   ├── ai-provider.ts      # OpenAI wrapper
 │   │   ├── email.ts            # Resend wrapper
 │   │   ├── analytics.ts        # PostHog wrapper
@@ -127,6 +134,15 @@ Rule: **business code imports only from `web/lib/`**. Never `import { createClie
 - Exports: `getCurrentUser()`, `requireUser()`, `signOut()`, `sendMagicLink(email)`, `verifyInvite(code)`.
 - Wraps Supabase Auth calls.
 - Future: Clerk/Auth0 swap = one file.
+
+### `web/lib/agent-auth.ts`
+- Verifies API tokens for MCP/API agents.
+- Tokens use prefix `lc_pat_`, are stored only as SHA-256 hashes, and carry scopes (`public:read`, `ai:run`, `project:write`).
+- Future: OAuth can layer on top without changing public DTOs.
+
+### `web/lib/public-content.ts`
+- Canonical public content DTO layer for SSR pages, REST API v1, MCP resources/tools, sitemap, metadata, and `llms.txt`.
+- Enforces published/public-only reads and strips private/auth/admin fields.
 
 ### `web/lib/ai-provider.ts`
 - Exports: `generatePostcardArt({sourcePhoto, style, prompt})`, `describePhotos(photos[])`.
@@ -185,6 +201,7 @@ See `web/.env.example` (to be created in M0). Key ones:
 | `NEXT_PUBLIC_POSTHOG_KEY` | client | Analytics |
 | `SENTRY_DSN` | client + server | Error reporting |
 | `NEXT_PUBLIC_APP_URL` | client + server | Canonical URL for magic links |
+| `M2_AUTH_ENABLED` | server | Enables Supabase auth gates for studio/write/AI/API token paths |
 
 ## 7. Deployment
 
@@ -207,7 +224,7 @@ We are deliberately not building:
 - Redis/Memcache (Supabase Postgres handles it)
 - Microservices (Next.js monolith is fine to 1000s of users)
 - CDN for images (Supabase Storage + Vercel CDN is enough)
-- Search infrastructure (Supabase full-text works for beta)
+- Dedicated search infrastructure (public sitemap, DTOs, and markdown packs are enough for beta)
 
 If/when a real bottleneck appears, we revisit.
 

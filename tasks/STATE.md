@@ -1,10 +1,10 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-25T23:10Z
+**Last updated:** 2026-04-26T20:34Z
 
 ## Plan version
 
-**Plan v2.1** (see `docs/implementation-plan.md`): features-first, time estimates removed. M0 → M-fast → M-preview → M-iter → **M1 complete** → M2 next.
+**Plan v2.1 + M7 agent-native extension** (see `docs/implementation-plan.md` and `tasks/M7-ai-native-discovery/`): features-first, then live infra, then AI-native discovery/API/MCP surfaces.
 
 ## Summary
 
@@ -20,17 +20,19 @@
 | M4 Public pages polish | ⏳ not started | OG images, ToS, privacy, feedback form |
 | M5 Observability | ⏳ not started | Sentry / PostHog / GitHub Actions CI |
 | M6 Launch | ⏳ not started | Custom domain `zhouyixiaoxiao.org` (IONOS CNAME + Vercel), invite codes, smoke test |
+| M7 AI-native discovery | ✅ implemented locally | Public-content DTO seam, API v1, OpenAPI, API-token migration, MCP endpoint, robots/sitemap/llms, metadata/JSON-LD, and agent docs. Needs post-deploy smoke after merge. |
 
 ## Eligible next tracks (owner picks)
 
-1. **M4 public polish** — ToS, Privacy, feedback form, 404/loading states, OG image. This is the next best track before inviting broader EU/public beta traffic.
-2. **M5 observability + CI** — Sentry, PostHog, auth/invite/quota tests, GitHub Actions.
-3. **Live-smoke owner signup notification with a real fresh beta account** — code is implemented, deployed, and Vercel Production has `RESEND_API_KEY`, `OWNER_NOTIFY_EMAIL`, and `TRANSACTIONAL_FROM_EMAIL`; remaining optional check is to onboard a fresh plus-address and confirm the owner email arrives.
-4. **M6 custom domain** — owner action in IONOS + Vercel domain setup. Current shareable fallback is `https://london-cuts.vercel.app/` or the direct reader URL.
-5. **Per-user AI quota** — new migration + `user_daily_ai_spend` table + tracker in ai-provider. Defer until friend-user traffic proves the need.
-6. **User menu UI** — sign-out button + display-name in studio chrome. Small; tack onto any future UI pass.
-7. **Invite/onboarding polish** — normal `/sign-in` mail now works via Resend SMTP; next polish is copy/templates and avoiding owner-only wording in beta emails.
-8. **Seed sync smoke after deployment** — after any seed edit, run `/api/migrate/seed` with the migration secret or local service-role route, then verify the live reader shows 13 stops and real coordinates.
+1. **Deploy + smoke M7** — after merge/deploy, verify `/api/v1/projects`, `/api/openapi.json`, `/mcp`, `/llms.txt`, `/llms-full.txt`, `/robots.txt`, and `/sitemap.xml` in production. Apply `0003_api_tokens.sql` only when the owner wants machine-token access.
+2. **M4 public polish** — ToS, Privacy, feedback form, 404/loading states, OG image. This is the next best track before inviting broader EU/public beta traffic.
+3. **M5 observability + CI** — Sentry, PostHog, auth/invite/quota tests, GitHub Actions.
+4. **Live-smoke owner signup notification with a real fresh beta account** — code is implemented, deployed, and Vercel Production has `RESEND_API_KEY`, `OWNER_NOTIFY_EMAIL`, and `TRANSACTIONAL_FROM_EMAIL`; remaining optional check is to onboard a fresh plus-address and confirm the owner email arrives.
+5. **M6 custom domain** — owner action in IONOS + Vercel domain setup. Current shareable fallback is `https://london-cuts.vercel.app/` or the direct reader URL.
+6. **Per-user AI quota** — new migration + `user_daily_ai_spend` table + tracker in ai-provider. Defer until friend-user traffic proves the need.
+7. **User menu UI** — sign-out button + display-name in studio chrome. Small; tack onto any future UI pass.
+8. **Invite/onboarding polish** — normal `/sign-in` mail now works via Resend SMTP; next polish is copy/templates and avoiding owner-only wording in beta emails.
+9. **Seed sync smoke after deployment** — after any seed edit, run `/api/migrate/seed` with the migration secret or local service-role route, then verify the live reader shows 13 stops and real coordinates.
 
 First step for whichever track: read `tasks/HANDOFF.md` first — it's the canonical resume-point and has the M1 architecture diagram + seam map + gotchas + M2 activation flow.
 
@@ -44,6 +46,13 @@ _none_
 
 ## Recently completed
 
+- **M7 AI-native MCP/API/SEO/GEO surfaces** (2026-04-26T20:34Z):
+  - Added `web/lib/public-content.ts` as the canonical public DTO/markdown/metadata/JSON-LD seam.
+  - Added REST API v1, OpenAPI, API-token auth seam, and migration `0003_api_tokens.sql`.
+  - Added `/mcp` JSON-RPC endpoint with public resources/tools/prompts and authenticated AI/write tools.
+  - Added `robots.txt`, `sitemap.xml`, `llms.txt`, `llms-full.txt`, dynamic metadata, and JSON-LD.
+  - Added `docs/agent-manifest.md`, `docs/api-contract.md`, `docs/ai-discovery.md`, and `tasks/M7-ai-native-discovery/`.
+  - Initial verification: `pnpm typecheck` passed.
 - **Full-web QA pass + Studio hydration fix** (2026-04-25T23:10Z):
   - Ran full automated checks: `pnpm lint`, `pnpm typecheck`, `pnpm test` (70/70), and `pnpm build`.
   - Fixed full-lint blockers: unescaped public copy, Next internal links, unused eslint-disable comments, VariantRow helper names/purity warnings, and documented set-state-in-effect exceptions.

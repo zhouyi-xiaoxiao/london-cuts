@@ -5,6 +5,7 @@
 **Working name:** London Cuts (placeholder; product may be renamed before public launch).
 **Live fallback:** `https://london-cuts.vercel.app/` (currently redirects to the public SE1 reader demo).
 **Future custom domain:** `zhouyixiaoxiao.org` (M6, after IONOS → Vercel DNS).
+**AI entry points:** `/llms.txt`, `/llms-full.txt`, `/api/openapi.json`, `/api/v1/projects`, `/mcp`.
 
 ---
 
@@ -34,6 +35,7 @@ open design-system/preview/brand-roundel.html
 ## Where to start
 
 - **Contributor or AI agent:** read `CLAUDE.md`, then `tasks/AGENTS.md`, then pick a task from `tasks/STATE.md`.
+- **Agent integration:** read `docs/agent-manifest.md`, `docs/api-contract.md`, and `docs/ai-discovery.md`.
 - **Reviewer / new teammate:** read `docs/requirements.md` → `docs/architecture.md` → `docs/data-model.md` → `docs/implementation-plan.md`.
 - **Designer:** read `design-system/README.md`.
 
@@ -62,6 +64,9 @@ open design-system/preview/brand-roundel.html
 - `docs/architecture.md` — how `web/` is structured
 - `docs/data-model.md` — target DB schema
 - `docs/implementation-plan.md` — milestone roadmap (plan v2.1: features-first, then infra)
+- `docs/agent-manifest.md` — callable surfaces, auth scopes, verification, and do-not-automate rules
+- `docs/api-contract.md` — REST and MCP contract notes
+- `docs/ai-discovery.md` — SEO/GEO/llms.txt strategy
 
 ## License
 

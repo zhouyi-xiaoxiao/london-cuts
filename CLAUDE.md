@@ -7,9 +7,11 @@ You're working in the London Cuts repo. Before any substantial change, read:
 3. `docs/architecture.md` — how it's structured
 4. `docs/data-model.md` — DB schema
 5. `docs/implementation-plan.md` — milestone roadmap
-6. `tasks/AGENTS.md` — the execution protocol (how to claim and finish tasks)
-7. `tasks/PARALLELISM.md` — subagent coordination rules
-8. `tasks/STATE.md` — current status of every task
+6. `docs/agent-manifest.md` — API/MCP/agent-callable surfaces and do-not-automate rules
+7. `docs/api-contract.md` and `docs/ai-discovery.md` — external AI/API surfaces
+8. `tasks/AGENTS.md` — the execution protocol (how to claim and finish tasks)
+9. `tasks/PARALLELISM.md` — subagent coordination rules
+10. `tasks/STATE.md` — current status of every task
 
 ## Mission
 
@@ -35,6 +37,8 @@ The HTML-era prototype in `archive/app-html-prototype-2026-04-20/` (after M0-T00
 Business code imports only from `web/lib/`:
 - `web/lib/storage.ts` (all DB reads/writes)
 - `web/lib/auth.ts` (current user)
+- `web/lib/agent-auth.ts` (machine-token scopes for AI/API/MCP clients)
+- `web/lib/public-content.ts` (canonical public DTOs for pages, API, MCP, sitemap, and llms.txt)
 - `web/lib/ai-provider.ts` (OpenAI)
 - `web/lib/email.ts` (Resend)
 - `web/lib/analytics.ts` (PostHog)
@@ -42,6 +46,13 @@ Business code imports only from `web/lib/`:
 - `web/lib/errors.ts` (typed errors)
 
 Never `import { createClient } from '@supabase/supabase-js'` outside `web/lib/`. Never `import OpenAI` outside `web/lib/ai-provider.ts`. Swapping providers should touch exactly one file.
+
+## Agent-native surfaces
+
+Public agent access should go through `/api/v1/*`, `/api/openapi.json`,
+`/mcp`, `/llms.txt`, or markdown citation packs. Do not scrape `/studio` when a
+public DTO/API/MCP resource answers the question. AI/write tools require an
+existing browser session or an `lc_pat_` Bearer token with the right scope.
 
 ## Design system is canonical
 
@@ -72,6 +83,7 @@ Don't invent new design values. Reuse or propose an update to `design-system/`.
 - Adding new npm dependencies (ask first)
 - Running migrations against production Supabase
 - Sending real emails outside test mode
+- Issuing or printing API tokens, invite codes, or magic links
 
 ## Commit messages
 

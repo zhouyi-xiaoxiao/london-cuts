@@ -93,7 +93,7 @@ interface SyncPayload {
 }
 
 export async function POST(req: Request) {
-  const gate = await gateApiRequest();
+  const gate = await gateApiRequest(req, "project:write");
   if (!gate.allowed) return gate.response;
 
   let payload: SyncPayload;
@@ -116,7 +116,10 @@ export async function POST(req: Request) {
   const ownerId = gate.profileId ?? DEFAULT_OWNER_ID;
   let db;
   try {
-    db = isM2Enabled() ? await getUserServerClient() : getServerClient();
+    db =
+      isM2Enabled() && gate.authKind === "session"
+        ? await getUserServerClient()
+        : getServerClient();
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : String(e) },

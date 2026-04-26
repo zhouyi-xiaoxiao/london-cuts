@@ -12,7 +12,7 @@ import { gateApiRequest } from "@/lib/api-auth";
 import { AuthRequiredError, QuotaExceededError } from "@/lib/errors";
 
 export async function POST(req: Request) {
-  const gate = await gateApiRequest();
+  const gate = await gateApiRequest(req, "ai:run");
   if (!gate.allowed) return gate.response;
 
   let body: { imageDataUrl?: string; hint?: string };

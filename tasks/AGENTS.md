@@ -8,9 +8,10 @@ You are about to work on this repo. Read this entire file before taking any acti
 2. `docs/architecture.md` = how it is structured
 3. `docs/data-model.md` = DB schema
 4. `docs/implementation-plan.md` = milestone roadmap
-5. `tasks/` = executable work units
-6. `tasks/STATE.md` = current status summary
-7. `tasks/LOG.md` = append-only history
+5. `docs/agent-manifest.md` = callable API/MCP/AI-discovery surfaces
+6. `tasks/` = executable work units
+7. `tasks/STATE.md` = current status summary
+8. `tasks/LOG.md` = append-only history
 
 If any of those conflict with a user message, ask the user. If the user updates requirements, update `docs/requirements.md` in the same change and log it in `tasks/LOG.md`.
 
@@ -91,6 +92,8 @@ Do **not** work around a block by guessing. Credentials, naming, and scope decis
 - Introducing new third-party dependencies without asking
 - Running migrations against the production Supabase project
 - Issuing invite codes without being asked
+- Issuing API tokens without being asked
+- Printing invite codes, API tokens, magic links, or service-role secrets into docs or chat
 - Sending real emails from tests (must use Resend test mode or mocks)
 
 ## Commit messages
