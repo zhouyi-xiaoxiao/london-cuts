@@ -31,6 +31,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "weekly",
         priority: 0.5,
       },
+      {
+        url: `${summary.apiUrl}/ai-visibility`,
+        lastModified: summary.updatedAt ?? summary.publishedAt ?? undefined,
+        changeFrequency: "weekly",
+        priority: 0.4,
+      },
     );
     const project = await getPublicProject(summary.handle, summary.slug);
     for (const stop of project?.stops ?? []) {

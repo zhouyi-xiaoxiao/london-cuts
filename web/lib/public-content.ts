@@ -57,6 +57,23 @@ export interface PublicStopDTO {
   postcard: PublicPostcardDTO;
 }
 
+export interface PublicFeaturedStopDTO {
+  n: string;
+  title: string;
+  slug: string;
+  mood: string;
+  location: string;
+  canonicalUrl: string;
+  heroImageUrl: string | null;
+}
+
+export interface PublicCitationGuidanceDTO {
+  project: string;
+  markdown: string;
+  stops: readonly string[];
+  doNotInfer: readonly string[];
+}
+
 export interface PublicProjectSummaryDTO {
   id: string;
   handle: string;
@@ -75,6 +92,12 @@ export interface PublicProjectSummaryDTO {
   markdownUrl: string;
   coverImageUrl: string | null;
   stopCount: number;
+  shortSummary: string;
+  retrievalKeywords: readonly string[];
+  featuredStops: readonly PublicFeaturedStopDTO[];
+  places: readonly string[];
+  imageCount: number;
+  citationGuidance: PublicCitationGuidanceDTO;
 }
 
 export interface PublicProjectDTO extends PublicProjectSummaryDTO {
@@ -82,6 +105,29 @@ export interface PublicProjectDTO extends PublicProjectSummaryDTO {
   assets: readonly PublicAssetDTO[];
   markdown: string;
 }
+
+interface DiscoveryStopInput {
+  n: string;
+  title: string;
+  slug: string;
+  mood: string;
+  canonicalUrl: string;
+  heroImageUrl: string | null;
+  location?: string | null;
+  label?: string | null;
+  code?: string | null;
+  heroAssetId?: string | null;
+}
+
+type PublicProjectDiscoveryFields = Pick<
+  PublicProjectSummaryDTO,
+  | "shortSummary"
+  | "retrievalKeywords"
+  | "featuredStops"
+  | "places"
+  | "imageCount"
+  | "citationGuidance"
+>;
 
 export function getAppBaseUrl(): string {
   const raw = process.env.NEXT_PUBLIC_APP_URL?.trim() || DEFAULT_BASE_URL;
@@ -188,15 +234,60 @@ export function projectMarkdown(project: PublicProjectDTO): string {
   const lines = [
     `# ${project.title}`,
     "",
-    project.subtitle ?? project.description,
+    project.shortSummary,
     "",
+    "## At a Glance",
+    "",
+    `- Summary: ${project.shortSummary}`,
     `- Author: ${project.authorName} (@${project.handle})`,
+    `- Places: ${listOrUnknown(project.places)}`,
+    `- Keywords: ${listOrUnknown(project.retrievalKeywords)}`,
     `- Canonical URL: ${project.canonicalUrl}`,
     `- API URL: ${project.apiUrl}`,
+    `- Markdown URL: ${project.markdownUrl}`,
     `- Published: ${project.publishedAt ?? "unknown"}`,
     `- Stops: ${project.stopCount}`,
+    `- Images: ${project.imageCount}`,
     "",
-    "## Stops",
+    "## Facts",
+    "",
+    `- Title: ${project.title}`,
+    `- Subtitle: ${project.subtitle ?? "none"}`,
+    `- Description: ${project.description}`,
+    `- Location: ${project.locationName ?? listOrUnknown(project.places)}`,
+    `- Default mode: ${project.defaultMode}`,
+    `- Tags: ${listOrUnknown(project.tags)}`,
+    `- Cover image: ${project.coverImageUrl ?? "none"}`,
+    "",
+    "## Stops Table",
+    "",
+    "| # | Stop | Mood | Place | Time | Chapter URL |",
+    "|---|---|---|---|---|---|",
+    ...project.stops.map(
+      (stop) =>
+        `| ${mdCell(stop.n)} | ${mdCell(stop.title)} | ${mdCell(
+          stop.mood,
+        )} | ${mdCell(stop.label || stop.code)} | ${mdCell(stop.time)} | ${
+          stop.canonicalUrl
+        } |`,
+    ),
+    "",
+    "## Image References",
+    "",
+    ...(project.assets.length > 0
+      ? [
+          "| Asset | URL | Alt | Caption |",
+          "|---|---|---|---|",
+          ...project.assets.map(
+            (asset) =>
+              `| ${mdCell(asset.id)} | ${asset.absoluteUrl ?? "none"} | ${mdCell(
+                asset.alt,
+              )} | ${mdCell(asset.caption)} |`,
+          ),
+        ]
+      : ["No public image assets are exposed for this project."]),
+    "",
+    "## Stop Notes",
     "",
   ];
 
@@ -222,11 +313,26 @@ export function projectMarkdown(project: PublicProjectDTO): string {
     lines.push("");
   }
 
-  lines.push("## Citation");
+  lines.push("## Citation URLs");
   lines.push("");
-  lines.push(
-    `When citing this project, prefer the canonical project URL ${project.canonicalUrl} and the stop URL for stop-level claims.`,
-  );
+  lines.push(`- Project canonical: ${project.canonicalUrl}`);
+  lines.push(`- Markdown pack: ${project.markdownUrl}`);
+  lines.push(`- Public API: ${project.apiUrl}`);
+  for (const stop of project.stops) {
+    lines.push(`- ${stop.n}. ${stop.title}: ${stop.canonicalUrl}`);
+    lines.push(`- ${stop.n}. ${stop.title} postcard: ${stop.postcard.canonicalUrl}`);
+  }
+  lines.push("");
+  lines.push("## Do-Not-Infer Notes");
+  lines.push("");
+  for (const note of project.citationGuidance.doNotInfer) {
+    lines.push(`- ${note}`);
+  }
+  lines.push("");
+  lines.push("## Citation Guidance");
+  lines.push("");
+  lines.push(`- ${project.citationGuidance.project}`);
+  lines.push(`- ${project.citationGuidance.markdown}`);
   return lines.join("\n").trimEnd() + "\n";
 }
 
@@ -300,7 +406,7 @@ export function stopJsonLd(
 
 export function projectMetadata(project: PublicProjectDTO): Metadata {
   const title = `${project.title} | London Cuts`;
-  const description = project.description;
+  const description = project.shortSummary || project.description;
   return {
     title,
     description,
@@ -403,29 +509,74 @@ async function listSupabaseProjectSummaries(): Promise<PublicProjectSummaryDTO[]
   const { data: stopRows } = projectIds.length
     ? await db
         .from("stops")
-        .select("project_id")
+        .select(
+          "project_id, legacy_n, order_index, slug, code, title, place, time_label, mood, display_label, hero_asset_id",
+        )
         .in("project_id", projectIds)
         .is("deleted_at", null)
+        .order("order_index", { ascending: true })
     : { data: [] };
   const stopCountByProject = new Map<string, number>();
+  const stopsByProject = new Map<string, DiscoveryStopInput[]>();
   for (const stop of stopRows ?? []) {
     const projectId = stop.project_id as string;
     stopCountByProject.set(projectId, (stopCountByProject.get(projectId) ?? 0) + 1);
+    const current = stopsByProject.get(projectId) ?? [];
+    const title = ((stop.title as string | null) ?? "").trim();
+    const slug = ((stop.slug as string | null) ?? stopSlug(title || "stop")).trim();
+    current.push({
+      n:
+        ((stop.legacy_n as string | null) ??
+          String((stop.order_index as number | null) ?? current.length + 1)),
+      title,
+      slug,
+      mood: ((stop.mood as string | null) ?? "").trim(),
+      location: (
+        (stop.place as string | null) ??
+        (stop.display_label as string | null) ??
+        (stop.code as string | null) ??
+        ""
+      ).trim(),
+      canonicalUrl: "",
+      heroImageUrl: null,
+      heroAssetId: (stop.hero_asset_id as string | null) ?? null,
+    });
+    stopsByProject.set(projectId, current);
   }
 
-  const { data: coverRows } = coverIds.length
+  const { data: assetRows } = projectIds.length
+    ? await db
+        .from("assets")
+        .select("id, project_id, storage_path")
+        .in("project_id", projectIds)
+        .is("deleted_at", null)
+    : { data: [] };
+  const imageCountByProject = new Map<string, number>();
+  const assetUrlById = new Map<string, string | null>();
+  for (const asset of assetRows ?? []) {
+    const projectId = asset.project_id as string | null;
+    if (projectId) {
+      imageCountByProject.set(projectId, (imageCountByProject.get(projectId) ?? 0) + 1);
+    }
+    assetUrlById.set(
+      asset.id as string,
+      absoluteUrl((asset.storage_path as string | null) ?? null),
+    );
+  }
+
+  const missingCoverIds = coverIds.filter((id) => !assetUrlById.has(id));
+  const { data: coverRows } = missingCoverIds.length
     ? await db
         .from("assets")
         .select("id, storage_path")
-        .in("id", coverIds)
+        .in("id", missingCoverIds)
         .is("deleted_at", null)
     : { data: [] };
   const coverById = new Map<string, string | null>();
   for (const cover of coverRows ?? []) {
-    coverById.set(
-      cover.id as string,
-      absoluteUrl((cover.storage_path as string | null) ?? null),
-    );
+    const url = absoluteUrl((cover.storage_path as string | null) ?? null);
+    coverById.set(cover.id as string, url);
+    assetUrlById.set(cover.id as string, url);
   }
 
   return projects.map((row) => {
@@ -435,6 +586,37 @@ async function listSupabaseProjectSummaries(): Promise<PublicProjectSummaryDTO[]
     };
     const handle = normalizeHandle(user.handle);
     const canonicalUrl = `${getAppBaseUrl()}/${handlePath(handle)}/${row.slug}`;
+    const markdownUrl = `${getAppBaseUrl()}/api/v1/projects/${encodeURIComponent(
+      handlePath(handle),
+    )}/${row.slug}/markdown`;
+    const featuredStops = (stopsByProject.get(row.id as string) ?? [])
+      .slice(0, 5)
+      .map((stop) => ({
+        ...stop,
+        canonicalUrl: `${canonicalUrl}/chapter/${stop.slug}`,
+        heroImageUrl: stop.heroAssetId
+          ? (assetUrlById.get(stop.heroAssetId) ?? null)
+          : null,
+      }));
+    const description =
+      ((row.description as string | null) ??
+        (row.subtitle as string | null) ??
+        `${row.title} by ${user.display_name ?? handle}`);
+    const tags = Array.isArray(row.tags) ? (row.tags as string[]) : [];
+    const imageCount = imageCountByProject.get(row.id as string) ?? 0;
+    const discovery = buildDiscoveryFields({
+      authorName: user.display_name ?? handle,
+      title: row.title as string,
+      subtitle: (row.subtitle as string | null) ?? null,
+      description,
+      locationName: (row.location_name as string | null) ?? null,
+      tags,
+      canonicalUrl,
+      markdownUrl,
+      stops: featuredStops,
+      stopCount: stopCountByProject.get(row.id as string) ?? featuredStops.length,
+      imageCount,
+    });
     return {
       id: row.id as string,
       handle,
@@ -442,26 +624,24 @@ async function listSupabaseProjectSummaries(): Promise<PublicProjectSummaryDTO[]
       slug: row.slug as string,
       title: row.title as string,
       subtitle: (row.subtitle as string | null) ?? null,
-      description:
-        ((row.description as string | null) ??
-          (row.subtitle as string | null) ??
-          `${row.title} by ${user.display_name ?? handle}`),
+      description,
       locationName: (row.location_name as string | null) ?? null,
       defaultMode: (row.default_mode as string | null) ?? "fashion",
-      tags: Array.isArray(row.tags) ? (row.tags as string[]) : [],
+      tags,
       publishedAt: (row.published_at as string | null) ?? null,
       updatedAt: (row.updated_at as string | null) ?? null,
       canonicalUrl,
       apiUrl: `${getAppBaseUrl()}/api/v1/projects/${encodeURIComponent(
         handlePath(handle),
       )}/${row.slug}`,
-      markdownUrl: `${getAppBaseUrl()}/api/v1/projects/${encodeURIComponent(
-        handlePath(handle),
-      )}/${row.slug}/markdown`,
+      markdownUrl,
       coverImageUrl: row.cover_asset_id
-        ? (coverById.get(row.cover_asset_id as string) ?? null)
+        ? (assetUrlById.get(row.cover_asset_id as string) ??
+          coverById.get(row.cover_asset_id as string) ??
+          null)
         : null,
       stopCount: stopCountByProject.get(row.id as string) ?? 0,
+      ...discovery,
     };
   });
 }
@@ -498,6 +678,26 @@ function runtimeToPublicProject(
   const coverAsset = project.coverAssetId
     ? assetById.get(project.coverAssetId)
     : assetDtos[assetDtos.length - 1];
+  const description =
+    project.subtitle ??
+    project.locationName ??
+    `${project.title}, a public London Cuts travel story.`;
+  const markdownUrl = `${getAppBaseUrl()}/api/v1/projects/${encodeURIComponent(
+    handlePath(normalizedHandle),
+  )}/${project.slug}/markdown`;
+  const discovery = buildDiscoveryFields({
+    authorName: project.author || normalizedHandle,
+    title: project.title,
+    subtitle: project.subtitle,
+    description,
+    locationName: project.locationName,
+    tags: project.tags ?? [],
+    canonicalUrl,
+    markdownUrl,
+    stops: stopDtos,
+    stopCount: stopDtos.length,
+    imageCount: assetDtos.filter((asset) => asset.absoluteUrl).length,
+  });
   const dto: Omit<PublicProjectDTO, "markdown"> = {
     id: project.id,
     handle: normalizedHandle,
@@ -505,10 +705,7 @@ function runtimeToPublicProject(
     slug: project.slug,
     title: project.title,
     subtitle: project.subtitle,
-    description:
-      project.subtitle ??
-      project.locationName ??
-      `${project.title}, a public London Cuts travel story.`,
+    description,
     locationName: project.locationName,
     defaultMode: project.defaultMode,
     tags: project.tags ?? [],
@@ -518,11 +715,10 @@ function runtimeToPublicProject(
     apiUrl: `${getAppBaseUrl()}/api/v1/projects/${encodeURIComponent(
       handlePath(normalizedHandle),
     )}/${project.slug}`,
-    markdownUrl: `${getAppBaseUrl()}/api/v1/projects/${encodeURIComponent(
-      handlePath(normalizedHandle),
-    )}/${project.slug}/markdown`,
+    markdownUrl,
     coverImageUrl: coverAsset?.absoluteUrl ?? null,
     stopCount: stopDtos.length,
+    ...discovery,
     stops: stopDtos,
     assets: assetDtos,
   };
@@ -583,6 +779,127 @@ function toAssetDto(asset: Asset): PublicAssetDTO {
     caption,
     styleId: asset.styleId ?? null,
   };
+}
+
+function buildDiscoveryFields(input: {
+  authorName: string;
+  title: string;
+  subtitle: string | null;
+  description: string;
+  locationName: string | null;
+  tags: readonly string[];
+  canonicalUrl: string;
+  markdownUrl: string;
+  stops: readonly DiscoveryStopInput[];
+  stopCount?: number;
+  imageCount: number;
+}): PublicProjectDiscoveryFields {
+  const featuredStops = input.stops.slice(0, 5).map((stop) => ({
+    n: stop.n,
+    title: stop.title,
+    slug: stop.slug,
+    mood: stop.mood,
+    location: stopLocation(stop),
+    canonicalUrl: stop.canonicalUrl,
+    heroImageUrl: stop.heroImageUrl,
+  }));
+  const places = uniqueClean([
+    input.locationName,
+    ...input.tags,
+    ...input.stops.flatMap((stop) => [
+      stop.location,
+      stop.label,
+      stop.code,
+      stop.title,
+    ]),
+  ]).slice(0, 16);
+  const stopTitles = input.stops.map((stop) => stop.title);
+  const retrievalKeywords = uniqueClean([
+    "London Cuts",
+    input.title,
+    input.subtitle,
+    input.authorName,
+    ...places,
+    ...input.tags,
+    ...stopTitles,
+    ...input.stops.map((stop) => stop.mood),
+  ]).slice(0, 32);
+  const shortSummary = truncateText(
+    [
+      firstSentence(input.description || input.subtitle || input.title),
+      input.locationName ? `Location: ${input.locationName}.` : "",
+      `${input.stopCount ?? input.stops.length} public stops and ${
+        input.imageCount
+      } public images.`,
+    ]
+      .filter(Boolean)
+      .join(" "),
+    280,
+  );
+  const stopCitations = input.stops.map(
+    (stop) => `${stop.title}: ${stop.canonicalUrl}`,
+  );
+  return {
+    shortSummary,
+    retrievalKeywords,
+    featuredStops,
+    places,
+    imageCount: input.imageCount,
+    citationGuidance: {
+      project: `Use ${input.canonicalUrl} for claims about the whole public project.`,
+      markdown: `Use ${input.markdownUrl} when an AI system needs structured facts, stop tables, image references, and do-not-infer notes.`,
+      stops: stopCitations,
+      doNotInfer: [
+        "Do not infer private itinerary details, unpublished drafts, auth state, invite codes, API tokens, or service-role access.",
+        "Do not claim author contact details, email addresses, or private account identifiers; public DTOs intentionally omit them.",
+        "Do not treat AI-generated postcard copy as a verified historical record.",
+        "Do not identify people, brands, or exact venues unless the public stop text or public image caption says so.",
+      ],
+    },
+  };
+}
+
+function stopLocation(stop: DiscoveryStopInput): string {
+  return cleanText(stop.location ?? stop.label ?? stop.code ?? "") || "unknown";
+}
+
+function firstSentence(value: string): string {
+  const cleaned = cleanText(value);
+  const match = cleaned.match(/^(.+?[.!?])\s/);
+  return match?.[1] ?? cleaned;
+}
+
+function truncateText(value: string, maxLength: number): string {
+  const cleaned = cleanText(value);
+  if (cleaned.length <= maxLength) return cleaned;
+  return `${cleaned.slice(0, maxLength - 1).trimEnd()}...`;
+}
+
+function uniqueClean(values: readonly (string | null | undefined)[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    const cleaned = cleanText(value ?? "");
+    if (!cleaned) continue;
+    const key = cleaned.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(cleaned);
+  }
+  return result;
+}
+
+function listOrUnknown(values: readonly string[]): string {
+  return values.length > 0 ? values.join(", ") : "unknown";
+}
+
+function mdCell(value: string | null | undefined): string {
+  const cleaned = cleanText(value ?? "");
+  return (cleaned || "unknown").replace(/\|/g, "\\|");
+}
+
+function cleanText(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
 }
 
 function seedProjectToRuntime(seed: typeof SEED_PROJECT, id: string): Project {

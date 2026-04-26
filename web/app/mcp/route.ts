@@ -5,6 +5,7 @@ import {
   requireAgentAccess,
   type AgentScope,
 } from "@/lib/agent-auth";
+import { auditPublicProjectVisibility } from "@/lib/ai-visibility";
 import {
   getAppBaseUrl,
   getPublicProject,
@@ -52,6 +53,7 @@ export async function GET() {
       "search_public_projects",
       "get_public_project",
       "get_public_stop",
+      "audit_public_project_visibility",
       "describe_photo",
       "compose_project",
       "generate_postcard",
@@ -176,7 +178,17 @@ async function callTool(req: Request, params: Record<string, unknown> | undefine
       const projects = await listPublicProjects();
       const data = query
         ? projects.filter((p) =>
-            [p.title, p.description, p.locationName, p.authorName, ...p.tags]
+            [
+              p.title,
+              p.description,
+              p.shortSummary,
+              p.locationName,
+              p.authorName,
+              ...p.tags,
+              ...p.places,
+              ...p.retrievalKeywords,
+              ...p.featuredStops.map((stop) => stop.title),
+            ]
               .filter(Boolean)
               .join(" ")
               .toLowerCase()
@@ -201,6 +213,14 @@ async function callTool(req: Request, params: Record<string, unknown> | undefine
       );
       if (!result) throw new Error("Public stop not found");
       return toolText(result);
+    }
+    case "audit_public_project_visibility": {
+      const project = await getPublicProject(
+        requireString(args.handle, "handle"),
+        requireString(args.slug, "slug"),
+      );
+      if (!project) throw new Error("Public project not found");
+      return toolText(auditPublicProjectVisibility(project));
     }
     case "describe_photo": {
       await requireMcpWriteAccess(req, "ai:run");
@@ -307,6 +327,12 @@ function toolDefinitions() {
       },
     },
     {
+      name: "audit_public_project_visibility",
+      description:
+        "Read a deterministic AI visibility audit for one public project.",
+      inputSchema: projectHandleSchema(),
+    },
+    {
       name: "describe_photo",
       description: "Authenticated AI vision description for one photo. Requires ai:run.",
       inputSchema: {
@@ -372,6 +398,13 @@ function promptDefinitions() {
       description: "Check whether a project has enough public/citation material.",
       arguments: [{ name: "project_json", description: "Project DTO JSON", required: true }],
     },
+    {
+      name: "improve_ai_visibility_pack",
+      description: "Turn an AI visibility audit into concrete public copy/API improvements.",
+      arguments: [
+        { name: "audit_json", description: "AI visibility audit JSON", required: true },
+      ],
+    },
   ];
 }
 
@@ -415,6 +448,20 @@ function getPrompt(params: Record<string, unknown> | undefined) {
           content: {
             type: "text",
             text: `Review this London Cuts project for publish readiness, citation quality, missing media, and AI-search clarity:\n\n${args.project_json ?? ""}`,
+          },
+        },
+      ],
+    };
+  }
+  if (name === "improve_ai_visibility_pack") {
+    return {
+      description: "Improve AI visibility from an audit.",
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: `Use this London Cuts AI visibility audit to propose concrete public DTO, markdown, metadata, image-alt, and citation-copy improvements. Preserve facts and do not invent private data:\n\n${args.audit_json ?? ""}`,
           },
         },
       ],

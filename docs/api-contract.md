@@ -17,8 +17,13 @@ the external interface.
 - `GET /api/v1/projects/{handle}/{slug}`
 - `GET /api/v1/projects/{handle}/{slug}/stops/{stop}`
 - `GET /api/v1/projects/{handle}/{slug}/markdown`
+- `GET /api/v1/projects/{handle}/{slug}/ai-visibility`
 
 The markdown endpoint is intended for AI citation and retrieval pipelines.
+Markdown packs use stable sections: At a Glance, Facts, Stops Table, Image
+References, Citation URLs, and Do-Not-Infer Notes. The AI visibility endpoint
+returns suggested queries, answer cards, missing metadata, weak citations,
+image-alt gaps, and recommended copy/API improvements.
 
 ## Authenticated Endpoints
 
@@ -32,6 +37,9 @@ The markdown endpoint is intended for AI citation and retrieval pipelines.
 The `/mcp` endpoint exposes the same capability set through JSON-RPC style MCP
 methods. Public read tools require no auth. AI and write tools require auth and
 validate the request `Origin` header when one is present.
+
+Public MCP tools include `audit_public_project_visibility`, which wraps
+`GET /api/v1/projects/{handle}/{slug}/ai-visibility`.
 
 ## OpenAPI
 

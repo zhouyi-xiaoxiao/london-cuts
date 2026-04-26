@@ -17,8 +17,16 @@ London Cuts supports both traditional crawl surfaces and AI retrieval surfaces.
 - `/llms-full.txt` includes API/MCP guidance and the public project index.
 - `/api/v1/projects/{handle}/{slug}/markdown` gives a clean citation pack so
   agents do not need to scrape styled HTML.
+- `/api/v1/projects/{handle}/{slug}/ai-visibility` gives a read-only audit for
+  suggested AI queries, answer cards, metadata gaps, weak citations, image-alt
+  gaps, and GEO/SEO recommendations.
 - `/api/openapi.json` describes callable REST endpoints.
 - `/mcp` exposes resources, tools, and prompts for MCP-compatible hosts.
+
+Public project DTOs include `shortSummary`, `retrievalKeywords`,
+`featuredStops`, `places`, `imageCount`, and `citationGuidance`. Keep those
+fields generated from `web/lib/public-content.ts` so all discovery surfaces
+agree.
 
 ## Citation Rules
 

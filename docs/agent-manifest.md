@@ -25,6 +25,7 @@ Public, no auth:
 - Read a public project: `GET /api/v1/projects/{handle}/{slug}`
 - Read a public stop: `GET /api/v1/projects/{handle}/{slug}/stops/{stop}`
 - Read markdown citation pack: `GET /api/v1/projects/{handle}/{slug}/markdown`
+- Audit AI visibility: `GET /api/v1/projects/{handle}/{slug}/ai-visibility`
 - Read OpenAPI: `GET /api/openapi.json`
 
 Authenticated:
@@ -44,6 +45,11 @@ MCP:
 - `prompts/list`
 - `prompts/get`
 
+Public tools include `search_public_projects`, `get_public_project`,
+`get_public_stop`, and `audit_public_project_visibility`. Authenticated tools
+include `describe_photo`, `compose_project`, `generate_postcard`, and
+`sync_project`.
+
 ## Auth
 
 Browser agents can use the existing Supabase cookie session. Machine agents use
@@ -57,6 +63,8 @@ Scopes:
 
 Tokens are stored only as SHA-256 hashes in `public.api_tokens`. Do not store or
 log plaintext tokens. Token issuance is a manual/operator action for v1.
+Use `web/scripts/issue-agent-token.mjs` only after `0003_api_tokens.sql` has
+been applied. Prefer `--store-keychain`; avoid `--print-once` in shared logs.
 
 ## Do Not Automate
 
@@ -82,6 +90,7 @@ Useful smoke checks:
 
 ```bash
 curl -sS http://localhost:3000/api/v1/projects
+curl -sS http://localhost:3000/api/v1/projects/%40ana-ishii/a-year-in-se1/ai-visibility
 curl -sS http://localhost:3000/api/openapi.json
 curl -sS http://localhost:3000/llms.txt
 curl -sS -X POST http://localhost:3000/mcp \

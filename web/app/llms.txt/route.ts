@@ -22,12 +22,12 @@ export async function GET() {
     "",
     ...projects.map(
       (project) =>
-        `- ${project.title} by ${project.authorName}: ${project.canonicalUrl} (markdown: ${project.markdownUrl})`,
+        `- ${project.title} by ${project.authorName}: ${project.canonicalUrl} (markdown: ${project.markdownUrl}; audit: ${project.apiUrl}/ai-visibility)`,
     ),
     "",
     "## Citation Guidance",
     "",
-    "Prefer canonical project URLs for project-level claims and chapter/postcard URLs for stop-level claims. Do not cite studio, onboarding, auth, invite, sync, migration, or MCP write surfaces.",
+    "Prefer markdown packs for structured extraction, canonical project URLs for project-level claims, and chapter/postcard URLs for stop-level claims. Do not cite studio, onboarding, auth, invite, sync, migration, or MCP write surfaces.",
   ];
   return new Response(lines.join("\n"), {
     headers: {

@@ -25,9 +25,21 @@ describe("public-content DTO seam", () => {
       canonicalUrl: expect.stringContaining("https://example.test/@ana-ishii/"),
       apiUrl: expect.stringContaining("/api/v1/projects/"),
       markdownUrl: expect.stringContaining("/markdown"),
+      shortSummary: expect.any(String),
+      retrievalKeywords: expect.arrayContaining(["London Cuts"]),
+      featuredStops: expect.any(Array),
+      places: expect.any(Array),
+      imageCount: expect.any(Number),
+      citationGuidance: expect.objectContaining({
+        doNotInfer: expect.arrayContaining([
+          expect.stringContaining("Do not infer private itinerary"),
+        ]),
+      }),
     });
     expect(JSON.stringify(projects)).not.toContain("authUserId");
-    expect(JSON.stringify(projects)).not.toContain("email");
+    expect(JSON.stringify(projects)).not.toMatch(
+      /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i,
+    );
     expect(JSON.stringify(projects)).not.toContain("service_role");
   });
 
@@ -36,7 +48,12 @@ describe("public-content DTO seam", () => {
     expect(project).not.toBeNull();
     expect(project?.stops).toHaveLength(13);
     expect(project?.markdown).toContain("# A Year Around London");
-    expect(project?.markdown).toContain("Canonical URL:");
+    expect(project?.markdown).toContain("## At a Glance");
+    expect(project?.markdown).toContain("## Facts");
+    expect(project?.markdown).toContain("## Stops Table");
+    expect(project?.markdown).toContain("## Image References");
+    expect(project?.markdown).toContain("## Citation URLs");
+    expect(project?.markdown).toContain("## Do-Not-Infer Notes");
     expect(project?.markdown).toContain("/chapter/regent-street-illuminations");
   });
 

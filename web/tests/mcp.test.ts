@@ -23,6 +23,9 @@ describe("MCP endpoint", () => {
       "get_public_project",
     );
     expect(json.result.tools.map((tool: { name: string }) => tool.name)).toContain(
+      "audit_public_project_visibility",
+    );
+    expect(json.result.tools.map((tool: { name: string }) => tool.name)).toContain(
       "generate_postcard",
     );
   });
@@ -40,5 +43,21 @@ describe("MCP endpoint", () => {
     );
     const json = await res.json();
     expect(json.result.content[0].text).toContain("A Year Around London");
+  });
+
+  it("audits public project visibility through a tool call without auth", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://example.test");
+    const { POST } = await import("@/app/mcp/route");
+    const res = await POST(
+      rpc("tools/call", {
+        name: "audit_public_project_visibility",
+        arguments: { handle: "@ana-ishii", slug: "a-year-in-se1" },
+      }),
+    );
+    const json = await res.json();
+    expect(json.result.content[0].text).toContain("ai_visibility_audit");
+    expect(json.result.content[0].text).toContain("suggestedQueries");
   });
 });
