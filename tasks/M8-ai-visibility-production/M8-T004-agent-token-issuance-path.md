@@ -30,6 +30,10 @@ completed_at: 2026-04-26T21:00Z
 - Added `web/scripts/issue-agent-token.mjs`.
 - Production token issuance was attempted only after public read-surface smoke,
   but Supabase returned `api_tokens table is not available`.
-- No production API token was issued.
-- Exact next step: open the Supabase SQL Editor for project `acymyvefnvydksxzzegw`
-  and run `web/supabase/migrations/0003_api_tokens.sql`, then rerun the script.
+- Follow-up on 2026-04-27: applied `0003_api_tokens.sql` in Supabase SQL Editor
+  and issued owner token `owner-full-agent-20260427` with scopes
+  `public:read,ai:run,project:write`.
+- Plaintext token is stored only in macOS Keychain service
+  `london-cuts-agent-token`; it was not printed or written to repo docs.
+- Negative-scope smoke used temporary token `tmp-readonly-negative-20260427`;
+  the temporary DB token was revoked and the Keychain entry removed.
