@@ -1,6 +1,6 @@
 # M8 — AI Visibility Productionization
 
-**Status:** In progress in the 2026-04-26 Codex pass.
+**Status:** Done in the 2026-04-26 Codex pass.
 
 Goal: turn the M7 local AI/API/MCP/GEO implementation into live, citeable,
 agent-callable production surfaces with stronger retrieval quality and a
@@ -14,7 +14,7 @@ controlled token-issuance path.
 | M8-T002 | Public DTO and markdown quality | DONE |
 | M8-T003 | AI visibility audit API/MCP/prompt | DONE |
 | M8-T004 | Production token issuance path | DONE |
-| M8-T005 | Production smoke and continuity | TODO |
+| M8-T005 | Production smoke and continuity | DONE |
 
 ## Agent Notes
 

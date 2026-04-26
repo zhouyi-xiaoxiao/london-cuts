@@ -1,10 +1,10 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-26T20:34Z
+**Last updated:** 2026-04-26T21:10Z
 
 ## Plan version
 
-**Plan v2.1 + M7 agent-native extension** (see `docs/implementation-plan.md` and `tasks/M7-ai-native-discovery/`): features-first, then live infra, then AI-native discovery/API/MCP surfaces.
+**Plan v2.1 + M8 AI visibility productionization** (see `docs/implementation-plan.md`, `tasks/M7-ai-native-discovery/`, and `tasks/M8-ai-visibility-production/`): features-first, then live infra, then AI-native discovery/API/MCP surfaces.
 
 ## Summary
 
@@ -20,12 +20,13 @@
 | M4 Public pages polish | ⏳ not started | OG images, ToS, privacy, feedback form |
 | M5 Observability | ⏳ not started | Sentry / PostHog / GitHub Actions CI |
 | M6 Launch | ⏳ not started | Custom domain `zhouyixiaoxiao.org` (IONOS CNAME + Vercel), invite codes, smoke test |
-| M7 AI-native discovery | ✅ implemented locally | Public-content DTO seam, API v1, OpenAPI, API-token migration, MCP endpoint, robots/sitemap/llms, metadata/JSON-LD, and agent docs. Needs post-deploy smoke after merge. |
+| M7 AI-native discovery | ✅ deployed | Public-content DTO seam, API v1, OpenAPI, API-token migration, MCP endpoint, robots/sitemap/llms, metadata/JSON-LD, and agent docs are live. |
+| M8 AI visibility productionization | ✅ deployed | DTO/markdown quality upgraded, `/ai-visibility` API + MCP tool live, `llms-full.txt` points to citation surfaces, production smoke passed. Token migration is not applied; no token issued. |
 
 ## Eligible next tracks (owner picks)
 
-1. **Deploy + smoke M7** — after merge/deploy, verify `/api/v1/projects`, `/api/openapi.json`, `/mcp`, `/llms.txt`, `/llms-full.txt`, `/robots.txt`, and `/sitemap.xml` in production. Apply `0003_api_tokens.sql` only when the owner wants machine-token access.
-2. **M4 public polish** — ToS, Privacy, feedback form, 404/loading states, OG image. This is the next best track before inviting broader EU/public beta traffic.
+1. **M4 public polish** — ToS, Privacy, feedback form, 404/loading states, OG image. This is the next best track before inviting broader EU/public beta traffic.
+2. **Apply `0003_api_tokens.sql` only if owner wants machine-token access now** — after applying in Supabase SQL Editor for project `acymyvefnvydksxzzegw`, run `web/scripts/issue-agent-token.mjs --store-keychain` and smoke scoped MCP auth. No token exists yet.
 3. **M5 observability + CI** — Sentry, PostHog, auth/invite/quota tests, GitHub Actions.
 4. **Live-smoke owner signup notification with a real fresh beta account** — code is implemented, deployed, and Vercel Production has `RESEND_API_KEY`, `OWNER_NOTIFY_EMAIL`, and `TRANSACTIONAL_FROM_EMAIL`; remaining optional check is to onboard a fresh plus-address and confirm the owner email arrives.
 5. **M6 custom domain** — owner action in IONOS + Vercel domain setup. Current shareable fallback is `https://london-cuts.vercel.app/` or the direct reader URL.
@@ -46,6 +47,13 @@ _none_
 
 ## Recently completed
 
+- **M8 AI visibility productionization** (2026-04-26T21:10Z):
+  - Shipped M7 to production and verified `/api/v1/projects`, `/api/openapi.json`, `/mcp`, `/llms.txt`, `/llms-full.txt`, `/robots.txt`, and `/sitemap.xml`.
+  - Upgraded public DTOs with `shortSummary`, `retrievalKeywords`, `featuredStops`, `places`, `imageCount`, and `citationGuidance`.
+  - Rewrote markdown citation packs with At a Glance, Facts, Stops Table, Image References, Citation URLs, and Do-Not-Infer Notes.
+  - Added `GET /api/v1/projects/{handle}/{slug}/ai-visibility`, OpenAPI schema/path, MCP tool `audit_public_project_visibility`, and prompt `improve_ai_visibility_pack`.
+  - Added `web/scripts/issue-agent-token.mjs`; production token issuance stopped with the SQL Editor instruction because `public.api_tokens` is not available. No API token was issued.
+  - Verification: `pnpm typecheck`, `pnpm lint`, `pnpm test` (20 files, 78 tests), `pnpm build`, secret scan, and production content smoke.
 - **M7 AI-native MCP/API/SEO/GEO surfaces** (2026-04-26T20:34Z):
   - Added `web/lib/public-content.ts` as the canonical public DTO/markdown/metadata/JSON-LD seam.
   - Added REST API v1, OpenAPI, API-token auth seam, and migration `0003_api_tokens.sql`.

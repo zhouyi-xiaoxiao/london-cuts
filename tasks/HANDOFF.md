@@ -15,9 +15,9 @@ A creator tool for documenting a single-location trip (anywhere in the world) wi
 `docs/implementation-plan.md` is at **v2.1** — features-first ordering:
 M0 consolidation → M-fast → M-preview → **M-iter (F-I001..F-I039 CLOSED)** → **M1 Supabase (LIVE)** → **M2 Auth+invites (LIVE + verified + preview gate retired)** → M4/M5/M6.
 
-**As of 2026-04-25T23:10Z**:
+**As of 2026-04-26T21:10Z**:
 - **M-preview LIVE, gate retired**: `https://london-cuts.vercel.app` serves commits on `main`. `/` redirects to the public reader demo `/@ana-ishii/a-year-in-se1`, so the main URL is shareable. The public demo is now `A Year Around London`: 13 static seed photos, 13 stops, and `se1-13` as cover from `web/public/seed-images/`. Vercel auto-deploy on every push to `main`. Custom domain `zhouyixiaoxiao.org` NOT yet wired. `PREVIEW_PASSWORD` has been removed from Vercel envs; `web/proxy.ts` is now only an emergency no-op brake if that env var is set again.
-- **M7 AI-native discovery/API/MCP implemented locally (2026-04-26)**: new canonical public DTO seam `web/lib/public-content.ts`; public REST API v1 at `/api/v1/projects`; OpenAPI at `/api/openapi.json`; minimal MCP JSON-RPC endpoint at `/mcp`; discovery files `/llms.txt`, `/llms-full.txt`, `/robots.txt`, `/sitemap.xml`; dynamic metadata + JSON-LD for public project/chapter/postcard pages; machine-token auth seam `web/lib/agent-auth.ts`; migration `web/supabase/migrations/0003_api_tokens.sql`. Production migration was NOT applied and no real API token was issued.
+- **M7/M8 AI-native discovery/API/MCP live (2026-04-26)**: canonical public DTO seam `web/lib/public-content.ts`; public REST API v1 at `/api/v1/projects`; OpenAPI at `/api/openapi.json`; MCP JSON-RPC endpoint at `/mcp`; discovery files `/llms.txt`, `/llms-full.txt`, `/robots.txt`, `/sitemap.xml`; metadata + JSON-LD for public project/chapter/postcard pages. M8 adds richer DTO fields, structured markdown citation packs, `GET /api/v1/projects/{handle}/{slug}/ai-visibility`, MCP tool `audit_public_project_visibility`, and token issuance script `web/scripts/issue-agent-token.mjs`. Production smoke passed. `0003_api_tokens.sql` is NOT applied and no real API token was issued.
 - **M-iter: 18/21+ shipped.** F-I001..F-I018. The 4-stream sprint on 2026-04-23 closed the biggest audit gaps. Still open: **VariantsRow only** (deferred to its own session per `tasks/AUDIT-WORKSPACE.md` M3 recommendation — 345-line AI-generation UI, real $ spend, needs undivided attention).
   - F-I001..F-I011: font swap / cinema letterbox / postcard flip / publish URL / atlas brightness / spine add-remove-move / per-mode postcard-front + chapter grammars / variant cache
   - F-I012: production sync end-to-end verified via curl (POST /api/sync/upsert → Supabase Storage CDN → HTTP 200)
@@ -137,25 +137,28 @@ Rollback = set env `M2_AUTH_ENABLED=false`. No DB rollback needed — migration 
 
 ## AI-native API/MCP/GEO status (2026-04-26)
 
-Implemented locally:
+Live in production:
 - Public REST API v1:
   - `GET /api/v1/projects`
   - `GET /api/v1/projects/{handle}/{slug}`
   - `GET /api/v1/projects/{handle}/{slug}/stops/{stop}`
   - `GET /api/v1/projects/{handle}/{slug}/markdown`
+  - `GET /api/v1/projects/{handle}/{slug}/ai-visibility`
 - Authenticated API v1 wrappers:
   - `POST /api/v1/ai/describe-photo` (`ai:run`)
   - `POST /api/v1/ai/compose-project` (`ai:run`)
   - `POST /api/v1/ai/generate-postcard` (`ai:run`)
   - `POST /api/v1/projects/sync` (`project:write`)
-- MCP endpoint `/mcp`: supports `initialize`, `resources/list`, `resources/read`, `tools/list`, `tools/call`, `prompts/list`, and `prompts/get`.
+- MCP endpoint `/mcp`: supports `initialize`, `resources/list`, `resources/read`, `tools/list`, `tools/call`, `prompts/list`, and `prompts/get`. Public tools include `search_public_projects`, `get_public_project`, `get_public_stop`, and `audit_public_project_visibility`.
 - Discovery: `/llms.txt`, `/llms-full.txt`, `/api/openapi.json`, `/robots.txt`, `/sitemap.xml`, plus public-page metadata and JSON-LD.
+- Public DTO quality: projects expose `shortSummary`, `retrievalKeywords`, `featuredStops`, `places`, `imageCount`, and `citationGuidance`. Markdown packs include At a Glance, Facts, Stops Table, Image References, Citation URLs, and Do-Not-Infer Notes.
 - API tokens: migration `0003_api_tokens.sql`, prefix `lc_pat_`, scopes `public:read`, `ai:run`, `project:write`, token hash only.
 
 Not done automatically:
 - Production DB migration `0003_api_tokens.sql` has not been applied.
 - No API token was issued.
-- Production smoke for M7 should run after deployment.
+- Attempted token issuance after production read-surface smoke stopped with: open the Supabase SQL Editor for project `acymyvefnvydksxzzegw` and run `web/supabase/migrations/0003_api_tokens.sql`, then rerun `web/scripts/issue-agent-token.mjs --store-keychain`.
+- Production smoke passed for public reader, `/api/v1/projects`, `/api/openapi.json`, `/llms.txt`, `/llms-full.txt`, `/robots.txt`, `/sitemap.xml`, `/mcp`, markdown sections, and MCP audit tool call.
 
 ### Auth email delivery status (2026-04-24)
 

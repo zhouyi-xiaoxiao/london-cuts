@@ -28,5 +28,8 @@ completed_at: 2026-04-26T21:00Z
 ## Trace
 
 - Added `web/scripts/issue-agent-token.mjs`.
-- No production API token was issued in this task.
-- `0003_api_tokens.sql` remains an explicit owner/operator step.
+- Production token issuance was attempted only after public read-surface smoke,
+  but Supabase returned `api_tokens table is not available`.
+- No production API token was issued.
+- Exact next step: open the Supabase SQL Editor for project `acymyvefnvydksxzzegw`
+  and run `web/supabase/migrations/0003_api_tokens.sql`, then rerun the script.

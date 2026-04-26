@@ -186,6 +186,11 @@ async function main() {
     scopes: args.scopes,
   });
   if (insertError) {
+    if (isMissingRelation(insertError)) {
+      console.error("api_tokens table is not available.");
+      console.error(SQL_EDITOR_INSTRUCTION);
+      process.exit(1);
+    }
     console.error(insertError.message);
     process.exit(1);
   }
