@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-27T20:52Z
+**Last updated:** 2026-04-27T21:51Z
 
 ## Plan version
 
@@ -22,12 +22,12 @@
 | M6 Launch | ⏳ not started | Custom domain `zhouyixiaoxiao.org` (IONOS CNAME + Vercel), invite codes, smoke test |
 | M7 AI-native discovery | ✅ deployed | Public-content DTO seam, API v1, OpenAPI, API-token migration, MCP endpoint, robots/sitemap/llms, metadata/JSON-LD, and agent docs are live. |
 | M8 AI visibility productionization | ✅ deployed | DTO/markdown quality upgraded, `/ai-visibility` API + MCP tool live, `llms-full.txt` points to citation surfaces, production smoke passed. Agent-token migration applied; owner full-scope token stored in Keychain. |
-| v1.2 Bilingual active surfaces | 🧪 implemented locally | English + Simplified Chinese for active UI/API/agent/discovery/docs. Added `0004_i18n_translations.sql`, locale resolver/switcher, seed translations, DTO localization, OpenAPI/MCP/llms localization, sitemap alternates, and translation-aware Studio text edits. Production migration + seed resync still pending. |
+| v1.2 Bilingual active surfaces | ✅ deployed | English + Simplified Chinese for active UI/API/agent/discovery/docs. `0004_i18n_translations.sql` applied in production, seed demo `translations.zh` refreshed for projects/stops/postcards/assets, and production smoke passed for `/zh`, `/en`, API v1, OpenAPI, MCP, llms, sitemap alternates, and DB fallback/base-field behavior. |
 
 ## Eligible next tracks (owner picks)
 
 1. **M4 public polish** — ToS, Privacy, feedback form, 404/loading states, OG image. This is the next best track before inviting broader EU/public beta traffic.
-2. **Bilingual rollout** — apply `0004_i18n_translations.sql`, resync seed/demo translations, deploy, then smoke `/zh`, `/en`, `?lang=zh`, OpenAPI, llms, MCP, sitemap alternates, and Studio edit persistence. Do not print secrets/tokens.
+2. **Authenticated bilingual Studio smoke** — optional follow-up with a normal email sign-in. Do not use admin-generated callback URLs in browser tools that echo final URLs.
 3. **Use owner agent token for controlled agent/MCP operations** — token label `owner-full-agent-20260427`, scopes `public:read,ai:run,project:write`, stored in macOS Keychain service `london-cuts-agent-token`. Do not print or commit the token.
 4. **M5 observability + CI** — Sentry, PostHog, auth/invite/quota tests, GitHub Actions.
 5. **Live-smoke owner signup notification with a real fresh beta account** — code is implemented, deployed, and Vercel Production has `RESEND_API_KEY`, `OWNER_NOTIFY_EMAIL`, and `TRANSACTIONAL_FROM_EMAIL`; remaining optional check is to onboard a fresh plus-address and confirm the owner email arrives.
