@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-27T21:51Z
+**Last updated:** 2026-04-28T01:55Z
 
 ## Plan version
 
@@ -49,6 +49,11 @@ _none_
 
 ## Recently completed
 
+- **F-I040 atlas viewport stability** (2026-04-28T01:55Z):
+  - Owner reported the MapLibre atlas drifts/snaps to a different position when zooming. Read [web/components/map/atlas.tsx](web/components/map/atlas.tsx) and identified three converging causes: `placeMarkers` registered on BOTH `idle` and `load` (so `fitBounds` ran twice on initial settle); no "user has interacted" gate (so any later `setStyle`/HMR/stop change could re-snap the camera); and no `ResizeObserver` on the map container (so when the spine collapses at <900px the canvas projection desyncs from on-screen coordinates).
+  - Fix: refactored `placeMarkersRef` into a single render-phase entry point gated by `didInitialFitRef` + `userMovedRef`. User-input listeners (`dragstart`, `zoomstart`, `wheel`, `pitchstart`, `rotatestart` — *not* `movestart`, since that fires for programmatic `fitBounds`) flip `userMovedRef`. Dropped the duplicate `idle` listener; only `load` survives. Added a `ResizeObserver` on the container that calls `map.resize()`, with cleanup that detaches user-input listeners + disconnects the observer before tearing down the map.
+  - Test infra upgrade in [web/tests/atlas.test.tsx](web/tests/atlas.test.tsx): replaced the synchronous `FakeMap.once` stub with a real event-emitter, added `fitBounds`/`resize` spies, and polyfilled `globalThis.ResizeObserver`. New `describe("F-I040 viewport stability")` block: 9 cases covering one-shot fitBounds, no re-fit on dup load / mode change / re-render, dragstart suppression, container resize, user-input wiring, and "no idle listener" assertion.
+  - Verification: `pnpm typecheck` + `pnpm test atlas` (12/12) + browser smoke at `http://localhost:3000/atlas` (initial bounds frame UK + Reykjavík correctly; viewport 1280→800 shrinks the canvas via `map.resize`; debug logs confirmed `ResizeObserver fired → map.resize() called → canvas` matches container width). No new deps.
 - **M8 AI visibility productionization** (2026-04-26T21:10Z):
   - Shipped M7 to production and verified `/api/v1/projects`, `/api/openapi.json`, `/mcp`, `/llms.txt`, `/llms-full.txt`, `/robots.txt`, and `/sitemap.xml`.
   - Upgraded public DTOs with `shortSummary`, `retrievalKeywords`, `featuredStops`, `places`, `imageCount`, and `citationGuidance`.

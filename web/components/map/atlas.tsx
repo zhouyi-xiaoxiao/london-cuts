@@ -415,6 +415,7 @@ type MaplibreMap = {
   off?: (event: string, cb: () => void) => unknown;
   fitBounds: (bounds: unknown, opts: unknown) => unknown;
   project: (coord: [number, number]) => { x: number; y: number };
+  resize?: () => void;
 };
 type MaplibreMarker = {
   remove: () => void;
@@ -482,6 +483,23 @@ export function Atlas({
   // Same pattern for the overlay repositioner so the `move` listener
   // always sees the current stops / jitter.
   const repositionHoverCardRef = useRef<() => void>(() => undefined);
+  // F-I040 viewport stability state machine. `didInitialFitRef` flips
+  // true after the first successful auto-fit so we never fight the
+  // user's own zoom/pan. `userMovedRef` flips true on the first
+  // user-input event (drag, wheel, pinch, rotate) — programmatic
+  // movement from `fitBounds` does NOT flip it, by design (we listen
+  // to the user-only events, not `movestart`).
+  const didInitialFitRef = useRef(false);
+  const userMovedRef = useRef(false);
+  // Latest stops, mirrored into a ref so `placeMarkersRef` reads fresh
+  // data even if it's invoked from a captured closure (defensive — the
+  // boot effect's `.once("load")` listener should fire only once, but
+  // we keep the always-latest pattern consistent with the rest of this
+  // file).
+  const stopsRef = useRef<readonly AtlasStop[]>(stops);
+  // Single re-fit-and-render entry point. Called from the boot effect's
+  // `load` listener and from the stops-change effect below.
+  const placeMarkersRef = useRef<() => void>(() => undefined);
 
   // Missing-coord accounting. Drives the "📍 N stops need coordinates"
   // chip and the jitter-on-render behaviour. Recomputed per render;
@@ -509,6 +527,9 @@ export function Atlas({
   // rules and can cause stale reads; doing it in `useEffect` is the
   // idiomatic pattern.
   useEffect(() => {
+    // Mirror the latest stops into a ref so `placeMarkersRef` reads
+    // current data even from a captured-once event listener.
+    stopsRef.current = stops;
     // Compute effective coords once and share between renderMarkers and
     // the overlay repositioner. Jitters default-coord stops so they
     // don't stack on top of each other at 51.505 / -0.09.
@@ -601,6 +622,31 @@ export function Atlas({
       const y = Math.round(screen.y - cardH - 14);
       cardEl.style.transform = `translate(${x}px, ${y}px)`;
     };
+
+    // F-I040 — single re-render-and-maybe-fit entry point. Always
+    // refreshes markers; auto-fits the viewport ONLY if we haven't
+    // already fit and the user hasn't moved the map yet. Using
+    // `stopsRef.current` (not the closed-over `stops`) is defensive:
+    // the only caller that could be stale is the boot effect's
+    // `.once("load")` handler, which fires once and is then removed.
+    placeMarkersRef.current = () => {
+      const map = mapRef.current;
+      const maplibregl = maplibreRef.current;
+      if (!map || !maplibregl) return;
+      renderMarkersRef.current();
+      if (didInitialFitRef.current) return;
+      if (userMovedRef.current) return;
+      const currentStops = stopsRef.current;
+      if (currentStops.length <= 1) return;
+      try {
+        const bounds = new maplibregl.LngLatBounds();
+        currentStops.forEach((s) => bounds.extend([s.lng, s.lat]));
+        map.fitBounds(bounds, { padding: 48, duration: 0, maxZoom: 14 });
+        didInitialFitRef.current = true;
+      } catch {
+        /* fitBounds can throw on degenerate bounds; swallow. */
+      }
+    };
   }, [stops, mode, onStopClick]);
 
   // ─── Dynamic library load + map construction ────────────────────────
@@ -608,6 +654,17 @@ export function Atlas({
     if (failed) return;
     if (typeof window === "undefined") return;
     let cancelled = false;
+    // Hoisted out of the async IIFE so the cleanup closure below can
+    // see them and tear them down on unmount. F-I040.
+    let onUserInput: (() => void) | null = null;
+    let resizeObserver: ResizeObserver | null = null;
+    const USER_EVENTS = [
+      "dragstart",
+      "zoomstart",
+      "wheel",
+      "pitchstart",
+      "rotatestart",
+    ] as const;
 
     (async () => {
       try {
@@ -664,28 +721,44 @@ export function Atlas({
           /* swallow — test stubs may not implement .on */
         }
 
-        // Render markers once the style has loaded. `idle` fires after
-        // every tile has settled, so it's the most reliable moment.
-        const placeMarkers = () => {
-          renderMarkersRef.current();
-          if (stops.length > 1) {
-            try {
-              const bounds = new maplibregl.LngLatBounds();
-              // Use real coords where available; fall back to default
-              // for missing-coord stops so bounds stay non-degenerate.
-              stops.forEach((s) => bounds.extend([s.lng, s.lat]));
-              map.fitBounds(bounds, {
-                padding: 48,
-                duration: 0,
-                maxZoom: 14,
-              });
-            } catch {
-              // fitBounds can throw on degenerate bounds; swallow.
-            }
-          }
+        // F-I040 — flip `userMovedRef` on the first real user input so
+        // any later `placeMarkersRef` call short-circuits before
+        // re-fitting the viewport. We listen to user-only events
+        // (drag/zoom/wheel/pinch/rotate START), NOT `movestart`, because
+        // `fitBounds` itself fires `movestart` and would self-trigger.
+        onUserInput = () => {
+          userMovedRef.current = true;
         };
-        map.once("idle", placeMarkers);
-        map.once("load", placeMarkers);
+        try {
+          USER_EVENTS.forEach((ev) => map.on(ev, onUserInput!));
+        } catch {
+          /* swallow — test stubs may not implement these events */
+        }
+
+        // F-I040 — ResizeObserver on the map container so MapLibre's
+        // canvas + projection track responsive layout changes (e.g.
+        // the studio spine collapsing at <900px). Without this, click
+        // coordinates desync from on-screen pin positions and the user
+        // perceives "the map drifted when I zoomed".
+        if (
+          typeof ResizeObserver !== "undefined" &&
+          containerRef.current
+        ) {
+          resizeObserver = new ResizeObserver(() => {
+            try {
+              map.resize?.();
+            } catch {
+              /* swallow */
+            }
+          });
+          resizeObserver.observe(containerRef.current);
+        }
+
+        // Render markers + (first time only) frame the viewport once
+        // the initial style has loaded. The state machine inside
+        // `placeMarkersRef` enforces the "fit at most once, never after
+        // user input" rule.
+        map.once("load", () => placeMarkersRef.current());
       } catch (err) {
         console.warn("[atlas] MapLibre failed, using SVG fallback", err);
         if (!cancelled) setFailed(true);
@@ -694,6 +767,22 @@ export function Atlas({
 
     return () => {
       cancelled = true;
+      // F-I040 — drop the ResizeObserver and user-input listeners
+      // before tearing the map down. Order matters: detach listeners
+      // first so a final resize event during teardown doesn't try to
+      // call `.resize()` on a half-removed map.
+      resizeObserver?.disconnect();
+      resizeObserver = null;
+      if (mapRef.current && onUserInput) {
+        try {
+          USER_EVENTS.forEach((ev) =>
+            mapRef.current?.off?.(ev, onUserInput!),
+          );
+        } catch {
+          /* swallow */
+        }
+      }
+      onUserInput = null;
       // Clean up markers + map on unmount or prop change.
       markersRef.current.forEach((m) => {
         try {
@@ -738,9 +827,13 @@ export function Atlas({
   }, [mode, ready, failed]);
 
   // ─── Re-render markers if the stops prop changes after mount.
+  // F-I040 — go through `placeMarkersRef` (not bare `renderMarkersRef`)
+  // so a newly-added stop can frame the viewport ONLY if the user
+  // hasn't moved the map yet. After the user pans/zooms, the inner
+  // state machine short-circuits and only refreshes markers.
   useEffect(() => {
     if (!ready || failed) return;
-    renderMarkersRef.current();
+    placeMarkersRef.current();
   }, [stops, ready, failed]);
 
   // ─── The render. SVG fallback if MapLibre blew up.
