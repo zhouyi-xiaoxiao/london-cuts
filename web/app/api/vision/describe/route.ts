@@ -10,12 +10,13 @@ import { NextResponse } from "next/server";
 import { describePhoto, getSpendToDateCents } from "@/lib/ai-provider";
 import { gateApiRequest } from "@/lib/api-auth";
 import { AuthRequiredError, QuotaExceededError } from "@/lib/errors";
+import { normalizeLocale, resolveLocaleFromRequest } from "@/lib/i18n";
 
 export async function POST(req: Request) {
   const gate = await gateApiRequest(req, "ai:run");
   if (!gate.allowed) return gate.response;
 
-  let body: { imageDataUrl?: string; hint?: string };
+  let body: { imageDataUrl?: string; hint?: string; locale?: string; outputLocale?: string };
   try {
     body = await req.json();
   } catch {
@@ -46,9 +47,13 @@ export async function POST(req: Request) {
     typeof hint === "string" && hint.trim().length > 0
       ? hint.trim().slice(0, 400)
       : null;
+  const locale =
+    normalizeLocale(body.outputLocale) ??
+    normalizeLocale(body.locale) ??
+    resolveLocaleFromRequest(req);
 
   try {
-    const result = await describePhoto(imageDataUrl, { hint: cleanHint });
+    const result = await describePhoto(imageDataUrl, { hint: cleanHint, locale });
     return NextResponse.json({
       ...result,
       spendToDateCents: getSpendToDateCents(),

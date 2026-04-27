@@ -8,6 +8,8 @@
 
 import Link from "next/link";
 
+import { useT } from "@/components/i18n-provider";
+
 export interface NotFoundCardProps {
   /** Human-readable description of what we were looking for. */
   what: string;
@@ -16,6 +18,7 @@ export interface NotFoundCardProps {
 }
 
 export function NotFoundCard({ what, hint }: NotFoundCardProps) {
+  const t = useT();
   return (
     <main
       style={{
@@ -29,7 +32,7 @@ export function NotFoundCard({ what, hint }: NotFoundCardProps) {
         gap: 18,
       }}
     >
-      <div className="eyebrow">Nothing here — yet</div>
+      <div className="eyebrow">{t("notFound.eyebrow")}</div>
       <h1
         style={{
           fontFamily: "var(--mode-display-font, var(--f-serif, serif))",
@@ -38,13 +41,10 @@ export function NotFoundCard({ what, hint }: NotFoundCardProps) {
           margin: 0,
         }}
       >
-        {what} isn&apos;t in this browser.
+        {what} {t("notFound.suffix")}
       </h1>
       <p style={{ lineHeight: 1.7, opacity: 0.8, maxWidth: "46ch" }}>
-        London Cuts is in its early public-beta phase — every reader&apos;s
-        projects live in their own browser until we switch on the cloud
-        backend. If someone shared this link with you, ask them to
-        publish (or re-publish) from their device.
+        {t("notFound.body")}
       </p>
       {hint && (
         <p
@@ -63,10 +63,10 @@ export function NotFoundCard({ what, hint }: NotFoundCardProps) {
         }}
       >
         <Link href="/atlas" className="btn btn-solid">
-          Open the atlas
+          {t("notFound.openAtlas")}
         </Link>
         <Link href="/studio" className="btn">
-          Enter your studio
+          {t("notFound.enterStudio")}
         </Link>
       </div>
     </main>

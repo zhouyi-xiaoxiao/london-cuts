@@ -20,9 +20,12 @@ import {
 } from "@/lib/ai-provider";
 import { gateApiRequest } from "@/lib/api-auth";
 import { AuthRequiredError, QuotaExceededError } from "@/lib/errors";
+import { normalizeLocale, resolveLocaleFromRequest } from "@/lib/i18n";
 
 interface RequestBody {
   photos?: readonly ComposePhotoInput[];
+  locale?: string;
+  outputLocale?: string;
 }
 
 export async function POST(req: Request) {
@@ -59,9 +62,13 @@ export async function POST(req: Request) {
       );
     }
   }
+  const locale =
+    normalizeLocale(body.outputLocale) ??
+    normalizeLocale(body.locale) ??
+    resolveLocaleFromRequest(req);
 
   try {
-    const result = await composeProject(photos);
+    const result = await composeProject(photos, { locale });
     return NextResponse.json({
       ...result,
       spendToDateCents: getSpendToDateCents(),

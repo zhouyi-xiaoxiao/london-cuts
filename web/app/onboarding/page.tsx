@@ -17,6 +17,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+import { LanguageSwitcher, useT } from "@/components/i18n-provider";
+
 const HANDLE_RE = /^[a-z0-9-]{2,32}$/;
 const DISPLAY_MIN = 2;
 const DISPLAY_MAX = 60;
@@ -72,6 +74,7 @@ export default function OnboardingPage() {
   const [code, setCode] = useState("");
   const [handleTouched, setHandleTouched] = useState(false);
   const [state, setState] = useState<SubmitState>({ kind: "idle" });
+  const t = useT();
 
   // Check auth + pre-fill from email on mount.
   useEffect(() => {
@@ -193,7 +196,10 @@ export default function OnboardingPage() {
         }}
       >
         <div className="eyebrow" style={{ marginBottom: 10 }}>
-          London Cuts · Welcome
+          {t("onboarding.eyebrow")}
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <LanguageSwitcher compact />
         </div>
         <h1
           style={{
@@ -204,7 +210,7 @@ export default function OnboardingPage() {
             letterSpacing: "-0.01em",
           }}
         >
-          Set up your travel journal.
+          {t("onboarding.title")}
         </h1>
 
         {auth.kind === "checking" && (
@@ -218,14 +224,14 @@ export default function OnboardingPage() {
               letterSpacing: "0",
             }}
           >
-            Checking your session…
+            {t("onboarding.checking")}
           </p>
         )}
 
         {auth.kind === "signed-out" && (
           <div style={{ marginTop: 18 }}>
             <p style={{ fontSize: 15, lineHeight: 1.55, margin: 0 }}>
-              Sign in first. We&apos;ll bounce you back here after.
+              {t("onboarding.signInFirst")}
             </p>
             <Link
               href="/sign-in?next=/onboarding"
@@ -239,7 +245,7 @@ export default function OnboardingPage() {
                 justifyContent: "center",
               }}
             >
-              Go to sign-in
+              {t("onboarding.goSignIn")}
             </Link>
           </div>
         )}
@@ -247,8 +253,7 @@ export default function OnboardingPage() {
         {auth.kind === "already-onboarded" && (
           <div style={{ marginTop: 18 }}>
             <p style={{ fontSize: 15, lineHeight: 1.55, margin: 0 }}>
-              You&apos;re already set up as{" "}
-              <strong>@{auth.handle}</strong>.
+              {t("onboarding.already", { handle: auth.handle })}
             </p>
             <Link
               href="/studio"
@@ -262,7 +267,7 @@ export default function OnboardingPage() {
                 justifyContent: "center",
               }}
             >
-              Open your studio
+              {t("onboarding.openStudio")}
             </Link>
           </div>
         )}
@@ -278,8 +283,7 @@ export default function OnboardingPage() {
                 opacity: 0.82,
               }}
             >
-              Signed in as <strong>{auth.email}</strong>. Just three quick
-              things before you start writing.
+              {t("onboarding.signedIn", { email: auth.email })}
             </p>
 
             {/* Field 1 — Your name */}
@@ -292,7 +296,7 @@ export default function OnboardingPage() {
                   marginBottom: 4,
                 }}
               >
-                Your name
+                {t("onboarding.name")}
               </span>
               <span
                 style={{
@@ -303,8 +307,7 @@ export default function OnboardingPage() {
                   lineHeight: 1.45,
                 }}
               >
-                Shown on your published pages, like a byline. Can be
-                changed later.
+                {t("onboarding.nameHelp")}
               </span>
               <input
                 type="text"
@@ -336,7 +339,7 @@ export default function OnboardingPage() {
                   marginBottom: 4,
                 }}
               >
-                Your page address
+                {t("onboarding.pageAddress")}
               </span>
               <span
                 style={{
@@ -347,8 +350,7 @@ export default function OnboardingPage() {
                   lineHeight: 1.45,
                 }}
               >
-                The short name that goes in the link when you share a
-                trip. Lowercase letters, digits, or hyphens.
+                {t("onboarding.pageHelp")}
               </span>
               <div
                 style={{
@@ -426,7 +428,7 @@ export default function OnboardingPage() {
                   marginBottom: 4,
                 }}
               >
-                Invite code
+                {t("onboarding.invite")}
               </span>
               <span
                 style={{
@@ -437,8 +439,7 @@ export default function OnboardingPage() {
                   lineHeight: 1.45,
                 }}
               >
-                The code from whoever invited you. Each code is for one
-                person — enter it here to activate your account.
+                {t("onboarding.inviteHelp")}
               </span>
               <input
                 type="text"
@@ -475,7 +476,7 @@ export default function OnboardingPage() {
                 justifyContent: "center",
               }}
             >
-              {state.kind === "submitting" ? "Setting up…" : "Start writing"}
+              {state.kind === "submitting" ? t("onboarding.settingUp") : t("onboarding.start")}
             </button>
 
             {state.kind === "error" && (
@@ -502,8 +503,7 @@ export default function OnboardingPage() {
                 lineHeight: 1.5,
               }}
             >
-              None of this is public yet. You control what gets shared
-              when you publish a trip.
+              {t("onboarding.privateNote")}
             </p>
           </form>
         )}

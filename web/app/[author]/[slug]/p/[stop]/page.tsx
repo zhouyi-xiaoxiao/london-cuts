@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 
 import { PostcardPage } from "@/components/public/postcard-page";
 import {
   getPublicStop,
+  publicProjectToRuntimeLookup,
   stopJsonLd,
   stopMetadata,
 } from "@/lib/public-content";
 import { fetchPublicProjectByHandleAndSlug } from "@/lib/public-lookup";
 import { getPublicStopParams } from "@/lib/static-params";
+import { resolveLocaleFromHeaders } from "@/lib/i18n";
 
 export const dynamicParams = true;
 export const revalidate = 60;
@@ -22,7 +25,8 @@ export async function generateMetadata({
   params: Promise<{ author: string; slug: string; stop: string }>;
 }): Promise<Metadata> {
   const { author, slug, stop } = await params;
-  const result = await getPublicStop(author, slug, stop);
+  const locale = resolveLocaleFromHeaders(await headers());
+  const result = await getPublicStop(author, slug, stop, locale);
   return result
     ? stopMetadata(result.project, result.stop, "postcard")
     : { title: "Public postcard not found | London Cuts" };
@@ -34,9 +38,14 @@ export default async function Page({
   params: Promise<{ author: string; slug: string; stop: string }>;
 }) {
   const { author, slug, stop } = await params;
+  const locale = resolveLocaleFromHeaders(await headers());
   const payload = await fetchPublicProjectByHandleAndSlug(author, slug);
-  const publicStop = await getPublicStop(author, slug, stop);
-  const initialData = payload ? { ...payload, isCurrent: false } : null;
+  const publicStop = await getPublicStop(author, slug, stop, locale);
+  const initialData = publicStop
+    ? publicProjectToRuntimeLookup(publicStop.project)
+    : payload
+      ? { ...payload, isCurrent: false }
+      : null;
   return (
     <>
       {publicStop ? (

@@ -157,6 +157,7 @@ function toProject(
     saves: r.saves ?? 0,
     duration: r.duration_label ?? "",
     coverLabel: r.cover_label ?? "",
+    translations: r.translations ?? undefined,
   };
 }
 
@@ -201,9 +202,11 @@ function toStop(
             : undefined,
       frontAssetId: pc?.front_asset_id ?? null,
       style: toPostcardStyle(pc?.style_id) ?? null,
+      translations: pc?.translations ?? undefined,
     },
     heroAssetId: r.hero_asset_id ?? null,
     assetIds: Array.from(assetIds),
+    translations: r.translations ?? undefined,
     status: {
       upload: Boolean(status.upload),
       hero: Boolean(status.hero),
@@ -228,6 +231,7 @@ function toAsset(row: Record<string, unknown>): Asset {
     styleId: toPostcardStyle(r.style_id) ?? undefined,
     styleLabel: r.style_id ?? undefined,
     prompt: r.prompt ?? undefined,
+    translations: r.translations ?? undefined,
   };
 }
 

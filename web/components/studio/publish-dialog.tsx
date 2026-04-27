@@ -16,6 +16,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { useT } from "@/components/i18n-provider";
 import { useProject, useProjectActions } from "@/stores/project";
 import { useStops, useStopActions } from "@/stores/stop";
 import { useUi, useUiActions } from "@/stores/ui";
@@ -89,6 +90,7 @@ function issueLabels(c: StopCheck): string[] {
 // ─── Component ─────────────────────────────────────────────────────────
 
 export function PublishDialog() {
+  const t = useT();
   const ui = useUi();
   const { setPublishOpen } = useUiActions();
   const project = useProject();
@@ -161,7 +163,7 @@ export function PublishDialog() {
       status: "published",
       publishedAt: new Date().toISOString(),
     });
-    setToast("Published");
+    setToast(t("publish.published"));
     window.setTimeout(() => setToast(null), 1500);
   }
 
@@ -170,14 +172,14 @@ export function PublishDialog() {
       status: "draft",
       publishedAt: null,
     });
-    setToast("Unpublished");
+    setToast(t("publish.unpublished"));
     window.setTimeout(() => setToast(null), 1500);
   }
 
   async function handleCopyLink() {
     try {
       await navigator.clipboard.writeText(publicUrl);
-      setToast("Link copied");
+      setToast(t("publish.linkCopied"));
     } catch {
       setToast(`Copy failed — ${publicUrl}`);
     }
@@ -211,7 +213,7 @@ export function PublishDialog() {
       {/* Slideover */}
       <aside
         role="dialog"
-        aria-label="Publish project"
+        aria-label={t("publish.title")}
         aria-modal="true"
         style={{
           position: "fixed",
@@ -246,7 +248,7 @@ export function PublishDialog() {
               className="mono-sm"
               style={{ opacity: 0.55, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase" }}
             >
-              Publish · Ed.01
+              {t("studio.publish")} · Ed.01
             </div>
             <div
               style={{
@@ -267,9 +269,9 @@ export function PublishDialog() {
             type="button"
             className="btn btn-sm"
             onClick={() => setPublishOpen(false)}
-            aria-label="Close publish dialog"
+            aria-label={t("publish.back")}
           >
-            Back to workspace
+            {t("publish.back")}
           </button>
         </header>
 
@@ -299,7 +301,7 @@ export function PublishDialog() {
                   opacity: 0.75,
                 }}
               >
-                ● Live now
+                ● {t("publish.liveNow")}
               </div>
               <a
                 href={publicUrl}
@@ -324,7 +326,7 @@ export function PublishDialog() {
                   data-testid="publish-banner-copy-btn"
                   style={{ flex: 1 }}
                 >
-                  Copy link
+                  {t("common.copyLink")}
                 </button>
                 <button
                   type="button"
@@ -333,7 +335,7 @@ export function PublishDialog() {
                   data-testid="publish-banner-open-btn"
                   style={{ flex: 1 }}
                 >
-                  Open ↗
+                  {t("common.open")} ↗
                 </button>
               </div>
             </div>
@@ -350,8 +352,8 @@ export function PublishDialog() {
             }}
             data-testid="publish-counter"
           >
-            Pre-flight · {readyCount}/{perStop.length} ready ·{" "}
-            {needAttention === 0 ? "all clear" : `${needAttention} need attention`}
+            {t("publish.preflight")} · {readyCount}/{perStop.length} {t("publish.ready")} ·{" "}
+            {needAttention === 0 ? t("publish.allClear") : `${needAttention} ${t("publish.needAttention")}`}
           </div>
 
           {/* Per-stop checklist */}
@@ -430,7 +432,7 @@ export function PublishDialog() {
               marginTop: 20,
             }}
           >
-            Public URL
+            {t("publish.publicUrl")}
           </div>
           <div
             style={{
@@ -469,7 +471,7 @@ export function PublishDialog() {
               onClick={handleCopyLink}
               data-testid="publish-copy-url"
             >
-              Copy URL
+              {t("common.copyLink")}
             </button>
           </div>
 
@@ -484,7 +486,7 @@ export function PublishDialog() {
               marginTop: 20,
             }}
           >
-            Visibility
+            {t("publish.visibility")}
           </div>
           <div
             role="radiogroup"
@@ -543,7 +545,7 @@ export function PublishDialog() {
                   onClick={handleUnpublish}
                   data-testid="publish-unpublish-btn"
                 >
-                  Unpublish ×
+                  {t("publish.unpublish")} ×
                 </button>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
@@ -553,7 +555,7 @@ export function PublishDialog() {
                     data-testid="publish-copy-link-btn"
                     style={{ flex: 1 }}
                   >
-                    Copy public link
+                    {t("publish.copyPublic")}
                   </button>
                   <button
                     type="button"
@@ -562,7 +564,7 @@ export function PublishDialog() {
                     data-testid="publish-open-public-btn"
                     style={{ flex: 1 }}
                   >
-                    Open public project ↗
+                    {t("publish.openPublic")} ↗
                   </button>
                 </div>
               </>
@@ -580,7 +582,7 @@ export function PublishDialog() {
                     : `${needAttention} stop(s) still need attention`
                 }
               >
-                {allPass ? "Publish →" : `${needAttention} issue(s) block publish`}
+                {allPass ? `${t("publish.submit")} →` : `${needAttention} ${t("publish.blocked")}`}
               </button>
             )}
           </div>

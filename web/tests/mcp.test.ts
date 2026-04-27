@@ -60,4 +60,20 @@ describe("MCP endpoint", () => {
     expect(json.result.content[0].text).toContain("ai_visibility_audit");
     expect(json.result.content[0].text).toContain("suggestedQueries");
   });
+
+  it("localizes public MCP tool results through locale arguments", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://example.test");
+    const { POST } = await import("@/app/mcp/route");
+    const res = await POST(
+      rpc("tools/call", {
+        name: "get_public_project",
+        arguments: { handle: "@ana-ishii", slug: "a-year-in-se1", locale: "zh" },
+      }),
+    );
+    const json = await res.json();
+    expect(json.result.content[0].text).toContain('"locale": "zh"');
+    expect(json.result.content[0].text).toContain("伦敦");
+  });
 });

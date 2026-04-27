@@ -4,6 +4,13 @@
 
 import type { PostcardStyle } from "@/lib/ai-provider";
 import type {
+  AssetTranslation,
+  Localized,
+  PostcardTranslation,
+  ProjectTranslation,
+  StopTranslation,
+} from "@/lib/i18n";
+import type {
   BodyBlock,
   PostcardRecipient,
   SeedAsset,
@@ -41,6 +48,7 @@ export interface Project extends StorageProject {
   saves: number;
   duration: string;
   coverLabel: string;
+  translations?: Localized<ProjectTranslation>;
 }
 
 // ─── Stop (a numbered scene within a project) ──────────────────────────
@@ -51,6 +59,7 @@ export interface Postcard {
   orientation?: "portrait" | "landscape";
   frontAssetId?: string | null;
   style?: PostcardStyle | null;
+  translations?: Localized<PostcardTranslation>;
 }
 
 /** Normalised 2D coordinate (0..100 %) for hero image object-position pan.
@@ -67,6 +76,7 @@ export interface Stop extends Omit<SeedStop, "status"> {
   heroAssetId: string | null;
   heroFocus?: HeroFocus | null;
   assetIds: readonly string[];
+  translations?: Localized<StopTranslation>;
   status: {
     upload: boolean;
     hero: boolean;
@@ -86,6 +96,7 @@ export interface Asset extends SeedAsset {
   revisedPrompt?: string;
   styleLabel?: string;
   styleId?: PostcardStyle;
+  translations?: Localized<AssetTranslation>;
 }
 
 // ─── Media job (AI generation task) ────────────────────────────────────

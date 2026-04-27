@@ -8,6 +8,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 
+import { LanguageSwitcher, useT } from "@/components/i18n-provider";
 import { VisionUpload } from "@/components/studio/vision-upload";
 import { useAssets } from "@/stores/asset";
 import { useMode } from "@/stores/mode";
@@ -44,6 +45,7 @@ function coverUrlFor(
 // ─── main component ───────────────────────────────────────────────────
 
 export function ProjectsDashboard() {
+  const t = useT();
   const project = useProject();
   const stops = useStops();
   const assets = useAssets();
@@ -111,6 +113,7 @@ export function ProjectsDashboard() {
         publicUrl: string | null;
         styleId: string | null;
         prompt: string | null;
+        translations: Asset["translations"] | null;
       }> = [];
       for (const id of referencedAssetIds) {
         const a = assets.find((x) => x.id === id);
@@ -123,6 +126,7 @@ export function ProjectsDashboard() {
           publicUrl: isDataUrl ? null : a.imageUrl,
           styleId: a.styleId ?? null,
           prompt: a.prompt ?? null,
+          translations: a.translations ?? null,
         });
       }
 
@@ -147,6 +151,7 @@ export function ProjectsDashboard() {
             author: project.author,
             tags: project.tags,
             coverAssetLegacyId: project.coverAssetId,
+            translations: project.translations ?? null,
           },
           stops: stops.map((s) => ({
             n: s.n,
@@ -162,6 +167,7 @@ export function ProjectsDashboard() {
             status: s.status,
             heroAssetId: s.heroAssetId,
             postcard: s.postcard,
+            translations: s.translations ?? null,
           })),
           assets: assetPayload,
         }),
@@ -184,8 +190,8 @@ export function ProjectsDashboard() {
       setSyncState("ok");
       const uploadedPart =
         json.assetsUploaded > 0
-          ? ` · ${json.assetsUploaded} photo${json.assetsUploaded === 1 ? "" : "s"} uploaded`
-          : "";
+              ? ` · ${json.assetsUploaded} photo${json.assetsUploaded === 1 ? "" : "s"} uploaded`
+              : "";
       setSyncMsg(
         `${stops.length} stops synced${uploadedPart} · readers on other devices see this now`,
       );
@@ -226,19 +232,20 @@ export function ProjectsDashboard() {
               fontStyle: "var(--mode-italic, italic)",
             }}
           >
-            London Cuts Studio
+            {t("studio.title")}
           </span>
           <span className="mono-sm" style={{ opacity: 0.5 }}>
             {project.author}
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <LanguageSwitcher compact />
           <button
             className="btn btn-sm"
             onClick={onReset}
             title="Reset current project to seed data"
           >
-            Reset data
+            {t("studio.reset")}
           </button>
           <button
             className="btn btn-sm"
@@ -255,26 +262,26 @@ export function ProjectsDashboard() {
             }}
           >
             {syncState === "syncing"
-              ? "☁️ Syncing…"
+              ? `☁️ ${t("studio.syncing")}`
               : syncState === "ok"
-                ? "☁️ ✓ Synced"
+                ? `☁️ ✓ ${t("studio.synced")}`
                 : syncState === "error"
-                  ? "☁️ ✗ Retry"
-                  : "☁️ Sync to cloud"}
+                  ? `☁️ ✗ ${t("studio.retry")}`
+                  : `☁️ ${t("studio.sync")}`}
           </button>
           <button
             className="btn btn-sm"
             onClick={() => setVisionOpen((v) => !v)}
             title="Upload photos → GPT-4o auto-creates stops"
           >
-            {visionOpen ? "Hide vision upload" : "📁 New from photos"}
+            {visionOpen ? t("studio.hideVision") : `📁 ${t("studio.newFromPhotos")}`}
           </button>
           <button
             className="btn btn-solid"
             onClick={() => setModalOpen(true)}
             title="Archive current project and start a new one"
           >
-            + New project
+            + {t("studio.newProject")}
           </button>
         </div>
       </header>
@@ -325,7 +332,7 @@ export function ProjectsDashboard() {
               margin: 0,
             }}
           >
-            Your work.
+            {t("studio.yourWork")}
           </h1>
           <div
             className="mono-sm"
@@ -379,7 +386,7 @@ export function ProjectsDashboard() {
 
         <section style={{ marginTop: 56 }}>
           <div className="eyebrow" style={{ marginBottom: 12 }}>
-            Activity
+            {t("studio.activity")}
           </div>
           <ul
             style={{
@@ -426,7 +433,7 @@ export function ProjectsDashboard() {
             href="/atlas"
             style={{ fontFamily: "var(--f-mono)", fontSize: 12 }}
           >
-            → Public atlas
+            → {t("studio.publicAtlas")}
           </Link>
         </nav>
       </main>
@@ -487,6 +494,7 @@ interface CardProps {
 function ProjectCard(props: CardProps) {
   const { coverUrl, coverLabel, project, stops, summary: s, mode, progress, onClick, isCurrent } =
     props;
+  const t = useT();
   const published = project.publishedAt;
   return (
     <article
@@ -550,7 +558,7 @@ function ProjectCard(props: CardProps) {
           className="chip chip-solid"
           style={{ flexShrink: 0, fontSize: 10 }}
         >
-          {isCurrent ? "CURRENT" : project.visibility === "public" && published ? "LIVE" : "DRAFT"}
+          {isCurrent ? t("studio.current") : project.visibility === "public" && published ? t("studio.live") : t("studio.draft")}
         </span>
       </div>
       {project.subtitle && (

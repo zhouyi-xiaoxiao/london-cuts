@@ -25,4 +25,18 @@ describe("OpenAPI document", () => {
       scheme: "bearer",
     });
   });
+
+  it("localizes human-readable OpenAPI text while preserving identifiers", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://example.test");
+    const doc = buildOpenApiDocument("zh");
+    expect(doc.info.summary).toContain("公开");
+    expect(doc.paths["/api/v1/projects"].get.operationId).toBe("listPublicProjects");
+    expect(doc.paths["/api/v1/projects"].get.summary).toContain("列出");
+    expect(
+      doc.paths["/api/v1/ai/describe-photo"].post.requestBody.content[
+        "application/json"
+      ].schema.properties,
+    ).toHaveProperty("outputLocale");
+    expect(doc.components.schemas.PublicProjectSummary.properties.locale).toBeTruthy();
+  });
 });

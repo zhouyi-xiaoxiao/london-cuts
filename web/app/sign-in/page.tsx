@@ -12,6 +12,8 @@
 
 import { useState } from "react";
 
+import { LanguageSwitcher, useT } from "@/components/i18n-provider";
+
 type State =
   | { kind: "idle" }
   | { kind: "sending" }
@@ -21,6 +23,7 @@ type State =
 export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<State>({ kind: "idle" });
+  const t = useT();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -42,8 +45,8 @@ export default function SignInPage() {
           kind: "error",
           message:
             body.code === "email_rate_limited"
-              ? "Email sending is temporarily limited. Wait a little, then request a new magic link."
-              : (body.error ?? "could not send magic link"),
+              ? t("auth.rateLimited")
+              : (body.error ?? t("auth.sendFailed")),
         });
         return;
       }
@@ -51,7 +54,7 @@ export default function SignInPage() {
     } catch (err) {
       setState({
         kind: "error",
-        message: err instanceof Error ? err.message : "request failed",
+        message: err instanceof Error ? err.message : t("auth.requestFailed"),
       });
     }
   }
@@ -78,7 +81,10 @@ export default function SignInPage() {
         }}
       >
         <div className="eyebrow" style={{ marginBottom: 10 }}>
-          London Cuts · Sign in
+          {t("auth.signInEyebrow")}
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <LanguageSwitcher compact />
         </div>
         <h1
           style={{
@@ -89,15 +95,13 @@ export default function SignInPage() {
             letterSpacing: "-0.01em",
           }}
         >
-          {state.kind === "sent" ? "Check your email." : "Sign in with email."}
+          {state.kind === "sent" ? t("auth.sentTitle") : t("auth.signInTitle")}
         </h1>
 
         {state.kind === "sent" ? (
           <div style={{ marginTop: 18 }}>
             <p style={{ fontSize: 15, lineHeight: 1.55, margin: 0 }}>
-              We sent a one-time link to{" "}
-              <strong>{state.email}</strong>. Click the link in your inbox
-              to finish signing in.
+              {t("auth.sentBody", { email: state.email })}
             </p>
             <p
               className="mono-sm"
@@ -110,8 +114,7 @@ export default function SignInPage() {
                 letterSpacing: "0",
               }}
             >
-              Nothing in your inbox after a minute? Check spam, or try a
-              different address below.
+              {t("auth.sentHelp")}
             </p>
             <button
               type="button"
@@ -119,7 +122,7 @@ export default function SignInPage() {
               onClick={() => setState({ kind: "idle" })}
               style={{ marginTop: 16 }}
             >
-              Use a different email
+              {t("auth.useDifferent")}
             </button>
           </div>
         ) : (
@@ -134,7 +137,7 @@ export default function SignInPage() {
                   opacity: 0.62,
                 }}
               >
-                Email
+                {t("auth.email")}
               </span>
               <input
                 type="email"
@@ -169,7 +172,7 @@ export default function SignInPage() {
                 justifyContent: "center",
               }}
             >
-              {state.kind === "sending" ? "Sending…" : "Send magic link"}
+              {state.kind === "sending" ? t("auth.sending") : t("auth.sendMagic")}
             </button>
             {state.kind === "error" && (
               <div
@@ -197,9 +200,7 @@ export default function SignInPage() {
                 textTransform: "none",
               }}
             >
-              No password to remember. We&apos;ll email you a link to sign
-              in. First-time sign-ins need an invite code from the project
-              owner.
+              {t("auth.passwordless")}
             </p>
           </form>
         )}

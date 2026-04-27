@@ -22,6 +22,7 @@ import {
 } from "react";
 
 import { PostcardEditor } from "@/components/postcard/postcard-editor";
+import { useLocale } from "@/components/i18n-provider";
 import { useAssetActions, useAssetsByStop } from "@/stores/asset";
 import { usePostcardActions } from "@/stores/postcard";
 import { useStops, useStopActions } from "@/stores/stop";
@@ -643,6 +644,7 @@ type VisionState =
 
 function TitleWithVisionAssist({ stop }: TitleWithVisionAssistProps) {
   const { updateStop } = useStopActions();
+  const locale = useLocale();
   const stopAssets = useAssetsByStop(stop.n);
   const [state, setState] = useState<VisionState>({ kind: "idle" });
   const [hint, setHint] = useState("");
@@ -667,6 +669,7 @@ function TitleWithVisionAssist({ stop }: TitleWithVisionAssistProps) {
         body: JSON.stringify({
           imageDataUrl: heroAsset.imageUrl,
           hint: hint.trim() || undefined,
+          outputLocale: locale,
         }),
       });
       const body = (await res.json()) as

@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+import { LanguageSwitcher, useT } from "@/components/i18n-provider";
 import { useProject, useProjectActions } from "@/stores/project";
 import { useActiveStop, useActiveStopId, useStops, useStopActions } from "@/stores/stop";
 import { useMode, useSetMode, NARRATIVE_MODES } from "@/stores/mode";
@@ -51,6 +52,7 @@ export function Workspace() {
   const ui = useUi();
   const { setDrawerOpen, setDrawerTab, setPublishOpen } = useUiActions();
   const { archiveCurrentProject, resetToSeed } = useProjectActions();
+  const t = useT();
   const activeStop = useActiveStop();
   const activeId = useActiveStopId();
   const { setActiveStop } = useStopActions();
@@ -149,7 +151,7 @@ export function Workspace() {
             style={{ opacity: 0.6, textDecoration: "none", flexShrink: 0 }}
             aria-label="Back to projects"
           >
-            {isMobile ? "←" : "← Projects"}
+            {isMobile ? "←" : `← ${t("studio.backProjects")}`}
           </Link>
           <span
             className="roundel"
@@ -201,21 +203,22 @@ export function Workspace() {
           }}
         >
           <ModePill mode={mode} onChange={setMode} />
+          {!isMobile && <LanguageSwitcher compact />}
           {!isMobile && (
             <button
               className="btn btn-sm"
               onClick={toggleDrawer}
               title={ui.drawerOpen ? "Hide right panels" : "Show right panels"}
             >
-              {ui.drawerOpen ? "Hide panels →" : "← Show panels"}
+              {ui.drawerOpen ? `${t("studio.hidePanels")} →` : `← ${t("studio.showPanels")}`}
             </button>
           )}
           {isMobile && (
             <button
               type="button"
               onClick={toggleDrawer}
-              aria-label={ui.drawerOpen ? "Hide right panels" : "Show right panels"}
-              title={ui.drawerOpen ? "Hide right panels" : "Show right panels"}
+              aria-label={ui.drawerOpen ? t("studio.hidePanels") : t("studio.showPanels")}
+              title={ui.drawerOpen ? t("studio.hidePanels") : t("studio.showPanels")}
               className="mono-sm"
               style={{
                 minHeight: 40,
@@ -241,7 +244,7 @@ export function Workspace() {
                 : `${summary.total - summary.ready} stop(s) still missing hero/body/postcard`
             }
           >
-            {isMobile ? "Publish" : "Publish →"}
+            {isMobile ? t("studio.publish") : `${t("studio.publish")} →`}
           </button>
         </div>
       </header>
@@ -300,11 +303,12 @@ interface ModePillProps {
 }
 
 function ModePill({ mode, onChange }: ModePillProps) {
+  const t = useT();
   return (
     <div
       className="mode-pill"
       role="radiogroup"
-      aria-label="Narrative mode"
+      aria-label={t("mode.label")}
     >
       {NARRATIVE_MODES.map((m) => (
         <button
@@ -315,7 +319,7 @@ function ModePill({ mode, onChange }: ModePillProps) {
           onClick={() => onChange(m)}
           type="button"
         >
-          {m[0].toUpperCase() + m.slice(1)}
+          {t(`mode.${m}` as Parameters<typeof t>[0])}
         </button>
       ))}
     </div>

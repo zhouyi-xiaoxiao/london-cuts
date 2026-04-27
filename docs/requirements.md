@@ -1,7 +1,7 @@
 # Requirements — London Cuts Beta Launch
 
-**Version:** 1.0 (confirmed 2026-04-20)
-**Status:** approved, frozen for M0–M6
+**Version:** 1.2 (updated 2026-04-27)
+**Status:** approved; M0–M6 frozen, M7+ agent/i18n surfaces active
 
 This is the single source of truth for what we are building. If a task, plan, or change conflicts with this document, update this document first and record the change in `tasks/LOG.md`.
 
@@ -13,7 +13,7 @@ This is the single source of truth for what we are building. If a task, plan, or
 
 - **Placeholder name:** "London Cuts" (to be renamed before public launch; treat as working name)
 - **Domain:** `zhouyixiaoxiao.org` (IONOS), serve product at **root domain**
-- **Language:** English UI only for beta (i18n plumbing reserved for later)
+- **Language:** English + Simplified Chinese for active product surfaces
 - **Platform:** Desktop-first, responsive CSS so phones don't break
 
 ## 2. Users
@@ -119,6 +119,19 @@ This is the single source of truth for what we are building. If a task, plan, or
 - AI discovery files (`llms.txt`, `llms-full.txt`) describe public surfaces and citation rules
 - Traditional SEO discovery includes sitemap, robots, canonical metadata, OG metadata, and JSON-LD
 
+### NFR11 Bilingual content and locale behavior
+- Active public reader, studio/auth/onboarding, seed demo, API v1, OpenAPI, MCP,
+  `llms.txt`, `llms-full.txt`, sitemap alternates, metadata, JSON-LD, docs, and
+  continuity files support English and Simplified Chinese.
+- Explicit `/zh/...`, `/en/...`, and `?lang=zh|en` win; then `lc_locale`
+  cookie; then `Accept-Language`; then English fallback.
+- Stable identifiers stay English-compatible: handles, slugs, route names, JSON
+  field names, operationIds, schema keys, enum values, token scopes, MCP
+  method/tool names, and style IDs.
+- Base persisted fields remain the English-compatible source for existing
+  content. Chinese content is additive under `translations.zh`; missing
+  user-created translations fall back to source text until edited/generated.
+
 ### NFR6 Developer experience
 - Maintained: `CLAUDE.md`, `docs/architecture.md`, `docs/data-model.md`, `tasks/`
 - Self-explanatory file/folder names
@@ -162,7 +175,6 @@ This is the single source of truth for what we are building. If a task, plan, or
 - Native mobile app (responsive CSS only)
 - Social features (likes / follows / comments)
 - Paid tier / subscriptions
-- Multi-language UI
 - Offline mode
 - Collaborative editing
 - User-facing data export
@@ -178,3 +190,4 @@ This is the single source of truth for what we are building. If a task, plan, or
 
 - **2026-04-20 v1.0** — Initial confirmed requirements, frozen for M0–M6
 - **2026-04-26 v1.1** — Added AI-native API/MCP/discovery requirements and moved SEO/GEO from out-of-scope to beta infrastructure.
+- **2026-04-27 v1.2** — Added full active-surface English/Simplified Chinese scope, locale negotiation precedence, translation storage model, and agent/API localization rules.

@@ -6,27 +6,33 @@ London Cuts supports both traditional crawl surfaces and AI retrieval surfaces.
 
 - `robots.txt` allows public reader pages and API discovery files.
 - `sitemap.xml` includes root, atlas, public projects, markdown packs, chapter
-  pages, and postcard pages.
+  pages, postcard pages, and `hreflang` alternates for English and Simplified
+  Chinese where applicable.
 - Public project/chapter/postcard pages emit canonical metadata and Open Graph /
   Twitter metadata.
-- Public pages emit JSON-LD for `CreativeWork` and stop-level location data.
+- Public pages emit locale-aware JSON-LD for `CreativeWork` and stop-level
+  location data.
 
 ## AI Retrieval
 
-- `/llms.txt` is the compact AI entry point.
-- `/llms-full.txt` includes API/MCP guidance and the public project index.
+- `/llms.txt` is the compact AI entry point. Use `?lang=zh` for Simplified
+  Chinese guidance.
+- `/llms-full.txt` includes API/MCP guidance and the public project index. Use
+  `?lang=zh` for the Chinese edition.
 - `/api/v1/projects/{handle}/{slug}/markdown` gives a clean citation pack so
   agents do not need to scrape styled HTML.
 - `/api/v1/projects/{handle}/{slug}/ai-visibility` gives a read-only audit for
   suggested AI queries, answer cards, metadata gaps, weak citations, image-alt
   gaps, and GEO/SEO recommendations.
-- `/api/openapi.json` describes callable REST endpoints.
-- `/mcp` exposes resources, tools, and prompts for MCP-compatible hosts.
+- `/api/openapi.json` describes callable REST endpoints; `?lang=zh` localizes
+  summaries/descriptions only.
+- `/mcp` exposes resources, tools, and prompts for MCP-compatible hosts and
+  accepts locale through query/header/cookie or arguments.
 
 Public project DTOs include `shortSummary`, `retrievalKeywords`,
-`featuredStops`, `places`, `imageCount`, and `citationGuidance`. Keep those
-fields generated from `web/lib/public-content.ts` so all discovery surfaces
-agree.
+`featuredStops`, `places`, `imageCount`, `citationGuidance`, `locale`,
+`availableLocales`, `alternateUrls`, and `translationStatus`. Keep those fields
+generated from `web/lib/public-content.ts` so all discovery surfaces agree.
 
 ## Citation Rules
 

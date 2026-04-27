@@ -26,6 +26,12 @@ import type {
 } from "./types";
 import type { NarrativeMode } from "@/lib/storage";
 import {
+  SEED_POSTCARD_TRANSLATIONS,
+  SEED_PROJECT_TRANSLATIONS,
+  SEED_STOP_TRANSLATIONS,
+} from "@/lib/i18n";
+import { currentClientLocale } from "./localize";
+import {
   PROJECTS_FEED,
   SEED_ASSETS,
   SEED_BODIES,
@@ -80,10 +86,12 @@ function seedStateFromDataModule(): RootState {
             orientation: "landscape",
             frontAssetId: hero?.id ?? null,
             style: null,
+            translations: SEED_POSTCARD_TRANSLATIONS[`${SEED_PROJECT.slug}:${s.n}`],
           }
         : { message: "", recipient: { ...DEFAULT_RECIPIENT } },
       heroAssetId: hero?.id ?? null,
       assetIds: hero ? [hero.id] : [],
+      translations: SEED_STOP_TRANSLATIONS[`${SEED_PROJECT.slug}:${s.n}`],
       // Upgrade the upload + hero status bits if we have a real photo.
       status: {
         ...s.status,
@@ -116,6 +124,7 @@ function seedStateFromDataModule(): RootState {
     saves: SEED_PROJECT.saves,
     duration: SEED_PROJECT.duration,
     coverLabel: SEED_PROJECT.coverLabel,
+    translations: SEED_PROJECT_TRANSLATIONS[SEED_PROJECT.slug],
   };
 
   // Pre-seed archive with the Reykjavík demo so the dashboard shows
@@ -127,6 +136,7 @@ function seedStateFromDataModule(): RootState {
     postcard: { message: "", recipient: { ...DEFAULT_RECIPIENT } },
     heroAssetId: null,
     assetIds: [],
+    translations: SEED_STOP_TRANSLATIONS[`${SEED_PROJECT_REYKJAVIK.slug}:${s.n}`],
   }));
   const reykjavikProject: Project = {
     id: "seed-a-week-in-reykjavik",
@@ -149,6 +159,7 @@ function seedStateFromDataModule(): RootState {
     saves: SEED_PROJECT_REYKJAVIK.saves,
     duration: SEED_PROJECT_REYKJAVIK.duration,
     coverLabel: SEED_PROJECT_REYKJAVIK.coverLabel,
+    translations: SEED_PROJECT_TRANSLATIONS[SEED_PROJECT_REYKJAVIK.slug],
   };
 
   return {
@@ -352,7 +363,7 @@ export const useRootStore = create<RootStore>()(
       updateStop: (stopId, patch) =>
         set((s) => ({
           stops: s.stops.map((st) =>
-            st.n === stopId ? { ...st, ...patch } : st,
+            st.n === stopId ? applyLocalizedStopPatch(st, patch) : st,
           ),
         })),
       reorderStops: (orderedIds) =>
@@ -447,7 +458,7 @@ export const useRootStore = create<RootStore>()(
         set((s) => ({
           stops: s.stops.map((st) =>
             st.n === stopId
-              ? { ...st, postcard: { ...st.postcard, ...patch } }
+              ? applyLocalizedPostcardPatch(st, patch)
               : st,
           ),
         })),
@@ -511,6 +522,62 @@ export const useRootStore = create<RootStore>()(
     },
   ),
 );
+
+function applyLocalizedStopPatch(stop: Stop, patch: Partial<Stop>): Stop {
+  const locale = currentClientLocale();
+  if (locale === "en") return { ...stop, ...patch };
+
+  const basePatch: Partial<Stop> = { ...patch };
+  const existing = stop.translations?.[locale] ?? {};
+  const localized: NonNullable<Stop["translations"]>[typeof locale] = {
+    ...existing,
+  };
+  let hasLocalized = false;
+
+  for (const key of ["title", "time", "mood", "label", "code", "body"] as const) {
+    if (key in basePatch) {
+      localized[key] = basePatch[key] as never;
+      delete basePatch[key];
+      hasLocalized = true;
+    }
+  }
+
+  if (!hasLocalized) return { ...stop, ...patch };
+  return {
+    ...stop,
+    ...basePatch,
+    translations: {
+      ...stop.translations,
+      [locale]: localized,
+    },
+  };
+}
+
+function applyLocalizedPostcardPatch(
+  stop: Stop,
+  patch: Partial<Stop["postcard"]>,
+): Stop {
+  const locale = currentClientLocale();
+  if (locale === "en" || !("message" in patch)) {
+    return { ...stop, postcard: { ...stop.postcard, ...patch } };
+  }
+
+  const { message: _message, ...basePatch } = patch;
+  return {
+    ...stop,
+    postcard: {
+      ...stop.postcard,
+      ...basePatch,
+      translations: {
+        ...stop.postcard.translations,
+        [locale]: {
+          ...stop.postcard.translations?.[locale],
+          message: patch.message ?? "",
+        },
+      },
+    },
+  };
+}
 
 // ─── IndexedDB hydrate + persist (async side-channel for data URLs) ────
 

@@ -19,6 +19,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { LanguageSwitcher, useT } from "@/components/i18n-provider";
 import { Atlas, type AtlasStop } from "@/components/map/atlas";
 import { ModeSwitcher } from "@/components/mode-switcher";
 import { useMode } from "@/stores/mode";
@@ -54,6 +55,7 @@ export function PublicProjectPage({
   const lookup = initialData ?? localLookup;
   const router = useRouter();
   const mode = useMode();
+  const t = useT();
 
   if (!lookup) {
     return (
@@ -148,11 +150,14 @@ export function PublicProjectPage({
               {project.author}
               {project.publishedAt ? ` · ${project.publishedAt}` : ""}
               {typeof project.reads === "number"
-                ? ` · ${project.reads.toLocaleString()} reads`
+                ? ` · ${project.reads.toLocaleString()} ${t("public.reads")}`
                 : ""}
             </div>
           </div>
-          <ModeSwitcher />
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <LanguageSwitcher compact />
+            <ModeSwitcher />
+          </div>
         </div>
       </header>
 
@@ -273,7 +278,7 @@ export function PublicProjectPage({
 
       {/* Atlas */}
       <section
-        aria-label="Atlas for this project"
+        aria-label={t("public.atlasAria")}
         style={{
           maxWidth: 1280,
           margin: "0 auto",
@@ -285,7 +290,7 @@ export function PublicProjectPage({
 
       {/* Stop cards grid */}
       <section
-        aria-label="Stops in this project"
+        aria-label={t("public.stopsAria")}
         style={{
           maxWidth: 1280,
           margin: "0 auto",
@@ -303,7 +308,7 @@ export function PublicProjectPage({
             marginBottom: 16,
           }}
         >
-          {stops.length} stops
+          {stops.length} {t("public.stops")}
         </div>
         <ul
           style={{
@@ -351,7 +356,7 @@ export function PublicProjectPage({
             minHeight: 40,
           }}
         >
-          Published via London Cuts
+          {t("public.publishedVia")}
         </Link>
       </footer>
     </main>
@@ -375,6 +380,7 @@ function StopCard({
     ? assets.find((a) => a.id === stop.heroAssetId) ?? null
     : null;
   const thumb = hero?.imageUrl ?? null;
+  const t = useT();
 
   return (
     <Link
@@ -425,7 +431,7 @@ function StopCard({
               textTransform: "uppercase",
             }}
           >
-            No hero yet
+            {t("public.noHero")}
           </div>
         )}
         <div

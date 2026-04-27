@@ -57,6 +57,17 @@ describe("public-content DTO seam", () => {
     expect(project?.markdown).toContain("/chapter/regent-street-illuminations");
   });
 
+  it("localizes public DTOs and markdown packs in Simplified Chinese", async () => {
+    const project = await getPublicProject("@ana-ishii", "a-year-in-se1", "zh");
+    expect(project).not.toBeNull();
+    expect(project?.locale).toBe("zh");
+    expect(project?.availableLocales).toContain("zh");
+    expect(project?.title).toContain("伦敦");
+    expect(project?.markdownUrl).toContain("lang=zh");
+    expect(project?.markdown).toContain("## 概览");
+    expect(project?.citationGuidance.doNotInfer[0]).toContain("不要");
+  });
+
   it("returns an individual public stop by slug", async () => {
     const result = await getPublicStop(
       "@ana-ishii",

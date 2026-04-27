@@ -14,6 +14,7 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 
+import { LanguageSwitcher, useT } from "@/components/i18n-provider";
 import { ModeSwitcher } from "@/components/mode-switcher";
 import { PostcardBack } from "@/components/postcard/postcard-back";
 import {
@@ -53,6 +54,7 @@ export function PostcardPage({
   const localLookup = usePublicProjectLookup(authorHandle, slug);
   const lookup = initialData ?? localLookup;
   const cardRef = useRef<PostcardCardHandle>(null);
+  const t = useT();
   const [busy, setBusy] = useState<"png-front" | "png-back" | "pdf" | null>(
     null,
   );
@@ -108,7 +110,7 @@ export function PostcardPage({
 
   const onDownloadPdf = async () => {
     if (!frontUrl) {
-      setErr("Postcard has no front image yet.");
+      setErr(t("public.noPostcardFront"));
       return;
     }
     setBusy("pdf");
@@ -168,7 +170,7 @@ export function PostcardPage({
               minHeight: 40,
             }}
           >
-            ← Back to chapter
+            ← {t("public.backToChapter")}
           </Link>
           <div
             style={{
@@ -183,18 +185,18 @@ export function PostcardPage({
               className="btn btn-sm"
               onClick={() => onDownloadPng("front")}
               disabled={!frontUrl || busy !== null}
-              title="Download front (PNG, 2× pixel density)"
+              title="Download front (PNG, 2x pixel density)"
             >
-              {busy === "png-front" ? "Exporting…" : "↓ PNG front"}
+              {busy === "png-front" ? t("public.exporting") : `↓ ${t("public.pngFront")}`}
             </button>
             <button
               type="button"
               className="btn btn-sm"
               onClick={() => onDownloadPng("back")}
               disabled={busy !== null}
-              title="Download back (PNG, 2× pixel density)"
+              title="Download back (PNG, 2x pixel density)"
             >
-              {busy === "png-back" ? "Exporting…" : "↓ PNG back"}
+              {busy === "png-back" ? t("public.exporting") : `↓ ${t("public.pngBack")}`}
             </button>
             <button
               type="button"
@@ -203,8 +205,9 @@ export function PostcardPage({
               disabled={!frontUrl || busy !== null}
               title="Download 2-page PDF (front + back)"
             >
-              {busy === "pdf" ? "Exporting…" : "↓ PDF"}
+              {busy === "pdf" ? t("public.exporting") : `↓ ${t("public.pdf")}`}
             </button>
+            <LanguageSwitcher compact />
             <ModeSwitcher />
           </div>
         </div>
@@ -230,7 +233,7 @@ export function PostcardPage({
             marginBottom: 12,
           }}
         >
-          Postcard · Stop {stop.n} · {project.title}
+          {t("public.postcard")} · {t("public.stop")} {stop.n} · {project.title}
         </div>
         <h1
           style={{

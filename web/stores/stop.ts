@@ -1,17 +1,21 @@
 // Stop-scoped hooks over the root Zustand store.
 "use client";
 
+import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import { useRootStore } from "./root";
+import { localizeStopForClient } from "./localize";
 import type { Stop } from "./types";
 
 export function useStops(): readonly Stop[] {
-  return useRootStore((s) => s.stops);
+  const stops = useRootStore((s) => s.stops);
+  return useMemo(() => stops.map(localizeStopForClient), [stops]);
 }
 
 export function useStop(stopId: string): Stop | undefined {
-  return useRootStore((s) => s.stops.find((st) => st.n === stopId));
+  const stop = useRootStore((s) => s.stops.find((st) => st.n === stopId));
+  return useMemo(() => (stop ? localizeStopForClient(stop) : undefined), [stop]);
 }
 
 export function useActiveStopId(): string {
@@ -19,7 +23,8 @@ export function useActiveStopId(): string {
 }
 
 export function useActiveStop(): Stop | undefined {
-  return useRootStore((s) => s.stops.find((st) => st.n === s.ui.activeStopId));
+  const stop = useRootStore((s) => s.stops.find((st) => st.n === s.ui.activeStopId));
+  return useMemo(() => (stop ? localizeStopForClient(stop) : undefined), [stop]);
 }
 
 export function useStopActions() {

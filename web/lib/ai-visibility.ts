@@ -1,4 +1,5 @@
 import type { PublicProjectDTO } from "@/lib/public-content";
+import type { Locale } from "@/lib/i18n";
 
 export type AiVisibilitySeverity = "info" | "warning" | "critical";
 export type AiVisibilityArea =
@@ -29,6 +30,7 @@ export interface AiVisibilityRecommendationDTO {
 
 export interface AiVisibilityAuditDTO {
   object: "ai_visibility_audit";
+  locale: Locale;
   generatedAt: string;
   score: number;
   project: {
@@ -51,7 +53,9 @@ export interface AiVisibilityAuditDTO {
 
 export function auditPublicProjectVisibility(
   project: PublicProjectDTO,
+  locale: Locale = project.locale,
 ): AiVisibilityAuditDTO {
+  const zh = locale === "zh";
   const issues: AiVisibilityIssueDTO[] = [];
   const missingMetadata: string[] = [];
   const weakCitations: string[] = [];
@@ -63,8 +67,10 @@ export function auditPublicProjectVisibility(
     issues.push({
       severity: "info",
       area: "metadata",
-      message: "Project subtitle is empty.",
-      recommendation: "Add a subtitle that says what the trip is and why it matters.",
+      message: zh ? "项目副标题为空。" : "Project subtitle is empty.",
+      recommendation: zh
+        ? "补充一句说明这段旅行是什么、为什么值得读的副标题。"
+        : "Add a subtitle that says what the trip is and why it matters.",
     });
   }
   if (!project.locationName && project.places.length === 0) {
@@ -72,8 +78,12 @@ export function auditPublicProjectVisibility(
     issues.push({
       severity: "warning",
       area: "metadata",
-      message: "No explicit location or place list is available.",
-      recommendation: "Add a project location and stop-level place names.",
+      message: zh
+        ? "缺少明确地点或地点列表。"
+        : "No explicit location or place list is available.",
+      recommendation: zh
+        ? "补充项目地点和每个站点的公开地点名称。"
+        : "Add a project location and stop-level place names.",
     });
   }
   if (!project.publishedAt) {
@@ -81,8 +91,10 @@ export function auditPublicProjectVisibility(
     issues.push({
       severity: "info",
       area: "metadata",
-      message: "Published timestamp is missing.",
-      recommendation: "Expose the publish date for fresher search snippets.",
+      message: zh ? "缺少发布时间。" : "Published timestamp is missing.",
+      recommendation: zh
+        ? "公开发布时间，让搜索摘要更容易判断内容新鲜度。"
+        : "Expose the publish date for fresher search snippets.",
     });
   }
   if (!project.coverImageUrl) {
@@ -90,54 +102,82 @@ export function auditPublicProjectVisibility(
     issues.push({
       severity: "warning",
       area: "images",
-      message: "Project has no public cover image.",
-      recommendation: "Set a public cover asset so link previews and answer cards have an image.",
+      message: zh ? "项目没有公开封面图。" : "Project has no public cover image.",
+      recommendation: zh
+        ? "设置一张公开封面资产，让链接预览和回答卡片有图可用。"
+        : "Set a public cover asset so link previews and answer cards have an image.",
     });
   } else {
-    strengths.push("Public cover image is available for social and AI previews.");
+    strengths.push(
+      zh
+        ? "已有公开封面图，可用于社交预览和 AI 预览。"
+        : "Public cover image is available for social and AI previews.",
+    );
   }
 
   if (project.shortSummary.length < 80) {
     issues.push({
       severity: "warning",
       area: "content",
-      message: "Short summary is too thin for answer engines.",
-      recommendation: "Expand the short summary with location, angle, and stop count.",
+      message: zh
+        ? "短摘要对回答引擎来说信息量偏少。"
+        : "Short summary is too thin for answer engines.",
+      recommendation: zh
+        ? "在短摘要里补充地点、叙事角度和站点数量。"
+        : "Expand the short summary with location, angle, and stop count.",
     });
   } else {
-    strengths.push("Short summary gives retrievers a concise project description.");
+    strengths.push(
+      zh
+        ? "短摘要已经能给检索器一个清晰的项目描述。"
+        : "Short summary gives retrievers a concise project description.",
+    );
   }
 
   if (project.retrievalKeywords.length < 6) {
     issues.push({
       severity: "warning",
       area: "metadata",
-      message: "Retrieval keyword coverage is low.",
-      recommendation: "Add location, stop titles, moods, and creator terms to retrievalKeywords.",
+      message: zh ? "检索关键词覆盖不足。" : "Retrieval keyword coverage is low.",
+      recommendation: zh
+        ? "把地点、站点标题、情绪词和作者相关词加入 retrievalKeywords。"
+        : "Add location, stop titles, moods, and creator terms to retrievalKeywords.",
     });
   } else {
-    strengths.push("Retrieval keywords include project, place, and stop terms.");
+    strengths.push(
+      zh
+        ? "检索关键词已经覆盖项目、地点和站点相关词。"
+        : "Retrieval keywords include project, place, and stop terms.",
+    );
   }
 
   if (project.featuredStops.length === 0) {
     issues.push({
       severity: "critical",
       area: "content",
-      message: "No featured stops are exposed in the public DTO.",
-      recommendation: "Expose the first few public stops with stable chapter URLs.",
+      message: zh
+        ? "公开 DTO 没有暴露 featured stops。"
+        : "No featured stops are exposed in the public DTO.",
+      recommendation: zh
+        ? "暴露前几个公开站点，并提供稳定章节 URL。"
+        : "Expose the first few public stops with stable chapter URLs.",
     });
   }
 
   const stopsWithoutBody = project.stops.filter((stop) => !stop.bodyText.trim());
   if (stopsWithoutBody.length > 0) {
     weakCitations.push(
-      `${stopsWithoutBody.length} stops have no body text for answer grounding.`,
+      zh
+        ? `${stopsWithoutBody.length} 个站点缺少可用于回答 grounding 的正文。`
+        : `${stopsWithoutBody.length} stops have no body text for answer grounding.`,
     );
     issues.push({
       severity: "warning",
       area: "content",
-      message: "Some stops lack body text.",
-      recommendation: "Add short factual body copy for each public stop.",
+      message: zh ? "部分站点缺少正文。" : "Some stops lack body text.",
+      recommendation: zh
+        ? "为每个公开站点补充简短、事实性的正文。"
+        : "Add short factual body copy for each public stop.",
     });
   }
 
@@ -149,11 +189,17 @@ export function auditPublicProjectVisibility(
     issues.push({
       severity: "info",
       area: "metadata",
-      message: "Some stops do not expose coordinates.",
-      recommendation: "Add public lat/lng only when exact coordinates are safe to disclose.",
+      message: zh ? "部分站点没有公开坐标。" : "Some stops do not expose coordinates.",
+      recommendation: zh
+        ? "只在精确坐标可以安全公开时补充 lat/lng。"
+        : "Add public lat/lng only when exact coordinates are safe to disclose.",
     });
   } else if (project.stops.length > 0) {
-    strengths.push("Stops expose coordinates for map and place understanding.");
+    strengths.push(
+      zh
+        ? "站点已公开坐标，有助于地图和地点理解。"
+        : "Stops expose coordinates for map and place understanding.",
+    );
   }
 
   for (const asset of project.assets) {
@@ -165,23 +211,42 @@ export function auditPublicProjectVisibility(
     issues.push({
       severity: "warning",
       area: "images",
-      message: "Some public images have weak alt text.",
-      recommendation: "Replace asset-id fallback alt text with factual visual descriptions.",
+      message: zh ? "部分公开图片的 alt 文本偏弱。" : "Some public images have weak alt text.",
+      recommendation: zh
+        ? "用事实性的视觉描述替换资产 ID fallback alt 文本。"
+        : "Replace asset-id fallback alt text with factual visual descriptions.",
     });
   } else if (project.assets.length > 0) {
-    strengths.push("Public images include useful alt/caption text.");
+    strengths.push(
+      zh
+        ? "公开图片已经包含有用的 alt/caption 文本。"
+        : "Public images include useful alt/caption text.",
+    );
   }
 
-  if (!project.markdown.includes("## Do-Not-Infer Notes")) {
-    weakCitations.push("Markdown pack lacks do-not-infer notes.");
+  if (
+    !project.markdown.includes("## Do-Not-Infer Notes") &&
+    !project.markdown.includes("## 不要推断")
+  ) {
+    weakCitations.push(
+      zh ? "Markdown 包缺少不要推断说明。" : "Markdown pack lacks do-not-infer notes.",
+    );
     issues.push({
       severity: "warning",
       area: "citations",
-      message: "Markdown pack is missing explicit inference boundaries.",
-      recommendation: "Include do-not-infer notes in the markdown citation pack.",
+      message: zh
+        ? "Markdown 包缺少明确的推断边界。"
+        : "Markdown pack is missing explicit inference boundaries.",
+      recommendation: zh
+        ? "在 Markdown 引用包中加入不要推断说明。"
+        : "Include do-not-infer notes in the markdown citation pack.",
     });
   } else {
-    strengths.push("Markdown citation pack includes explicit do-not-infer notes.");
+    strengths.push(
+      zh
+        ? "Markdown 引用包包含明确的不要推断说明。"
+        : "Markdown citation pack includes explicit do-not-infer notes.",
+    );
   }
 
   const score = scoreFromIssues(issues);
@@ -193,6 +258,7 @@ export function auditPublicProjectVisibility(
 
   return {
     object: "ai_visibility_audit",
+    locale,
     generatedAt: new Date().toISOString(),
     score,
     project: {
@@ -203,8 +269,8 @@ export function auditPublicProjectVisibility(
       markdownUrl: project.markdownUrl,
       apiUrl: project.apiUrl,
     },
-    suggestedQueries: suggestedQueries(project),
-    answerCards: answerCards(project),
+    suggestedQueries: suggestedQueries(project, locale),
+    answerCards: answerCards(project, locale),
     missingMetadata,
     weakCitations,
     imageAltGaps,
@@ -223,44 +289,66 @@ function scoreFromIssues(issues: readonly AiVisibilityIssueDTO[]): number {
   return Math.max(0, Math.min(100, 100 - penalty));
 }
 
-function suggestedQueries(project: PublicProjectDTO): string[] {
+function suggestedQueries(project: PublicProjectDTO, locale: Locale): string[] {
   return uniqueClean([
     project.title,
     `${project.title} London Cuts`,
     `${project.authorName} ${project.title}`,
-    ...project.places.map((place) => `${place} travel story`),
+    ...project.places.map((place) =>
+      locale === "zh" ? `${place} 旅行故事` : `${place} travel story`,
+    ),
     ...project.featuredStops.slice(0, 4).map((stop) => `${project.title} ${stop.title}`),
     ...project.retrievalKeywords.slice(0, 8),
   ]).slice(0, 16);
 }
 
-function answerCards(project: PublicProjectDTO): AiVisibilityAnswerCardDTO[] {
+function answerCards(
+  project: PublicProjectDTO,
+  locale: Locale,
+): AiVisibilityAnswerCardDTO[] {
+  const zh = locale === "zh";
   const featured = project.featuredStops.map((stop) => stop.title).join(", ");
   return [
     {
-      question: `What is ${project.title}?`,
+      question: zh ? `${project.title} 是什么？` : `What is ${project.title}?`,
       answer: project.shortSummary,
       sourceUrl: project.canonicalUrl,
     },
     {
-      question: `Where does ${project.title} take place?`,
+      question: zh
+        ? `${project.title} 发生在哪里？`
+        : `Where does ${project.title} take place?`,
       answer:
         project.places.length > 0
-          ? `${project.title} is grounded in ${project.places.join(", ")}.`
-          : "The public project does not expose a specific place list yet.",
+          ? zh
+            ? `${project.title} 以 ${project.places.join(", ")} 为主要地点。`
+            : `${project.title} is grounded in ${project.places.join(", ")}.`
+          : zh
+            ? "公开项目暂未暴露具体地点列表。"
+            : "The public project does not expose a specific place list yet.",
       sourceUrl: project.canonicalUrl,
     },
     {
-      question: `What are the key stops in ${project.title}?`,
+      question: zh
+        ? `${project.title} 的关键站点有哪些？`
+        : `What are the key stops in ${project.title}?`,
       answer: featured
-        ? `Featured public stops include ${featured}.`
-        : "No featured stops are exposed yet.",
+        ? zh
+          ? `公开 featured stops 包括 ${featured}。`
+          : `Featured public stops include ${featured}.`
+        : zh
+          ? "暂未暴露 featured stops。"
+          : "No featured stops are exposed yet.",
       sourceUrl: project.markdownUrl,
     },
     {
-      question: `How should ${project.title} be cited?`,
+      question: zh
+        ? `应该如何引用 ${project.title}？`
+        : `How should ${project.title} be cited?`,
       answer:
-        "Use the canonical project URL for project-level claims and chapter URLs for stop-level claims.",
+        zh
+          ? "项目级陈述引用 canonical 项目 URL；站点级事实引用对应章节 URL。"
+          : "Use the canonical project URL for project-level claims and chapter URLs for stop-level claims.",
       sourceUrl: project.markdownUrl,
     },
   ];

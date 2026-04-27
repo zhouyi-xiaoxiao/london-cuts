@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 
 import { getPublicStop } from "@/lib/public-content";
+import { resolveLocaleFromRequest } from "@/lib/i18n";
 
 export const revalidate = 60;
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ handle: string; slug: string; stop: string }> },
 ) {
   const { handle, slug, stop } = await params;
-  const result = await getPublicStop(handle, slug, stop);
+  const locale = resolveLocaleFromRequest(req);
+  const result = await getPublicStop(handle, slug, stop, locale);
   if (!result) {
     return NextResponse.json(
       { error: "public stop not found", code: "not_found" },

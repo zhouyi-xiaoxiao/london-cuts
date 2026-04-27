@@ -8,6 +8,7 @@ the app without scraping UI state.
 
 - Public site: `https://london-cuts.vercel.app`
 - Public project demo: `https://london-cuts.vercel.app/@ana-ishii/a-year-in-se1`
+- Chinese project demo: `https://london-cuts.vercel.app/zh/@ana-ishii/a-year-in-se1`
 - OpenAPI: `/api/openapi.json`
 - REST API v1: `/api/v1/*`
 - MCP endpoint: `/mcp`
@@ -16,6 +17,10 @@ the app without scraping UI state.
 
 `NEXT_PUBLIC_APP_URL` is the canonical base URL. Use it instead of hardcoding
 the Vercel URL in code.
+
+Locale negotiation: explicit `/zh` or `/en` UI prefixes and `?lang=zh|en` API
+queries win; then `lc_locale`; then `Accept-Language`; then English. Stable
+identifiers are never translated.
 
 ## Callable Capabilities
 
@@ -27,6 +32,9 @@ Public, no auth:
 - Read markdown citation pack: `GET /api/v1/projects/{handle}/{slug}/markdown`
 - Audit AI visibility: `GET /api/v1/projects/{handle}/{slug}/ai-visibility`
 - Read OpenAPI: `GET /api/openapi.json`
+
+Append `?lang=zh` to public REST/OpenAPI/llms URLs for Simplified Chinese
+content. DTOs include `locale`, `availableLocales`, and `alternateUrls`.
 
 Authenticated:
 
@@ -49,6 +57,9 @@ Public tools include `search_public_projects`, `get_public_project`,
 `get_public_stop`, and `audit_public_project_visibility`. Authenticated tools
 include `describe_photo`, `compose_project`, `generate_postcard`, and
 `sync_project`.
+
+For MCP, pass `locale` or `outputLocale` in arguments when the host does not set
+query/header/cookie locale. Tool and method names stay unchanged.
 
 ## Auth
 
@@ -90,9 +101,10 @@ Useful smoke checks:
 
 ```bash
 curl -sS http://localhost:3000/api/v1/projects
+curl -sS 'http://localhost:3000/api/v1/projects?lang=zh'
 curl -sS http://localhost:3000/api/v1/projects/%40ana-ishii/a-year-in-se1/ai-visibility
-curl -sS http://localhost:3000/api/openapi.json
-curl -sS http://localhost:3000/llms.txt
+curl -sS 'http://localhost:3000/api/openapi.json?lang=zh'
+curl -sS 'http://localhost:3000/llms.txt?lang=zh'
 curl -sS -X POST http://localhost:3000/mcp \
   -H 'content-type: application/json' \
   --data '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'

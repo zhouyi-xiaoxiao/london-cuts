@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useLocale } from "@/components/i18n-provider";
 import { applySkeleton } from "@/lib/layout/skeleton";
 import { useAssets } from "@/stores/asset";
 import { useStopActions } from "@/stores/stop";
@@ -32,6 +33,7 @@ export interface StopBodyEditorProps {
 
 export function StopBodyEditor({ stop }: StopBodyEditorProps) {
   const { updateStop } = useStopActions();
+  const locale = useLocale();
 
   // Which block (by index) currently owns the open AssetPicker. `null`
   // means the picker is closed.
@@ -131,7 +133,9 @@ export function StopBodyEditor({ stop }: StopBodyEditorProps) {
             title: stop.title,
             mood: stop.mood,
             tone: stop.tone,
+            locale,
           },
+          outputLocale: locale,
         }),
       });
       const body = (await res.json()) as

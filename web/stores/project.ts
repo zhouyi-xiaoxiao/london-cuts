@@ -5,13 +5,16 @@
 // triggers Zustand on every render → max-update-depth crash).
 "use client";
 
+import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import { useRootStore } from "./root";
+import { localizeProjectForClient } from "./localize";
 import type { Project, ArchivedProject } from "./types";
 
 export function useProject(): Project {
-  return useRootStore((s) => s.project);
+  const project = useRootStore((s) => s.project);
+  return useMemo(() => localizeProjectForClient(project), [project]);
 }
 
 export function useProjectArchive(): Record<string, ArchivedProject> {

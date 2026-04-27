@@ -15,13 +15,8 @@
 
 import { useEffect } from "react";
 
+import { useT } from "@/components/i18n-provider";
 import { NARRATIVE_MODES, useMode, useSetMode } from "@/stores/mode";
-
-const MODE_LABELS: Record<(typeof NARRATIVE_MODES)[number], string> = {
-  punk: "Punk",
-  fashion: "Fashion",
-  cinema: "Cinema",
-};
 
 // Legacy order is punk / fashion / cinema on the top bar — preserve it.
 const DISPLAY_ORDER = ["punk", "fashion", "cinema"] as const;
@@ -29,12 +24,13 @@ const DISPLAY_ORDER = ["punk", "fashion", "cinema"] as const;
 export function ModeSwitcher() {
   const mode = useMode();
   const setMode = useSetMode();
+  const t = useT();
 
   return (
     <div
       className="mode-pill"
       role="group"
-      aria-label="Narrative mode"
+      aria-label={t("mode.label")}
     >
       {DISPLAY_ORDER.map((id) => {
         const active = mode === id;
@@ -46,7 +42,7 @@ export function ModeSwitcher() {
             aria-pressed={active}
             onClick={() => setMode(id)}
           >
-            {MODE_LABELS[id]}
+            {t(`mode.${id}` as Parameters<typeof t>[0])}
           </button>
         );
       })}
@@ -72,4 +68,3 @@ export function HtmlModeAttr() {
   }, [mode]);
   return null;
 }
-

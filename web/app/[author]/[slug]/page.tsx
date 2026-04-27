@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 
 import { PublicProjectPage } from "@/components/public/public-project-page";
 import {
   getPublicProject,
+  publicProjectToRuntimeLookup,
   projectJsonLd,
   projectMetadata,
 } from "@/lib/public-content";
 import { fetchPublicProjectByHandleAndSlug } from "@/lib/public-lookup";
 import { getPublicProjectParams } from "@/lib/static-params";
+import { resolveLocaleFromHeaders } from "@/lib/i18n";
 
 // M1 Phase 2: allow dynamic params so user-created projects (post-Phase 3)
 // get an SSR shell without rebuilding. Seeded slugs still get prerendered
@@ -25,7 +28,8 @@ export async function generateMetadata({
   params: Promise<{ author: string; slug: string }>;
 }): Promise<Metadata> {
   const { author, slug } = await params;
-  const project = await getPublicProject(author, slug);
+  const locale = resolveLocaleFromHeaders(await headers());
+  const project = await getPublicProject(author, slug, locale);
   return project
     ? projectMetadata(project)
     : {
@@ -39,11 +43,16 @@ export default async function Page({
   params: Promise<{ author: string; slug: string }>;
 }) {
   const { author, slug } = await params;
+  const locale = resolveLocaleFromHeaders(await headers());
   const payload = await fetchPublicProjectByHandleAndSlug(author, slug);
-  const publicProject = await getPublicProject(author, slug);
+  const publicProject = await getPublicProject(author, slug, locale);
   // `isCurrent` is a client-only signal ("this is the Zustand-editable
   // project") — server-fetched data is never current.
-  const initialData = payload ? { ...payload, isCurrent: false } : null;
+  const initialData = publicProject
+    ? publicProjectToRuntimeLookup(publicProject)
+    : payload
+      ? { ...payload, isCurrent: false }
+      : null;
   return (
     <>
       {publicProject ? (

@@ -21,6 +21,14 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 
+import {
+  DEFAULT_LOCALE,
+  LOCALE_COOKIE,
+  localeFromAcceptLanguage,
+  normalizeLocale,
+  stripLocalePrefix,
+} from "@/lib/i18n";
+
 const COOKIE_NAME = "lc_preview_auth";
 
 /** Paths we NEVER gate — the gate itself lives here. */
@@ -64,16 +72,55 @@ function shouldGate(rawPathname: string): boolean {
 }
 
 export function proxy(req: NextRequest) {
-  const password = process.env.PREVIEW_PASSWORD;
-  if (!password) return NextResponse.next();
-
   const { pathname } = req.nextUrl;
+  const prefixed = stripLocalePrefix(pathname);
+  const cookieLocale = normalizeLocale(req.cookies.get(LOCALE_COOKIE)?.value);
+  const negotiated =
+    prefixed.locale ??
+    cookieLocale ??
+    localeFromAcceptLanguage(req.headers.get("accept-language")) ??
+    DEFAULT_LOCALE;
 
-  if (!shouldGate(pathname)) return NextResponse.next();
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-lc-locale", negotiated);
+
+  let localeResponse: NextResponse | null = null;
+  if (prefixed.locale) {
+    const rewriteUrl = req.nextUrl.clone();
+    rewriteUrl.pathname = prefixed.pathname;
+    localeResponse = NextResponse.rewrite(rewriteUrl, {
+      request: { headers: requestHeaders },
+    });
+    localeResponse.cookies.set(LOCALE_COOKIE, prefixed.locale, {
+      path: "/",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 365,
+    });
+  }
+
+  const password = process.env.PREVIEW_PASSWORD;
+  if (!password) {
+    return (
+      localeResponse ??
+      NextResponse.next({ request: { headers: requestHeaders } })
+    );
+  }
+
+  if (!shouldGate(prefixed.pathname)) {
+    return (
+      localeResponse ??
+      NextResponse.next({ request: { headers: requestHeaders } })
+    );
+  }
 
   // Already authenticated? Let through.
   const cookie = req.cookies.get(COOKIE_NAME);
-  if (cookie?.value === password) return NextResponse.next();
+  if (cookie?.value === password) {
+    return (
+      localeResponse ??
+      NextResponse.next({ request: { headers: requestHeaders } })
+    );
+  }
 
   // Otherwise redirect to the gate, preserving the intended destination.
   const url = req.nextUrl.clone();

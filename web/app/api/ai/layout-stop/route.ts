@@ -21,6 +21,7 @@ import {
 } from "@/lib/ai-provider";
 import { gateApiRequest } from "@/lib/api-auth";
 import { AuthRequiredError, QuotaExceededError } from "@/lib/errors";
+import { normalizeLocale, resolveLocaleFromRequest } from "@/lib/i18n";
 
 interface RequestBody {
   userId?: string;
@@ -29,7 +30,10 @@ interface RequestBody {
     title?: string | null;
     mood?: string | null;
     tone?: "warm" | "cool" | "punk" | null;
+    locale?: string | null;
   };
+  locale?: string;
+  outputLocale?: string;
 }
 
 export async function POST(req: Request) {
@@ -69,6 +73,11 @@ export async function POST(req: Request) {
       title: body.context?.title ?? null,
       mood: body.context?.mood ?? null,
       tone: body.context?.tone ?? null,
+      locale:
+        normalizeLocale(body.outputLocale) ??
+        normalizeLocale(body.locale) ??
+        normalizeLocale(body.context?.locale) ??
+        resolveLocaleFromRequest(req),
     },
   };
 

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 
+import { I18nProvider } from "@/components/i18n-provider";
 import { HtmlModeAttr } from "@/components/mode-switcher";
+import { resolveLocaleFromHeaders } from "@/lib/i18n";
 import { getAppBaseUrl } from "@/lib/public-content";
 
 import "@/app/globals.css";
@@ -22,13 +25,14 @@ export const metadata: Metadata = {
 const GOOGLE_FONTS =
   "https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Archivo+Black&family=Instrument+Serif:ital@0;1&family=Bodoni+Moda:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@400;500;600&display=swap";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = resolveLocaleFromHeaders(await headers());
   return (
-    <html lang="en">
+    <html lang={locale === "zh" ? "zh-CN" : "en"}>
       <head>
         <link
           rel="preconnect"
@@ -46,7 +50,7 @@ export default function RootLayout({
             the [data-mode="punk"] { … } rules in globals.css apply
             globally. Client-only; renders nothing in the tree. */}
         <HtmlModeAttr />
-        {children}
+        <I18nProvider locale={locale}>{children}</I18nProvider>
       </body>
     </html>
   );

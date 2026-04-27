@@ -12,6 +12,7 @@
 
 import { useRef, useState } from "react";
 
+import { useLocale } from "@/components/i18n-provider";
 import type {
   ComposeProjectResult,
   VisionAnalysisResult,
@@ -56,6 +57,7 @@ export interface VisionUploadProps {
 }
 
 export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
+  const locale = useLocale();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [composing, setComposing] = useState(false);
@@ -112,7 +114,7 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
           const res = await fetch("/api/vision/describe", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ imageDataUrl: dataUrl }),
+            body: JSON.stringify({ imageDataUrl: dataUrl, outputLocale: locale }),
           });
           const body = (await res.json()) as
             | (VisionAnalysisResult & {
@@ -294,6 +296,7 @@ export function VisionUpload({ onComplete, onClose }: VisionUploadProps) {
             capturedAtIso: p.grounding.capturedAtIso,
             description: p.description,
           })),
+          outputLocale: locale,
         }),
       });
       const body = (await res.json()) as

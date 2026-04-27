@@ -1,10 +1,10 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-27T00:35Z
+**Last updated:** 2026-04-27T20:52Z
 
 ## Plan version
 
-**Plan v2.1 + M8 AI visibility productionization** (see `docs/implementation-plan.md`, `tasks/M7-ai-native-discovery/`, and `tasks/M8-ai-visibility-production/`): features-first, then live infra, then AI-native discovery/API/MCP surfaces.
+**Plan v2.1 + M8 AI visibility productionization + v1.2 bilingual active surfaces** (see `docs/implementation-plan.md`, `docs/requirements.md`, `tasks/M7-ai-native-discovery/`, and `tasks/M8-ai-visibility-production/`): features-first, then live infra, then AI-native discovery/API/MCP surfaces, now with English/Simplified Chinese active-product coverage.
 
 ## Summary
 
@@ -22,18 +22,20 @@
 | M6 Launch | ⏳ not started | Custom domain `zhouyixiaoxiao.org` (IONOS CNAME + Vercel), invite codes, smoke test |
 | M7 AI-native discovery | ✅ deployed | Public-content DTO seam, API v1, OpenAPI, API-token migration, MCP endpoint, robots/sitemap/llms, metadata/JSON-LD, and agent docs are live. |
 | M8 AI visibility productionization | ✅ deployed | DTO/markdown quality upgraded, `/ai-visibility` API + MCP tool live, `llms-full.txt` points to citation surfaces, production smoke passed. Agent-token migration applied; owner full-scope token stored in Keychain. |
+| v1.2 Bilingual active surfaces | 🧪 implemented locally | English + Simplified Chinese for active UI/API/agent/discovery/docs. Added `0004_i18n_translations.sql`, locale resolver/switcher, seed translations, DTO localization, OpenAPI/MCP/llms localization, sitemap alternates, and translation-aware Studio text edits. Production migration + seed resync still pending. |
 
 ## Eligible next tracks (owner picks)
 
 1. **M4 public polish** — ToS, Privacy, feedback form, 404/loading states, OG image. This is the next best track before inviting broader EU/public beta traffic.
-2. **Use owner agent token for controlled agent/MCP operations** — token label `owner-full-agent-20260427`, scopes `public:read,ai:run,project:write`, stored in macOS Keychain service `london-cuts-agent-token`. Do not print or commit the token.
-3. **M5 observability + CI** — Sentry, PostHog, auth/invite/quota tests, GitHub Actions.
-4. **Live-smoke owner signup notification with a real fresh beta account** — code is implemented, deployed, and Vercel Production has `RESEND_API_KEY`, `OWNER_NOTIFY_EMAIL`, and `TRANSACTIONAL_FROM_EMAIL`; remaining optional check is to onboard a fresh plus-address and confirm the owner email arrives.
-5. **M6 custom domain** — owner action in IONOS + Vercel domain setup. Current shareable fallback is `https://london-cuts.vercel.app/` or the direct reader URL.
-6. **Per-user AI quota** — new migration + `user_daily_ai_spend` table + tracker in ai-provider. Defer until friend-user traffic proves the need.
-7. **User menu UI** — sign-out button + display-name in studio chrome. Small; tack onto any future UI pass.
-8. **Invite/onboarding polish** — normal `/sign-in` mail now works via Resend SMTP; next polish is copy/templates and avoiding owner-only wording in beta emails.
-9. **Seed sync smoke after deployment** — after any seed edit, run `/api/migrate/seed` with the migration secret or local service-role route, then verify the live reader shows 13 stops and real coordinates.
+2. **Bilingual rollout** — apply `0004_i18n_translations.sql`, resync seed/demo translations, deploy, then smoke `/zh`, `/en`, `?lang=zh`, OpenAPI, llms, MCP, sitemap alternates, and Studio edit persistence. Do not print secrets/tokens.
+3. **Use owner agent token for controlled agent/MCP operations** — token label `owner-full-agent-20260427`, scopes `public:read,ai:run,project:write`, stored in macOS Keychain service `london-cuts-agent-token`. Do not print or commit the token.
+4. **M5 observability + CI** — Sentry, PostHog, auth/invite/quota tests, GitHub Actions.
+5. **Live-smoke owner signup notification with a real fresh beta account** — code is implemented, deployed, and Vercel Production has `RESEND_API_KEY`, `OWNER_NOTIFY_EMAIL`, and `TRANSACTIONAL_FROM_EMAIL`; remaining optional check is to onboard a fresh plus-address and confirm the owner email arrives.
+6. **M6 custom domain** — owner action in IONOS + Vercel domain setup. Current shareable fallback is `https://london-cuts.vercel.app/` or the direct reader URL.
+7. **Per-user AI quota** — new migration + `user_daily_ai_spend` table + tracker in ai-provider. Defer until friend-user traffic proves the need.
+8. **User menu UI** — sign-out button + display-name in studio chrome. Small; tack onto any future UI pass.
+9. **Invite/onboarding polish** — normal `/sign-in` mail now works via Resend SMTP; next polish is copy/templates and avoiding owner-only wording in beta emails.
+10. **Seed sync smoke after deployment** — after any seed edit, run `/api/migrate/seed` with the migration secret or local service-role route, then verify the live reader shows 13 stops and real coordinates.
 
 First step for whichever track: read `tasks/HANDOFF.md` first — it's the canonical resume-point and has the M1 architecture diagram + seam map + gotchas + M2 activation flow.
 

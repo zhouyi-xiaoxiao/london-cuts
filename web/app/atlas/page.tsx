@@ -10,12 +10,14 @@
 
 import { useMemo } from "react";
 
+import { LanguageSwitcher, useT } from "@/components/i18n-provider";
 import { Atlas, type AtlasStop } from "@/components/map/atlas";
 import { useMode } from "@/stores/mode";
 import { SEED_STOPS, SEED_STOPS_REYKJAVIK } from "@/lib/seed";
 
 export default function Page() {
   const mode = useMode();
+  const t = useT();
 
   // Union of seed stops. Prefix the Reykjavík IDs so `n` is unique across
   // the two projects (both use "01".."NN"). `mood` / `time` feed the
@@ -53,7 +55,10 @@ export default function Page() {
         minHeight: "100vh",
       }}
     >
-      <div className="eyebrow">The Atlas · F-P002</div>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+        <div className="eyebrow">The Atlas · F-P002</div>
+        <LanguageSwitcher compact />
+      </div>
       <h1
         style={{
           fontFamily: "var(--mode-display-font)",
@@ -63,15 +68,13 @@ export default function Page() {
           margin: "12px 0 16px",
         }}
       >
-        {allStops.length} stops, two cities.
+        {t("atlas.title", { count: allStops.length })}
       </h1>
       <p
         className="mono-sm"
         style={{ opacity: 0.65, marginBottom: 28, maxWidth: 680 }}
       >
-        MapLibre-rendered atlas with mode-aware tile styles. Fashion uses
-        CARTO voyager, cinema uses dark-matter, punk uses a desaturated
-        light base with a red zine scrim.
+        {t("atlas.body")}
       </p>
 
       <Atlas
@@ -92,7 +95,7 @@ export default function Page() {
           letterSpacing: "0.08em",
         }}
       >
-        SWITCH NARRATIVE MODE TO SEE THE ATLAS RE-TILE
+        {t("atlas.switchHint")}
       </p>
     </main>
   );

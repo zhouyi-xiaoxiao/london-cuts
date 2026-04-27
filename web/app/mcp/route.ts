@@ -21,6 +21,11 @@ import {
   type ComposePhotoInput,
   type PostcardStyle,
 } from "@/lib/ai-provider";
+import {
+  normalizeLocale,
+  resolveLocaleFromRequest,
+  type Locale,
+} from "@/lib/i18n";
 
 export const runtime = "nodejs";
 
@@ -43,12 +48,17 @@ const VALID_STYLES: readonly PostcardStyle[] = [
   "artnouveau",
 ];
 
-export async function GET() {
+export async function GET(req: Request) {
+  const locale = resolveLocaleFromRequest(req);
+  const zh = locale === "zh";
   return NextResponse.json({
     name: "London Cuts MCP",
+    locale,
     endpoint: `${getAppBaseUrl()}/mcp`,
     protocolVersion: PROTOCOL_VERSION,
-    resources: ["public projects", "public stops", "markdown citation packs"],
+    resources: zh
+      ? ["公开项目", "公开站点", "Markdown 引用包"]
+      : ["public projects", "public stops", "markdown citation packs"],
     tools: [
       "search_public_projects",
       "get_public_project",
@@ -71,6 +81,7 @@ export async function POST(req: Request) {
   }
 
   const id = body.id ?? null;
+  const requestLocale = localeFromParams(body.params) ?? resolveLocaleFromRequest(req);
   if (body.jsonrpc !== "2.0" || typeof body.method !== "string") {
     return rpcResponse(id, rpcError(-32600, "Invalid Request"));
   }
@@ -91,17 +102,17 @@ export async function POST(req: Request) {
           },
         });
       case "resources/list":
-        return rpcResponse(id, await listResources());
+        return rpcResponse(id, await listResources(requestLocale));
       case "resources/read":
-        return rpcResponse(id, await readResource(body.params));
+        return rpcResponse(id, await readResource(body.params, requestLocale));
       case "tools/list":
-        return rpcResponse(id, { tools: toolDefinitions() });
+        return rpcResponse(id, { tools: toolDefinitions(requestLocale) });
       case "tools/call":
-        return rpcResponse(id, await callTool(req, body.params));
+        return rpcResponse(id, await callTool(req, body.params, requestLocale));
       case "prompts/list":
-        return rpcResponse(id, { prompts: promptDefinitions() });
+        return rpcResponse(id, { prompts: promptDefinitions(requestLocale) });
       case "prompts/get":
-        return rpcResponse(id, getPrompt(body.params));
+        return rpcResponse(id, getPrompt(body.params, requestLocale));
       default:
         return rpcResponse(id, rpcError(-32601, "Method not found"));
     }
@@ -112,8 +123,8 @@ export async function POST(req: Request) {
   }
 }
 
-async function listResources() {
-  const projects = await listPublicProjects();
+async function listResources(locale: Locale) {
+  const projects = await listPublicProjects(locale);
   return {
     resources: projects.flatMap((project) => [
       {
@@ -125,20 +136,25 @@ async function listResources() {
       {
         uri: projectMarkdownResourceUri(project.handle, project.slug),
         name: `${project.title} markdown`,
-        description: "Citation-friendly markdown pack",
+        description:
+          locale === "zh" ? "适合引用的 Markdown 包" : "Citation-friendly markdown pack",
         mimeType: "text/markdown",
       },
     ]),
   };
 }
 
-async function readResource(params: Record<string, unknown> | undefined) {
+async function readResource(
+  params: Record<string, unknown> | undefined,
+  requestLocale: Locale,
+) {
+  const locale = localeFromParams(params) ?? requestLocale;
   const uri = requireString(params?.uri, "uri");
   const parsed = parseResourceUri(uri);
   if (!parsed) throw new Error(`Unsupported resource URI: ${uri}`);
 
   if (parsed.kind === "project" || parsed.kind === "markdown") {
-    const project = await getPublicProject(parsed.handle, parsed.slug);
+    const project = await getPublicProject(parsed.handle, parsed.slug, locale);
     if (!project) throw new Error("Public project not found");
     return {
       contents: [
@@ -155,7 +171,7 @@ async function readResource(params: Record<string, unknown> | undefined) {
   }
 
   if (parsed.kind !== "stop") throw new Error(`Unsupported resource URI: ${uri}`);
-  const result = await getPublicStop(parsed.handle, parsed.slug, parsed.stop);
+  const result = await getPublicStop(parsed.handle, parsed.slug, parsed.stop, locale);
   if (!result) throw new Error("Public stop not found");
   return {
     contents: [
@@ -168,14 +184,19 @@ async function readResource(params: Record<string, unknown> | undefined) {
   };
 }
 
-async function callTool(req: Request, params: Record<string, unknown> | undefined) {
+async function callTool(
+  req: Request,
+  params: Record<string, unknown> | undefined,
+  requestLocale: Locale,
+) {
   const name = requireString(params?.name, "name");
   const args = (params?.arguments ?? {}) as Record<string, unknown>;
+  const locale = localeFromParams(args) ?? localeFromParams(params) ?? requestLocale;
 
   switch (name) {
     case "search_public_projects": {
       const query = typeof args.query === "string" ? args.query.toLowerCase() : "";
-      const projects = await listPublicProjects();
+      const projects = await listPublicProjects(locale);
       const data = query
         ? projects.filter((p) =>
             [
@@ -201,6 +222,7 @@ async function callTool(req: Request, params: Record<string, unknown> | undefine
       const project = await getPublicProject(
         requireString(args.handle, "handle"),
         requireString(args.slug, "slug"),
+        locale,
       );
       if (!project) throw new Error("Public project not found");
       return toolText(project);
@@ -210,6 +232,7 @@ async function callTool(req: Request, params: Record<string, unknown> | undefine
         requireString(args.handle, "handle"),
         requireString(args.slug, "slug"),
         requireString(args.stop, "stop"),
+        locale,
       );
       if (!result) throw new Error("Public stop not found");
       return toolText(result);
@@ -218,14 +241,16 @@ async function callTool(req: Request, params: Record<string, unknown> | undefine
       const project = await getPublicProject(
         requireString(args.handle, "handle"),
         requireString(args.slug, "slug"),
+        locale,
       );
       if (!project) throw new Error("Public project not found");
-      return toolText(auditPublicProjectVisibility(project));
+      return toolText(auditPublicProjectVisibility(project, locale));
     }
     case "describe_photo": {
       await requireMcpWriteAccess(req, "ai:run");
       const result = await describePhoto(requireString(args.imageDataUrl, "imageDataUrl"), {
         hint: typeof args.hint === "string" ? args.hint : null,
+        locale,
       });
       return toolText({ ...result, spendToDateCents: getSpendToDateCents() });
     }
@@ -233,7 +258,7 @@ async function callTool(req: Request, params: Record<string, unknown> | undefine
       await requireMcpWriteAccess(req, "ai:run");
       const photos = args.photos;
       if (!Array.isArray(photos)) throw new Error("photos must be an array");
-      const result = await composeProject(photos as readonly ComposePhotoInput[]);
+      const result = await composeProject(photos as readonly ComposePhotoInput[], { locale });
       return toolText({ ...result, spendToDateCents: getSpendToDateCents() });
     }
     case "generate_postcard": {
@@ -298,77 +323,96 @@ function forwardAuthHeaders(req: Request): Headers {
   return headers;
 }
 
-function toolDefinitions() {
+function toolDefinitions(locale: Locale) {
+  const zh = locale === "zh";
   return [
     {
       name: "search_public_projects",
-      description: "Search published public London Cuts projects.",
+      description: zh
+        ? "搜索已发布的公开 London Cuts 项目。"
+        : "Search published public London Cuts projects.",
       inputSchema: {
         type: "object",
-        properties: { query: { type: "string" } },
+        properties: localeProperties({ query: { type: "string" } }),
       },
     },
     {
       name: "get_public_project",
-      description: "Read one public project by handle and slug.",
+      description: zh
+        ? "按 handle 和 slug 读取一个公开项目。"
+        : "Read one public project by handle and slug.",
       inputSchema: projectHandleSchema(),
     },
     {
       name: "get_public_stop",
-      description: "Read one public stop/chapter.",
+      description: zh ? "读取一个公开站点/章节。" : "Read one public stop/chapter.",
       inputSchema: {
         type: "object",
-        properties: {
+        properties: localeProperties({
           handle: { type: "string" },
           slug: { type: "string" },
           stop: { type: "string" },
-        },
+        }),
         required: ["handle", "slug", "stop"],
       },
     },
     {
       name: "audit_public_project_visibility",
       description:
-        "Read a deterministic AI visibility audit for one public project.",
+        zh
+          ? "读取一个公开项目的确定性 AI 可见性审计。"
+          : "Read a deterministic AI visibility audit for one public project.",
       inputSchema: projectHandleSchema(),
     },
     {
       name: "describe_photo",
-      description: "Authenticated AI vision description for one photo. Requires ai:run.",
+      description: zh
+        ? "认证 AI 视觉接口：描述一张照片。需要 ai:run。"
+        : "Authenticated AI vision description for one photo. Requires ai:run.",
       inputSchema: {
         type: "object",
-        properties: {
+        properties: localeProperties({
           imageDataUrl: { type: "string" },
           hint: { type: "string" },
-        },
+          outputLocale: { type: "string", enum: ["en", "zh"] },
+        }),
         required: ["imageDataUrl"],
       },
     },
     {
       name: "compose_project",
-      description: "Authenticated AI grouping/copy draft from described photos. Requires ai:run.",
+      description: zh
+        ? "认证 AI：把已描述照片组合成项目草稿。需要 ai:run。"
+        : "Authenticated AI grouping/copy draft from described photos. Requires ai:run.",
       inputSchema: {
         type: "object",
-        properties: { photos: { type: "array", items: { type: "object" } } },
+        properties: localeProperties({
+          photos: { type: "array", items: { type: "object" } },
+          outputLocale: { type: "string", enum: ["en", "zh"] },
+        }),
         required: ["photos"],
       },
     },
     {
       name: "generate_postcard",
-      description: "Authenticated AI postcard generation. Requires ai:run.",
+      description: zh
+        ? "认证 AI：生成明信片图片。需要 ai:run。"
+        : "Authenticated AI postcard generation. Requires ai:run.",
       inputSchema: {
         type: "object",
-        properties: {
+        properties: localeProperties({
           sourceImageDataUrl: { type: "string" },
           style: { type: "string", enum: VALID_STYLES },
           quality: { type: "string", enum: ["low", "medium", "high"] },
-        },
+        }),
         required: ["sourceImageDataUrl", "style"],
       },
     },
     {
       name: "sync_project",
-      description: "Authenticated project sync to Supabase. Requires project:write.",
+      description: zh
+        ? "认证项目同步到 Supabase。需要 project:write。"
+        : "Authenticated project sync to Supabase. Requires project:write.",
       inputSchema: {
         type: "object",
         properties: { payload: { type: "object" } },
@@ -378,48 +422,93 @@ function toolDefinitions() {
   ];
 }
 
-function promptDefinitions() {
+function promptDefinitions(locale: Locale) {
+  const zh = locale === "zh";
   return [
     {
       name: "draft_travel_story",
-      description: "Draft a London Cuts story from photo notes and a location.",
+      description: zh
+        ? "根据照片笔记和地点起草 London Cuts 故事。"
+        : "Draft a London Cuts story from photo notes and a location.",
       arguments: [
-        { name: "location", description: "Trip location", required: true },
-        { name: "voice", description: "Desired narrative voice", required: false },
+        {
+          name: "location",
+          description: zh ? "旅行地点" : "Trip location",
+          required: true,
+        },
+        {
+          name: "voice",
+          description: zh ? "希望的叙事声音" : "Desired narrative voice",
+          required: false,
+        },
+        {
+          name: "locale",
+          description: zh ? "输出语言 en 或 zh" : "Output locale en or zh",
+          required: false,
+        },
       ],
     },
     {
       name: "polish_stop_copy",
-      description: "Polish one stop while preserving facts and structure.",
-      arguments: [{ name: "stop_json", description: "Stop DTO JSON", required: true }],
+      description: zh
+        ? "在保留事实和结构的前提下润色一个站点。"
+        : "Polish one stop while preserving facts and structure.",
+      arguments: [
+        { name: "stop_json", description: "Stop DTO JSON", required: true },
+        {
+          name: "locale",
+          description: zh ? "输出语言 en 或 zh" : "Output locale en or zh",
+          required: false,
+        },
+      ],
     },
     {
       name: "publish_readiness_check",
-      description: "Check whether a project has enough public/citation material.",
-      arguments: [{ name: "project_json", description: "Project DTO JSON", required: true }],
+      description: zh
+        ? "检查项目是否具备足够公开/引用材料。"
+        : "Check whether a project has enough public/citation material.",
+      arguments: [
+        { name: "project_json", description: "Project DTO JSON", required: true },
+        {
+          name: "locale",
+          description: zh ? "输出语言 en 或 zh" : "Output locale en or zh",
+          required: false,
+        },
+      ],
     },
     {
       name: "improve_ai_visibility_pack",
-      description: "Turn an AI visibility audit into concrete public copy/API improvements.",
+      description: zh
+        ? "把 AI 可见性审计转成具体 public copy/API 改进。"
+        : "Turn an AI visibility audit into concrete public copy/API improvements.",
       arguments: [
         { name: "audit_json", description: "AI visibility audit JSON", required: true },
+        {
+          name: "locale",
+          description: zh ? "输出语言 en 或 zh" : "Output locale en or zh",
+          required: false,
+        },
       ],
     },
   ];
 }
 
-function getPrompt(params: Record<string, unknown> | undefined) {
+function getPrompt(params: Record<string, unknown> | undefined, requestLocale: Locale) {
   const name = requireString(params?.name, "name");
   const args = (params?.arguments ?? {}) as Record<string, unknown>;
+  const locale = localeFromParams(args) ?? localeFromParams(params) ?? requestLocale;
+  const zh = locale === "zh";
   if (name === "draft_travel_story") {
     return {
-      description: "Draft a London Cuts travel story.",
+      description: zh ? "起草 London Cuts 旅行故事。" : "Draft a London Cuts travel story.",
       messages: [
         {
           role: "user",
           content: {
             type: "text",
-            text: `Draft a London Cuts project for ${args.location ?? "the provided location"}. Keep it visual, factual, and stop-based. Voice: ${args.voice ?? "cinematic but concise"}.`,
+            text: zh
+              ? `为 ${args.location ?? "给定地点"} 起草一个 London Cuts 项目。保持画面感、事实性和站点结构。声音：${args.voice ?? "电影感但简洁"}。请用简体中文输出。`
+              : `Draft a London Cuts project for ${args.location ?? "the provided location"}. Keep it visual, factual, and stop-based. Voice: ${args.voice ?? "cinematic but concise"}.`,
           },
         },
       ],
@@ -427,13 +516,15 @@ function getPrompt(params: Record<string, unknown> | undefined) {
   }
   if (name === "polish_stop_copy") {
     return {
-      description: "Polish one stop.",
+      description: zh ? "润色一个站点。" : "Polish one stop.",
       messages: [
         {
           role: "user",
           content: {
             type: "text",
-            text: `Polish this stop without adding facts or changing structure:\n\n${args.stop_json ?? ""}`,
+            text: zh
+              ? `在不添加事实、不改变结构的前提下润色这个站点。请用简体中文输出：\n\n${args.stop_json ?? ""}`
+              : `Polish this stop without adding facts or changing structure:\n\n${args.stop_json ?? ""}`,
           },
         },
       ],
@@ -441,13 +532,15 @@ function getPrompt(params: Record<string, unknown> | undefined) {
   }
   if (name === "publish_readiness_check") {
     return {
-      description: "Check project publish readiness.",
+      description: zh ? "检查项目发布准备度。" : "Check project publish readiness.",
       messages: [
         {
           role: "user",
           content: {
             type: "text",
-            text: `Review this London Cuts project for publish readiness, citation quality, missing media, and AI-search clarity:\n\n${args.project_json ?? ""}`,
+            text: zh
+              ? `检查这个 London Cuts 项目的发布准备度、引用质量、缺失媒体和 AI 搜索清晰度。请用简体中文输出：\n\n${args.project_json ?? ""}`
+              : `Review this London Cuts project for publish readiness, citation quality, missing media, and AI-search clarity:\n\n${args.project_json ?? ""}`,
           },
         },
       ],
@@ -455,13 +548,15 @@ function getPrompt(params: Record<string, unknown> | undefined) {
   }
   if (name === "improve_ai_visibility_pack") {
     return {
-      description: "Improve AI visibility from an audit.",
+      description: zh ? "根据审计改进 AI 可见性。" : "Improve AI visibility from an audit.",
       messages: [
         {
           role: "user",
           content: {
             type: "text",
-            text: `Use this London Cuts AI visibility audit to propose concrete public DTO, markdown, metadata, image-alt, and citation-copy improvements. Preserve facts and do not invent private data:\n\n${args.audit_json ?? ""}`,
+            text: zh
+              ? `根据这个 London Cuts AI 可见性审计，提出具体的 public DTO、markdown、metadata、image-alt 和 citation-copy 改进。保留事实，不要编造私有数据。请用简体中文输出：\n\n${args.audit_json ?? ""}`
+              : `Use this London Cuts AI visibility audit to propose concrete public DTO, markdown, metadata, image-alt, and citation-copy improvements. Preserve facts and do not invent private data:\n\n${args.audit_json ?? ""}`,
           },
         },
       ],
@@ -473,12 +568,30 @@ function getPrompt(params: Record<string, unknown> | undefined) {
 function projectHandleSchema() {
   return {
     type: "object",
-    properties: {
+    properties: localeProperties({
       handle: { type: "string" },
       slug: { type: "string" },
-    },
+    }),
     required: ["handle", "slug"],
   };
+}
+
+function localeProperties(properties: Record<string, unknown>) {
+  return {
+    ...properties,
+    locale: { type: "string", enum: ["en", "zh"] },
+  };
+}
+
+function localeFromParams(params: Record<string, unknown> | undefined): Locale | null {
+  const outputLocale =
+    typeof params?.outputLocale === "string" ? params.outputLocale : null;
+  const locale = typeof params?.locale === "string" ? params.locale : null;
+  return (
+    normalizeLocale(outputLocale) ??
+    normalizeLocale(locale) ??
+    null
+  );
 }
 
 function projectResourceUri(handle: string, slug: string) {

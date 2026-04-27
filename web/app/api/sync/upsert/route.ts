@@ -40,6 +40,7 @@ interface SyncAsset {
   publicUrl?: string | null;
   styleId?: string | null;
   prompt?: string | null;
+  translations?: Record<string, unknown> | null;
 }
 
 interface SyncStop {
@@ -66,7 +67,9 @@ interface SyncStop {
       line2?: string;
       country?: string;
     };
+    translations?: Record<string, unknown> | null;
   };
+  translations?: Record<string, unknown> | null;
 }
 
 interface SyncPayload {
@@ -87,6 +90,7 @@ interface SyncPayload {
     author?: string;
     tags?: readonly string[];
     coverAssetLegacyId?: string | null;
+    translations?: Record<string, unknown> | null;
   };
   stops: readonly SyncStop[];
   assets?: readonly SyncAsset[];
@@ -166,6 +170,7 @@ export async function POST(req: Request) {
           reads: payload.project.reads ?? 0,
           saves: payload.project.saves ?? 0,
           published_at: payload.project.publishedAt ?? null,
+          translations: payload.project.translations ?? {},
         },
         { onConflict: "legacy_id" },
       )
@@ -225,6 +230,7 @@ export async function POST(req: Request) {
           label: a.legacyId,
           style_id: a.styleId ?? null,
           prompt: a.prompt ?? null,
+          translations: a.translations ?? {},
         });
       }
 
@@ -279,6 +285,7 @@ export async function POST(req: Request) {
       hero_asset_id: s.heroAssetId
         ? (assetByLegacy.get(s.heroAssetId) ?? null)
         : null,
+      translations: s.translations ?? {},
     }));
 
     if (stopRows.length > 0) {
@@ -324,6 +331,7 @@ export async function POST(req: Request) {
           recipient_country: pc.recipient?.country ?? null,
           style_id: pc.style ?? null,
           orientation: pc.orientation === "portrait" ? "portrait" : "landscape",
+          translations: pc.translations ?? {},
         });
       }
       if (postcardRows.length > 0) {

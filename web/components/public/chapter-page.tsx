@@ -29,6 +29,7 @@
 
 import Link from "next/link";
 
+import { LanguageSwitcher, useT } from "@/components/i18n-provider";
 import { ModeSwitcher } from "@/components/mode-switcher";
 import { useMode } from "@/stores/mode";
 import { NotFoundCard } from "./not-found-card";
@@ -277,6 +278,7 @@ export function ChapterPage({
   const localLookup = usePublicProjectLookup(authorHandle, slug);
   const lookup = initialData ?? localLookup;
   const mode = useMode();
+  const t = useT();
 
   if (!lookup) {
     return <NotFoundCard what="This chapter" hint={`slug=${slug}`} />;
@@ -356,7 +358,10 @@ export function ChapterPage({
           >
             ← {project.title}
           </Link>
-          <ModeSwitcher />
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <LanguageSwitcher compact />
+            <ModeSwitcher />
+          </div>
         </div>
       </header>
 
@@ -372,7 +377,7 @@ export function ChapterPage({
             for Punk; left-aligned with mono eyebrow for Cinema. */}
         <div style={headerAlignment}>
           <div className="eyebrow" style={grammar.eyebrowStyle}>
-            Stop {stop.n} · {stop.code} · {stop.time} · {stop.mood}
+            {t("public.stop")} {stop.n} · {stop.code} · {stop.time} · {stop.mood}
           </div>
           <h1 style={grammar.h1Style}>{stop.title}</h1>
         </div>
@@ -437,7 +442,7 @@ export function ChapterPage({
             href={`/${authorHandle}/${project.slug}/p/${stopSlugFrom(stop.title)}`}
             className="btn btn-solid"
           >
-            Open postcard →
+            {t("public.openPostcard")} →
           </Link>
         </div>
 
@@ -467,6 +472,7 @@ function ChapterNav({
   prev: Stop | null;
   next: Stop | null;
 }) {
+  const t = useT();
   return (
     <nav
       aria-label="Stop navigation"
@@ -500,7 +506,7 @@ function ChapterNav({
               overflowWrap: "anywhere",
             }}
           >
-            ← Stop {prev.n} · {prev.title}
+            ← {t("public.stop")} {prev.n} · {prev.title}
           </Link>
         ) : (
           <Link
@@ -518,7 +524,7 @@ function ChapterNav({
               minHeight: 44,
             }}
           >
-            ← Back to project
+            ← {t("public.backToProject")}
           </Link>
         )}
       </div>
@@ -541,7 +547,7 @@ function ChapterNav({
               overflowWrap: "anywhere",
             }}
           >
-            Stop {next.n} · {next.title} →
+            {t("public.stop")} {next.n} · {next.title} →
           </Link>
         ) : (
           <span
@@ -553,7 +559,7 @@ function ChapterNav({
               opacity: 0.5,
             }}
           >
-            Last stop
+            {t("public.lastStop")}
           </span>
         )}
       </div>
@@ -574,6 +580,7 @@ function BodyBlocks({
   grammar: ModeGrammar;
   mode: NarrativeMode;
 }) {
+  const t = useT();
   if (!blocks || blocks.length === 0) {
     return (
       <p
@@ -584,7 +591,7 @@ function BodyBlocks({
           opacity: 0.6,
         }}
       >
-        This chapter is still in draft.
+        {t("public.draftChapter")}
       </p>
     );
   }

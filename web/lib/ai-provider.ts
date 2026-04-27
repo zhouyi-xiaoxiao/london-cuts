@@ -19,6 +19,7 @@ import OpenAI from "openai";
 
 import { AuthRequiredError, QuotaExceededError } from "./errors";
 import { env } from "./env";
+import type { Locale } from "./i18n";
 import { getStyleMeta, type StyleMeta } from "./palette";
 
 export type PostcardStyle =
@@ -269,12 +270,26 @@ export interface VisionAnalysisResult {
 // (1024x input + short JSON output).
 const VISION_COST_CENTS = 1;
 
-function mockVision(seed: string): VisionAnalysisResult {
+function mockVision(seed: string, locale: Locale = "en"): VisionAnalysisResult {
   const moods = ["Amber", "Steel", "Glacier", "Ember", "Neon", "Gold"];
   const tones: VisionAnalysisResult["tone"][] = ["warm", "cool", "punk"];
   const i = Math.abs(
     seed.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7),
   );
+  if (locale === "zh") {
+    const zhMoods = ["琥珀", "钢蓝", "冰川", "余烬", "霓虹", "金色"];
+    return {
+      title: `${zhMoods[i % zhMoods.length]}时刻`,
+      paragraph:
+        "MOCK — 这是一处安静、暖色调的场景，建筑线条清晰，光线柔和而有方向。远处的一个小细节提醒人注意到当下的时间。",
+      pullQuote: "光比注意力走得更快。",
+      postcardMessage:
+        "MOCK — 今天早上走到这里时想起你。光不会等人。",
+      mood: zhMoods[i % zhMoods.length],
+      tone: tones[i % tones.length],
+      locationHint: "未知 — 将 AI_PROVIDER_MOCK=false 后可启用真实识别。",
+    };
+  }
   return {
     title: `A moment at ${moods[i % moods.length].toLowerCase()} hour`,
     paragraph:
@@ -291,6 +306,7 @@ function mockVision(seed: string): VisionAnalysisResult {
 async function realDescribePhoto(
   source: string,
   hint: string | null,
+  locale: Locale,
 ): Promise<VisionAnalysisResult> {
   if (!env.OPENAI_API_KEY) {
     throw new AuthRequiredError();
@@ -310,6 +326,10 @@ async function realDescribePhoto(
   const userText = hint && hint.trim()
     ? `Analyse this photo. Return JSON. User context: ${hint.trim()}`
     : "Analyse this photo. Return JSON.";
+  const outputLanguage =
+    locale === "zh"
+      ? "Return title, paragraph, pullQuote, postcardMessage, mood, and locationHint in Simplified Chinese. Keep tone as the stable English enum warm|cool|punk."
+      : "Return all user-facing text in English. Keep tone as the stable English enum warm|cool|punk.";
 
   const response = await client.chat.completions.create({
     model: "gpt-4o-mini",
@@ -319,7 +339,7 @@ async function realDescribePhoto(
       {
         role: "system",
         content:
-          'You analyse personal travel/memory photographs for a creator tool. Respond as JSON only with fields: title (5-10 words), paragraph (40-70 words describing what is visible), pullQuote (under 15 words, evocative), postcardMessage (1-2 short sentences, first-person, like a note to a friend), mood (single word like "Amber", "Steel", "Ember"), tone ("warm"|"cool"|"punk"), locationHint (neighborhood or landmark if recognisable). When user context is provided, weigh it heavily — it is ground truth from the photographer.',
+          `You analyse personal travel/memory photographs for a creator tool. Respond as JSON only with fields: title (5-10 words), paragraph (40-70 words describing what is visible), pullQuote (under 15 words, evocative), postcardMessage (1-2 short sentences, first-person, like a note to a friend), mood (single word like "Amber", "Steel", "Ember"), tone ("warm"|"cool"|"punk"), locationHint (neighborhood or landmark if recognisable). When user context is provided, weigh it heavily — it is ground truth from the photographer. ${outputLanguage}`,
       },
       {
         role: "user",
@@ -350,15 +370,16 @@ async function realDescribePhoto(
 
 export async function describePhoto(
   source: string,
-  options: { hint?: string | null } = {},
+  options: { hint?: string | null; locale?: Locale } = {},
 ): Promise<VisionAnalysisResult & { costCents: number; mock: boolean }> {
+  const locale = options.locale ?? "en";
   const mockMode = env.AI_PROVIDER_MOCK === "true" || !env.OPENAI_API_KEY;
   if (mockMode) {
     const seed = source.slice(0, 64) + (options.hint ?? "");
-    return { ...mockVision(seed), costCents: 0, mock: true };
+    return { ...mockVision(seed, locale), costCents: 0, mock: true };
   }
   assertWithinBudget(VISION_COST_CENTS);
-  const result = await realDescribePhoto(source, options.hint ?? null);
+  const result = await realDescribePhoto(source, options.hint ?? null, locale);
   spendToDateCents += VISION_COST_CENTS;
   return { ...result, costCents: VISION_COST_CENTS, mock: false };
 }
@@ -414,7 +435,10 @@ export interface ComposeProjectResult {
 // Cheap — one text call to gpt-4o-mini. Conservative upper bound.
 const COMPOSE_COST_CENTS = 3;
 
-function mockCompose(photos: readonly ComposePhotoInput[]): ComposeProjectResult {
+function mockCompose(
+  photos: readonly ComposePhotoInput[],
+  locale: Locale = "en",
+): ComposeProjectResult {
   // Deterministic mock: group photos in pairs (or solo if odd count).
   // Mood + tone taken from the first photo of each group for variety.
   const stops: ComposedStop[] = [];
@@ -434,7 +458,8 @@ function mockCompose(photos: readonly ComposePhotoInput[]): ComposeProjectResult
       paragraphs,
       pullQuote: quote,
       postcardMessage:
-        group[0].description.postcardMessage ?? "MOCK — a short note.",
+        group[0].description.postcardMessage ??
+        (locale === "zh" ? "MOCK — 一句简短的问候。" : "MOCK — a short note."),
       code: (first.description.locationHint || "").slice(0, 8).toUpperCase(),
       lat: first.lat ?? null,
       lng: first.lng ?? null,
@@ -442,12 +467,18 @@ function mockCompose(photos: readonly ComposePhotoInput[]): ComposeProjectResult
   }
   return {
     project: {
-      title: "A walk from photos",
-      subtitle: "MOCK — flip AI_PROVIDER_MOCK=false for a real compose",
+      title: locale === "zh" ? "从照片开始的一段路" : "A walk from photos",
+      subtitle:
+        locale === "zh"
+          ? "MOCK — 将 AI_PROVIDER_MOCK=false 后可启用真实组合"
+          : "MOCK — flip AI_PROVIDER_MOCK=false for a real compose",
       defaultMode: "fashion",
     },
     stops,
-    rationale: `MOCK: grouped ${photos.length} photos into ${stops.length} stop(s) by pairs.`,
+    rationale:
+      locale === "zh"
+        ? `MOCK：按两张一组把 ${photos.length} 张照片组合成 ${stops.length} 个站点。`
+        : `MOCK: grouped ${photos.length} photos into ${stops.length} stop(s) by pairs.`,
     costCents: 0,
     mock: true,
   };
@@ -455,6 +486,7 @@ function mockCompose(photos: readonly ComposePhotoInput[]): ComposeProjectResult
 
 async function realCompose(
   photos: readonly ComposePhotoInput[],
+  locale: Locale,
 ): Promise<ComposeProjectResult> {
   if (!env.OPENAI_API_KEY) throw new AuthRequiredError();
   const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
@@ -491,6 +523,9 @@ async function realCompose(
     "pullQuote (one short evocative line, ≤ 15 words, pick from paragraph material),",
     "postcardMessage (1–2 first-person sentences to a friend).",
     "Finally, return a rationale explaining the groupings in one sentence.",
+    locale === "zh"
+      ? "Return title, subtitle, stop titles, moods, paragraphs, pullQuote, postcardMessage, and rationale in Simplified Chinese. Keep defaultMode and tone as stable English enum values."
+      : "Return user-facing text in English. Keep defaultMode and tone as stable English enum values.",
   ].join(" ");
 
   const response = await client.chat.completions.create({
@@ -553,20 +588,26 @@ async function realCompose(
 
 export async function composeProject(
   photos: readonly ComposePhotoInput[],
+  options: { locale?: Locale } = {},
 ): Promise<ComposeProjectResult> {
+  const locale = options.locale ?? "en";
   if (photos.length === 0) {
     return {
-      project: { title: "Empty", subtitle: "", defaultMode: "fashion" },
+      project: {
+        title: locale === "zh" ? "空项目" : "Empty",
+        subtitle: "",
+        defaultMode: "fashion",
+      },
       stops: [],
-      rationale: "No photos provided.",
+      rationale: locale === "zh" ? "没有提供照片。" : "No photos provided.",
       costCents: 0,
       mock: true,
     };
   }
   const mockMode = env.AI_PROVIDER_MOCK === "true" || !env.OPENAI_API_KEY;
-  if (mockMode) return mockCompose(photos);
+  if (mockMode) return mockCompose(photos, locale);
   assertWithinBudget(COMPOSE_COST_CENTS);
-  const result = await realCompose(photos);
+  const result = await realCompose(photos, locale);
   spendToDateCents += COMPOSE_COST_CENTS;
   return result;
 }
@@ -721,6 +762,7 @@ export interface PolishStopInput {
     title?: string | null;
     mood?: string | null;
     tone?: "warm" | "cool" | "punk" | null;
+    locale?: Locale | null;
   };
 }
 
@@ -734,16 +776,23 @@ export interface PolishStopResult {
 // Conservative upper bound — one gpt-4o-mini text call with ≤ 2k output.
 const POLISH_COST_CENTS = 2;
 
-function mockPolish(blocks: readonly PolishableBlock[]): PolishableBlock[] {
+function mockPolish(
+  blocks: readonly PolishableBlock[],
+  locale: Locale = "en",
+): PolishableBlock[] {
   // Deterministic mock: prepend "[POLISHED MOCK] " to paragraphs + pullQuote.
   // Leaves image / media / metaRow blocks untouched so the owner can see
   // which blocks the LLM will actually modify in REAL mode.
   return blocks.map((b) => {
     if (b.type === "paragraph" && typeof b.content === "string") {
-      return { ...b, content: `[POLISHED MOCK] ${b.content}` };
+      return {
+        ...b,
+        content:
+          locale === "zh" ? `[润色 MOCK] ${b.content}` : `[POLISHED MOCK] ${b.content}`,
+      };
     }
     if (b.type === "pullQuote" && typeof b.content === "string") {
-      return { ...b, content: `${b.content} — mock` };
+      return { ...b, content: `${b.content}${locale === "zh" ? " — mock" : " — mock"}` };
     }
     return b;
   });
@@ -791,12 +840,16 @@ async function realPolish(
     "6) If an item is already good, return it verbatim rather than paraphrase for its own sake.",
     "Also return a one-sentence rationale naming the 1-3 changes that matter most.",
     "Response schema: { items: [{ index, content }], rationale: string }",
+    input.context.locale === "zh"
+      ? "Return polished content and rationale in Simplified Chinese. Preserve original facts and proper nouns."
+      : "Return polished content and rationale in English unless the source text itself is in another language.",
   ].join(" ");
 
   const userPayload = {
     title: input.context.title ?? null,
     mood: input.context.mood ?? null,
     tone: input.context.tone ?? null,
+    locale: input.context.locale ?? "en",
     items: editable,
   };
 
@@ -839,7 +892,11 @@ async function realPolish(
 
   return {
     blocks: outBlocks,
-    rationale: parsed.rationale?.trim() || "Smoothed transitions; preserved voice.",
+    rationale:
+      parsed.rationale?.trim() ||
+      (input.context.locale === "zh"
+        ? "已顺滑段落衔接，并保留原有声音。"
+        : "Smoothed transitions; preserved voice."),
     costCents: POLISH_COST_CENTS,
     mock: false,
   };
@@ -848,10 +905,11 @@ async function realPolish(
 export async function polishStopBlocks(
   input: PolishStopInput,
 ): Promise<PolishStopResult> {
+  const locale = input.context.locale ?? "en";
   if (!input.blocks || input.blocks.length === 0) {
     return {
       blocks: [],
-      rationale: "No blocks to polish.",
+      rationale: locale === "zh" ? "没有可润色的内容块。" : "No blocks to polish.",
       costCents: 0,
       mock: true,
     };
@@ -859,8 +917,11 @@ export async function polishStopBlocks(
   const mockMode = env.AI_PROVIDER_MOCK === "true" || !env.OPENAI_API_KEY;
   if (mockMode) {
     return {
-      blocks: mockPolish(input.blocks),
-      rationale: "MOCK — prepended marker to paragraphs. Flip AI_PROVIDER_MOCK=false for a real polish.",
+      blocks: mockPolish(input.blocks, locale),
+      rationale:
+        locale === "zh"
+          ? "MOCK — 已给段落加上标记。将 AI_PROVIDER_MOCK=false 后可启用真实润色。"
+          : "MOCK — prepended marker to paragraphs. Flip AI_PROVIDER_MOCK=false for a real polish.",
       costCents: 0,
       mock: true,
     };
