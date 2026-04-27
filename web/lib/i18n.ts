@@ -453,3 +453,19 @@ export const SEED_POSTCARD_TRANSLATIONS: Record<string, Localized<PostcardTransl
   "a-year-in-se1:12": { zh: { message: "在 Gordon Street 附近找到一小块专注。每个人都按自己的节奏移动。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
   "a-year-in-se1:13": { zh: { message: "我在 Coleridge Road 为天空停下。它普通，又美得很短暂。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
 };
+
+export const SEED_ASSET_TRANSLATIONS: Record<string, Localized<AssetTranslation>> = {
+  "se1-01": { zh: { alt: "摄政街圣诞灯饰照亮夜晚。", caption: "摄政街的圣诞灯饰" } },
+  "se1-02": { zh: { alt: "透过纹理玻璃看到的安静绿意。", caption: "Muswell Hill 的窗景" } },
+  "se1-03": { zh: { alt: "Tufnell Park 地铁站台上的伦敦通勤瞬间。", caption: "Tufnell Park 地铁站" } },
+  "se1-04": { zh: { alt: "温莎城堡卫兵在石墙前列队执勤。", caption: "温莎卫兵" } },
+  "se1-05": { zh: { alt: "Cornwall Tower 内部的石拱和安静桌椅。", caption: "Cornwall Tower 的宁静空间" } },
+  "se1-06": { zh: { alt: "Golden Jubilee Bridge 附近庆祝毕业的人群。", caption: "桥边的毕业庆祝" } },
+  "se1-07": { zh: { alt: "Hounslow 通道里层叠的彩色涂鸦。", caption: "Hounslow 街头艺术" } },
+  "se1-08": { zh: { alt: "格林尼治半岛夜色中的河岸灯光和倒影。", caption: "格林尼治半岛夜景" } },
+  "se1-09": { zh: { alt: "希思罗机场英国边检处排队的人群。", caption: "希思罗抵达队伍" } },
+  "se1-10": { zh: { alt: "国王十字摄政运河旁忙碌而温暖的餐厅柜台。", caption: "摄政运河旁的餐桌" } },
+  "se1-11": { zh: { alt: "皮卡迪利夜晚的街道、车灯和店面亮光。", caption: "梅费尔夜色" } },
+  "se1-12": { zh: { alt: "Gordon Street 附近明亮而专注的健身房室内。", caption: "Pulse Fitness 健身房" } },
+  "se1-13": { zh: { alt: "Coleridge Road 上方柔和的日落云色。", caption: "Coleridge Road 的晚霞" } },
+};

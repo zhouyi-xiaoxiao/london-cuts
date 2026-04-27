@@ -11,6 +11,12 @@
 
 import { NextResponse } from "next/server";
 
+import {
+  SEED_ASSET_TRANSLATIONS,
+  SEED_POSTCARD_TRANSLATIONS,
+  SEED_PROJECT_TRANSLATIONS,
+  SEED_STOP_TRANSLATIONS,
+} from "@/lib/i18n";
 import { getServerClient } from "@/lib/supabase";
 import {
   SEED_ASSETS,
@@ -100,6 +106,7 @@ export async function POST(req: Request) {
           duration_label: SEED_PROJECT.duration,
           reads: SEED_PROJECT.reads,
           saves: SEED_PROJECT.saves,
+          translations: SEED_PROJECT_TRANSLATIONS[SEED_PROJECT.slug] ?? {},
           published_at: new Date().toISOString(),
         },
         {
@@ -118,6 +125,8 @@ export async function POST(req: Request) {
           duration_label: SEED_PROJECT_REYKJAVIK.duration,
           reads: SEED_PROJECT_REYKJAVIK.reads,
           saves: SEED_PROJECT_REYKJAVIK.saves,
+          translations:
+            SEED_PROJECT_TRANSLATIONS[SEED_PROJECT_REYKJAVIK.slug] ?? {},
           published_at: new Date().toISOString(),
         },
       ],
@@ -145,6 +154,8 @@ export async function POST(req: Request) {
             : ("warm" as const),
       storage_path: a.imageUrl ?? `missing/${a.id}`,
       label: a.id,
+      prompt: seedAssetCaption(a.id),
+      translations: SEED_ASSET_TRANSLATIONS[a.id] ?? {},
     }));
     const { data: insertedAssets, error: assetErr } = await db
       .from("assets")
@@ -187,6 +198,7 @@ export async function POST(req: Request) {
       lat: s.lat,
       lng: s.lng,
       hero_asset_id: assetByLegacy.get(`se1-${s.n}`) ?? null,
+      translations: SEED_STOP_TRANSLATIONS[`${SEED_PROJECT.slug}:${s.n}`] ?? {},
     }));
     const reykjavikStops = SEED_STOPS_REYKJAVIK.map((s, i) => ({
       legacy_id: `rvk-stop-${s.n}`,
@@ -205,6 +217,8 @@ export async function POST(req: Request) {
       lat: s.lat,
       lng: s.lng,
       hero_asset_id: null,
+      translations:
+        SEED_STOP_TRANSLATIONS[`${SEED_PROJECT_REYKJAVIK.slug}:${s.n}`] ?? {},
     }));
     const { data: insertedStops, error: stopErr } = await db
       .from("stops")
@@ -233,6 +247,7 @@ export async function POST(req: Request) {
           recipient_country: postcard.recipient.country,
           style_id: null,
           orientation: "landscape",
+          translations: SEED_POSTCARD_TRANSLATIONS[`${SEED_PROJECT.slug}:${n}`] ?? {},
         };
       })
       .filter((row): row is NonNullable<typeof row> => row !== null);
@@ -262,6 +277,15 @@ function slugify(input: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function seedAssetCaption(assetId: string): string | null {
+  const stop = SEED_ASSETS.find((asset) => asset.id === assetId)?.stop;
+  if (!stop) return null;
+  const hero = (SEED_BODIES[stop] ?? []).find(
+    (block) => block.type === "heroImage" && block.assetId === assetId,
+  );
+  return hero?.type === "heroImage" ? hero.caption : null;
 }
 
 async function seededStopIds(

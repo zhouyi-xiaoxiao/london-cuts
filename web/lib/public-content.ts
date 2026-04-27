@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import {
   DEFAULT_LOCALE,
   LOCALES,
+  SEED_ASSET_TRANSLATIONS,
   SEED_POSTCARD_TRANSLATIONS,
   SEED_PROJECT_TRANSLATIONS,
   SEED_STOP_TRANSLATIONS,
@@ -1368,7 +1369,19 @@ function seedAssetsToRuntime(): Asset[] {
   return SEED_ASSETS.map((asset) => ({
     ...asset,
     imageUrl: asset.imageUrl ?? null,
+    prompt: seedAssetCaption(asset.id),
+    translations: SEED_ASSET_TRANSLATIONS[asset.id],
   }));
+}
+
+function seedAssetCaption(assetId: string): string | undefined {
+  const stop = SEED_ASSETS.find((asset) => asset.id === assetId)?.stop;
+  if (!stop) return undefined;
+  const hero = (SEED_BODIES[stop] ?? []).find(
+    (block): block is Extract<BodyBlock, { type: "heroImage" }> =>
+      block.type === "heroImage" && block.assetId === assetId,
+  );
+  return hero?.caption;
 }
 
 function bodyToText(blocks: readonly BodyBlock[]): string {
