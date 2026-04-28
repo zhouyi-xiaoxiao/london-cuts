@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { createContext, useContext } from "react";
 
 import {
@@ -34,11 +35,13 @@ export function useT() {
 
 export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
   const locale = useLocale();
-  const pathname =
-    typeof window === "undefined" ? "/" : window.location.pathname || "/";
-  const search =
-    typeof window === "undefined" ? "" : window.location.search.replace(/^\?/, "");
-  const params = new URLSearchParams(search);
+  // Read pathname + search through Next routing context, not window.location.
+  // The previous `typeof window === "undefined"` branch evaluated to "/" during
+  // SSR but to the real path on the client, so each <Link> got a different
+  // href across the hydration boundary and React logged a mismatch.
+  const pathname = usePathname() || "/";
+  const searchParams = useSearchParams();
+  const params = new URLSearchParams(searchParams?.toString() ?? "");
   params.delete("lang");
   const cleanSearch = params.toString();
 

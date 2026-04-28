@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-28T03:10Z
+**Last updated:** 2026-04-28T04:30Z
 
 ## Plan version
 
@@ -48,6 +48,16 @@ _none_
 _none_
 
 ## Recently completed
+
+- **F-I042 LanguageSwitcher hydration mismatch** (2026-04-28T04:30Z):
+  - During F-I041 dev-server smoke I noticed Next.js hydration warnings firing on every public reader page render. Tracked them to [web/components/i18n-provider.tsx](web/components/i18n-provider.tsx) lines 37–40 — `LanguageSwitcher` was reading `window.location.pathname` and `window.location.search` directly with a `typeof window === "undefined"` SSR guard that fell back to `"/"`. The server therefore rendered each `<Link href="/en">` / `<Link href="/zh">` while the client computed `<Link href="/en/@ana-ishii/a-year-in-se1">` / `/zh/@ana-ishii/a-year-in-se1`. React logs the diff and refuses to patch it.
+  - Fix: switched to `usePathname()` + `useSearchParams()` from `next/navigation`. Both hooks read from Next routing context, so SSR and client agree from the first paint. Component is already `"use client"` so no boundary change. Kept the `?lang=` strip-and-preserve search-param behaviour but with a defensive `searchParams?.toString() ?? ""` (Next 13.4+ types allow `null` while Suspense resolves).
+  - Verification: dev server smoke at `localhost:3000/zh/@ana-ishii/a-year-in-se1` → console.error count drops from "every render" to 0; LanguageSwitcher links render `/en/@ana-ishii/a-year-in-se1` and `/zh/@ana-ishii/a-year-in-se1` correctly on first paint with no client-side rewrite. `pnpm typecheck` clean.
+
+- **F-I043 CJK quotation marks audit** (2026-04-28T04:30Z):
+  - The CJK Typography Proposal (F-I041) shipped a one-time GB-curly → 直角引号 migration script in [design-system/cjk-typography-2026-04-28.md §5](design-system/cjk-typography-2026-04-28.md). Audited whether any seed or component content actually needed it.
+  - Result: **zero migration needed today.** `rg [“”‘’]` across `web/`, `design-system/`, `tasks/`, `pitch/` finds 6 hits — every one is intentional Latin typography (English pull quote in [web/components/public-pages.tsx:965](web/components/public-pages.tsx:965), English UI labels in [web/components/studio/stop-body-editor.tsx:476](web/components/studio/stop-body-editor.tsx:476) and [web/components/studio/projects-dashboard.tsx:343](web/components/studio/projects-dashboard.tsx:343), apostrophes in English narrative in [tasks/generated/seed-photo-copy.json](tasks/generated/seed-photo-copy.json), pitch deck copy in [pitch/deck/slides/S08Ask.jsx:31](pitch/deck/slides/S08Ask.jsx:31), and the 4 examples inside the design-system migration doc itself).
+  - The Chinese seed in [web/lib/i18n.ts](web/lib/i18n.ts) uses 66 instances of full-width / right-angle CJK punctuation (`，。；：！？「」`) and zero curly Latin quotes. Migration script kept in `design-system/cjk-typography-2026-04-28.md §5` as a forward reference — to be re-run only if future Chinese content is imported from a source that uses GB curly quotes.
 
 - **F-I041 CJK typography redesign** (2026-04-28T03:10Z):
   - Owner reported the bilingual reader's Chinese typography looked "ugly / no aesthetic" because the existing token system was Latin-only — six Google Fonts loaded for English, but every CJK glyph fell through to whatever the OS shipped (PingFang SC on Mac, Microsoft YaHei / SimSun on Windows, parade of Noto sans variants on Linux). Per-mode visual grammar (Bodoni Moda for Fashion, Archivo Black for Punk, Instrument Serif for Cinema) had no CJK companion, so Chinese text was visually divorced from the Latin grammar.
