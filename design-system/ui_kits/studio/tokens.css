@@ -1,5 +1,9 @@
-/* London Cuts UI Kit — tokens inlined (mirror of colors_and_type.css) */
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Black&family=Instrument+Serif:ital@0;1&family=Bodoni+Moda:ital,wght@0,400..900;1,400..900&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@400;600&display=swap');
+/* London Cuts UI Kit — tokens inlined (mirror of colors_and_type.css).
+   CJK families added 2026-04-28; weights capped at 400/700/900 per the
+   CJK Typography Proposal — see ../../colors_and_type.css for the
+   canonical comment block. */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Black&family=Instrument+Serif:ital@0;1&family=Bodoni+Moda:ital,wght@0,400..900;1,400..900&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@400;600&family=Noto+Serif+SC:wght@400;700;900&family=Noto+Sans+SC:wght@400;700;900&display=swap');
+@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css');
 
 :root {
   --paper: oklch(0.985 0.004 60);
@@ -15,12 +19,13 @@
   --status-done: oklch(0.62 0.14 150);
   --status-failed: oklch(0.58 0.22 25);
 
-  --f-body: 'Archivo', system-ui, sans-serif;
-  --f-display: 'Instrument Serif', serif;
-  --f-fashion: 'Bodoni Moda', serif;
-  --f-punk: 'Archivo Black', sans-serif;
-  --f-mono: 'JetBrains Mono', monospace;
-  --f-hand: 'Caveat', cursive;
+  /* Latin face first, CJK fallback next, system CJK + generic last. */
+  --f-body: 'Archivo', 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
+  --f-display: 'Instrument Serif', 'LXGW WenKai', 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+  --f-fashion: 'Bodoni Moda', 'Noto Serif SC', 'Songti SC', 'STSong', serif;
+  --f-punk: 'Archivo Black', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --f-mono: 'JetBrains Mono', 'SF Mono', 'Noto Sans SC', 'PingFang SC', monospace;
+  --f-hand: 'Caveat', 'LXGW WenKai', 'Noto Serif SC', cursive;
 
   --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 40px; --s-8: 48px; --s-9: 64px;
 
