@@ -34,13 +34,16 @@
   --shadow-soft: 0 24px 70px rgb(17 14 11 / 0.08);
   --shadow-card: 0 14px 40px rgb(17 14 11 / 0.12);
 
-  /* Type scale (moved to legacy values) */
-  --f-display: 'Archivo Black', 'Archivo', system-ui, sans-serif;
-  --f-serif: 'Instrument Serif', 'Times New Roman', serif;
-  --f-fashion: 'Bodoni Moda', 'Didot', 'Bodoni 72', serif;
-  --f-sans: 'Archivo', system-ui, -apple-system, sans-serif;
-  --f-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
-  --f-hand: 'Caveat', cursive;
+  /* Type scale — Latin face first (handles ASCII), CJK fallback next
+     (the browser falls through to it when a glyph is missing in the
+     Latin face), system CJK + generic last. No JS lang-detection
+     needed; Google's unicode-range chunks do the cascading. */
+  --f-display: 'Archivo Black', 'Archivo', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --f-serif: 'Instrument Serif', 'LXGW WenKai', 'Noto Serif SC', 'Songti SC', 'SimSun', 'Times New Roman', serif;
+  --f-fashion: 'Bodoni Moda', 'Didot', 'Noto Serif SC', 'Songti SC', 'STSong', 'Bodoni 72', serif;
+  --f-sans: 'Archivo', 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
+  --f-mono: 'JetBrains Mono', 'SF Mono', 'Noto Sans SC', 'PingFang SC', ui-monospace, monospace;
+  --f-hand: 'Caveat', 'LXGW WenKai', 'Noto Serif SC', cursive;
 
   /* Grid */
   --gutter: 24px;
@@ -919,4 +922,106 @@ body[data-mode="cinema"] {
     font-size: 10px;
     letter-spacing: 0.08em;
   }
+}
+
+
+/* =========================================================================
+   12. CJK TYPOGRAPHY ADAPTATIONS
+   Activated by <html lang="zh-*"> (set in app/layout.tsx based on the
+   resolved locale). The font cascades in section 1 already pick the right
+   CJK face per token; this block only adjusts metrics that need to
+   differ from Latin: trim full-width punctuation, bump display sizes
+   so dense hanzi strokes don't compress visually, open up body
+   line-height for full-width block rhythm, and drop uppercase rules
+   that don't apply to a script with no case.
+   ========================================================================= */
+
+:lang(zh) {
+  /* palt = proportional alternates for full-width punctuation. Chrome
+     and Safari also support text-spacing-trim natively; Firefox falls
+     back to the OpenType feature. Both are the modern way to avoid
+     gaps around 「，」「。」 in mixed runs. */
+  font-feature-settings: "palt" 1;
+  text-spacing-trim: trim-start;
+  letter-spacing: 0;
+}
+
+/* Headings — CJK runs +2-4px to match the Latin visual density.
+   Body sizes stay equal; we open up line-height instead. */
+:lang(zh) h1 {
+  font-size: 76px;
+  line-height: 1.18;
+  letter-spacing: 0.01em;
+}
+:lang(zh) h2 {
+  font-size: 50px;
+  line-height: 1.22;
+  letter-spacing: 0.01em;
+}
+:lang(zh) h3 {
+  font-size: 30px;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+}
+
+/* Body — same px as Latin, more vertical air for full-width blocks. */
+:lang(zh) p,
+:lang(zh) .body {
+  line-height: 1.85;
+}
+
+/* Mono / eyebrow / caption — bump 1px so CJK strokes don't muddy
+   below 12px; tighten letter-spacing (CJK spacing comes from palt,
+   not tracking); drop uppercase (CJK has no case, mixed runs make
+   Latin shout while hanzi stays flat — visually broken). */
+:lang(zh) .eyebrow,
+:lang(zh) .mono,
+:lang(zh) .mono-sm,
+:lang(zh) .lc-eyebrow,
+:lang(zh) .lc-mono,
+:lang(zh) .caption {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+/* Per-mode CJK tuning ─────────────────────────────────────────────── */
+
+/* Fashion — Noto Serif SC at 900 needs a slight optical bump on H1
+   to feel like a Bodoni-grade didone display. */
+[data-mode="fashion"]:lang(zh) h1,
+[data-mode="fashion"] :lang(zh) h1 {
+  font-weight: 900;
+  letter-spacing: 0.01em;
+}
+
+/* Punk — global Punk rule uppercases h1 (--mode-uppercase: uppercase),
+   but uppercase is meaningless for hanzi. Force normal case + heavy
+   weight so the visual grammar still reads "punk" via mass and
+   line-tension instead of caps. */
+[data-mode="punk"]:lang(zh) h1,
+[data-mode="punk"] :lang(zh) h1 {
+  text-transform: none;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+/* Cinema — LXGW WenKai is upright with brushed-楷体 feel. Synthesize
+   italic to pair with Instrument Serif's italic editorial voice
+   (LXGW WenKai ships no italic file; CSS skew is the trade-off). */
+[data-mode="cinema"]:lang(zh) h1,
+[data-mode="cinema"]:lang(zh) h2,
+[data-mode="cinema"] :lang(zh) h1,
+[data-mode="cinema"] :lang(zh) h2 {
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+/* Cinema body — JetBrains Mono falls through to Noto Sans SC for
+   hanzi (per --f-mono cascade). Tighten line-height and add a little
+   tracking for the subtitle feel. */
+[data-mode="cinema"]:lang(zh) p {
+  line-height: 1.9;
+  letter-spacing: 0.02em;
 }

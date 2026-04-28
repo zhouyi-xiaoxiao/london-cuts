@@ -7,9 +7,16 @@
    =========================================================================
 */
 
-/* Google Fonts — Archivo / Archivo Black / Instrument Serif / Bodoni Moda /
-   JetBrains Mono / Caveat. */
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Archivo+Black&family=Instrument+Serif:ital@0;1&family=Bodoni+Moda:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@400;500;600&display=swap');
+/* Google Fonts — Latin: Archivo / Archivo Black / Instrument Serif /
+   Bodoni Moda / JetBrains Mono / Caveat. CJK: Noto Serif SC (Fashion
+   display, didone-analog at weight 900) + Noto Sans SC (Punk display +
+   body across all modes). CJK weights capped at 400/700/900 to bound
+   first-paint payload via Google's unicode-range chunking. */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Black&family=Instrument+Serif:ital@0;1&family=Bodoni+Moda:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@400;500;600&family=Noto+Serif+SC:wght@400;700;900&family=Noto+Sans+SC:wght@400;700;900&display=swap');
+
+/* LXGW WenKai — Cinema CJK display (open-source 楷体, brush-feel).
+   OFL via jsDelivr CDN; eager load because Cinema is a top-level mode. */
+@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css');
 
 :root {
   /* ---------- NEUTRALS — warm paper ---------- */
@@ -36,13 +43,16 @@
   --edit-ring-fashion: oklch(0.55 0.14  20);
   --edit-ring-cinema:  oklch(0.88 0.14  90);
 
-  /* ---------- TYPE FAMILIES ---------- */
-  --f-display: 'Archivo Black', 'Archivo', system-ui, sans-serif;   /* punk display */
-  --f-serif:   'Instrument Serif', 'Times New Roman', serif;         /* editorial */
-  --f-fashion: 'Bodoni Moda', 'Didot', 'Bodoni 72', serif;           /* fashion display */
-  --f-sans:    'Archivo', system-ui, -apple-system, sans-serif;      /* default body */
-  --f-mono:    'JetBrains Mono', 'SF Mono', ui-monospace, monospace; /* meta, eyebrows, chips */
-  --f-hand:    'Caveat', cursive;                                    /* postcard handwriting */
+  /* ---------- TYPE FAMILIES ----------
+     Latin face first (handles ASCII), CJK fallback next (the browser
+     falls through to it when a glyph is missing in the Latin face),
+     system CJK + generic last. No JS lang-detection needed. */
+  --f-display: 'Archivo Black', 'Archivo', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;          /* punk display */
+  --f-serif:   'Instrument Serif', 'LXGW WenKai', 'Noto Serif SC', 'Songti SC', 'SimSun', 'Times New Roman', serif;          /* editorial */
+  --f-fashion: 'Bodoni Moda', 'Didot', 'Noto Serif SC', 'Songti SC', 'STSong', 'Bodoni 72', serif;                            /* fashion display */
+  --f-sans:    'Archivo', 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;  /* default body */
+  --f-mono:    'JetBrains Mono', 'SF Mono', 'Noto Sans SC', 'PingFang SC', ui-monospace, monospace;                          /* meta, eyebrows, chips */
+  --f-hand:    'Caveat', 'LXGW WenKai', 'Noto Serif SC', cursive;                                                             /* postcard handwriting */
 
   /* ---------- TYPE SCALE ---------- */
   --fs-eyebrow: 10px;       --ls-eyebrow: 0.18em;
@@ -204,4 +214,65 @@ hr { height: 1px; background: currentColor; opacity: 0.15; border: 0; }
   letter-spacing: 0.12em;
   text-transform: uppercase;
   opacity: 0.7;
+}
+
+/* =========================================================================
+   CJK TYPOGRAPHY ADAPTATIONS
+   Activated by <html lang="zh-*">. The font cascades above already pick
+   the right CJK face per token; this block only adjusts metrics that
+   need to differ from Latin: trim full-width punctuation, bump display
+   sizes so dense hanzi strokes don't compress visually, open up body
+   line-height for full-width block rhythm, and drop uppercase rules
+   that don't apply to a script with no case.
+   ========================================================================= */
+
+:lang(zh) {
+  font-feature-settings: "palt" 1;
+  text-spacing-trim: trim-start;
+  letter-spacing: 0;
+}
+
+:lang(zh) h1 { font-size: 76px; line-height: 1.18; letter-spacing: 0.01em; }
+:lang(zh) h2 { font-size: 50px; line-height: 1.22; letter-spacing: 0.01em; }
+:lang(zh) h3 { font-size: 30px; line-height: 1.35; letter-spacing: 0.01em; }
+
+:lang(zh) p,
+:lang(zh) .body { line-height: 1.85; }
+
+:lang(zh) .eyebrow,
+:lang(zh) .mono,
+:lang(zh) .mono-sm,
+:lang(zh) .caption {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+/* Per-mode CJK tuning */
+
+[data-mode="fashion"]:lang(zh) h1,
+[data-mode="fashion"] :lang(zh) h1 {
+  font-weight: 900;
+  letter-spacing: 0.01em;
+}
+
+[data-mode="punk"]:lang(zh) h1,
+[data-mode="punk"] :lang(zh) h1 {
+  text-transform: none;     /* CJK has no case; uppercase rule is meaningless */
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+[data-mode="cinema"]:lang(zh) h1,
+[data-mode="cinema"]:lang(zh) h2,
+[data-mode="cinema"] :lang(zh) h1,
+[data-mode="cinema"] :lang(zh) h2 {
+  font-style: italic;       /* synthesized — LXGW WenKai ships no italic file */
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+[data-mode="cinema"]:lang(zh) p {
+  line-height: 1.9;
+  letter-spacing: 0.02em;
 }

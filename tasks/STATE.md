@@ -1,6 +1,6 @@
 # STATE — Project Status Snapshot
 
-**Last updated:** 2026-04-28T01:55Z
+**Last updated:** 2026-04-28T03:10Z
 
 ## Plan version
 
@@ -48,6 +48,14 @@ _none_
 _none_
 
 ## Recently completed
+
+- **F-I041 CJK typography redesign** (2026-04-28T03:10Z):
+  - Owner reported the bilingual reader's Chinese typography looked "ugly / no aesthetic" because the existing token system was Latin-only — six Google Fonts loaded for English, but every CJK glyph fell through to whatever the OS shipped (PingFang SC on Mac, Microsoft YaHei / SimSun on Windows, parade of Noto sans variants on Linux). Per-mode visual grammar (Bodoni Moda for Fashion, Archivo Black for Punk, Instrument Serif for Cinema) had no CJK companion, so Chinese text was visually divorced from the Latin grammar.
+  - Drove a Claude Design session ([https://claude.ai/design/p/019dd121-9c50-7886-935d-364717a22672](https://claude.ai/design/p/019dd121-9c50-7886-935d-364717a22672)) using the existing "London Cuts Design System" project as context. Output: 6-artboard hi-fi canvas with three mode mockups, Tweaks panel for live A/B (Punk-alt ZCOOL KuaiLe ↔ Noto Sans SC 900; `palt` on/off), and a 10.7 KB IMPLEMENTATION.md saved at [design-system/cjk-typography-2026-04-28.md](design-system/cjk-typography-2026-04-28.md).
+  - Pairings: **Fashion** Noto Serif SC 900 (didone-analog) + Noto Sans SC body; **Punk** Noto Sans SC 900 (heavy hei) + Noto Sans SC body; **Cinema** LXGW WenKai 楷体 (jsDelivr CDN) + Noto Sans SC body. Latin-first / CJK-fallback / system-CJK cascade in all six `--f-*` tokens — no JS lang detection, browser does the work via Google Fonts' unicode-range chunking.
+  - Implementation: [web/app/layout.tsx](web/app/layout.tsx) — `GOOGLE_FONTS` rebuilt as array, +2 CJK families with weights capped at 400/700/900, +1 jsDelivr `<link>` for LXGW WenKai. [web/app/globals.css](web/app/globals.css) — six `--f-*` vars rewritten with the cascade; new section 12 with `:lang(zh)` overrides (palt + text-spacing-trim + per-mode CJK tuning incl. synthesized italic for LXGW WenKai, Punk uppercase neutralised for hanzi). Canonical mirror in [design-system/colors_and_type.css](design-system/colors_and_type.css) and [design-system/ui_kits/studio/tokens.css](design-system/ui_kits/studio/tokens.css).
+  - Verification: dev server smoke at `http://localhost:3000/zh/@ana-ishii/a-year-in-se1` — Fashion h1 computed `font-family: "Bodoni Moda", Didot, "Noto Serif SC", ...` with `font-feature-settings: "palt"`, `font-style: italic`, `font-weight: 900`; mode switch to Punk and Cinema swaps the active CJK face cleanly; English mode (`html lang="en"`) is unchanged because `:lang(zh)` never fires. Network panel confirms unicode-range subsetting (`notoserifsc-...subset-NN.woff2` and `lxgwwenkai-regular-subset-NN.woff2` stream lazily). `pnpm typecheck` clean. Regression scan via Explore agent: 0 hard-coded CJK font bypasses, 0 naked `:lang(zh)`-vulnerable headings (all public h1s use inline `clamp()` font-size that out-specifies), 0 AI-native surfaces (`/api/v1`, `/mcp`, `/llms*`, `/sitemap.xml`) embed font URLs, 0 broken snapshot tests.
+  - Pre-existing issue spotted (not in scope): LanguageSwitcher in [web/components/i18n-provider.tsx](web/components/i18n-provider.tsx) (lines 35–89) emits Next.js hydration mismatches because client `href` derives from `window.location.pathname` while server pre-render uses `/`. Worth a follow-up F-I0xx.
 
 - **F-I040 atlas viewport stability** (2026-04-28T01:55Z):
   - Owner reported the MapLibre atlas drifts/snaps to a different position when zooming. Read [web/components/map/atlas.tsx](web/components/map/atlas.tsx) and identified three converging causes: `placeMarkers` registered on BOTH `idle` and `load` (so `fitBounds` ran twice on initial settle); no "user has interacted" gate (so any later `setStyle`/HMR/stop change could re-snap the camera); and no `ResizeObserver` on the map container (so when the spine collapses at <900px the canvas projection desyncs from on-screen coordinates).
