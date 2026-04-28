@@ -16,6 +16,7 @@
 // current project first, falls back to the archive. If nothing
 // matches, we render a <NotFoundCard /> instead of calling `notFound()`.
 
+import { useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -78,31 +79,46 @@ export function PublicProjectPage({
   const coverUrl = coverAsset?.imageUrl ?? null;
   const coverLabel = (coverStop?.label ?? project.coverLabel ?? "").toUpperCase();
 
-  const atlasStops: readonly AtlasStop[] = stops.map((s) => {
-    // Pin-hover popover wants a thumbnail + mood/time eyebrow. Look up
-    // the hero asset from the assets pool via the stop's `heroAssetId`
-    // — same path the stop-card grid uses.
-    const hero = s.heroAssetId
-      ? assets.find((a) => a.id === s.heroAssetId) ?? null
-      : null;
-    return {
-      n: s.n,
-      title: s.title,
-      lat: s.lat,
-      lng: s.lng,
-      heroUrl: hero?.imageUrl ?? null,
-      mood: s.mood ?? null,
-      timeLabel: s.time ?? null,
-    };
-  });
+  // F-I040 follow-up: memoize the projected stops array so the Atlas
+  // doesn't re-render every marker on unrelated parent re-renders
+  // (mode toggle, language switcher hover, router events, …). Without
+  // useMemo, `atlasStops` is a new reference each render, the stops
+  // effect inside Atlas re-fires, all markers get destroyed and
+  // re-created, and any active hover card flickers. The state machine
+  // still suppresses unwanted fitBounds via `didInitialFitRef`, but
+  // we shouldn't even reach that point on a no-op render.
+  const atlasStops: readonly AtlasStop[] = useMemo(
+    () =>
+      stops.map((s) => {
+        // Pin-hover popover wants a thumbnail + mood/time eyebrow.
+        // Look up the hero asset from the assets pool via the stop's
+        // `heroAssetId` — same path the stop-card grid uses.
+        const hero = s.heroAssetId
+          ? assets.find((a) => a.id === s.heroAssetId) ?? null
+          : null;
+        return {
+          n: s.n,
+          title: s.title,
+          lat: s.lat,
+          lng: s.lng,
+          heroUrl: hero?.imageUrl ?? null,
+          mood: s.mood ?? null,
+          timeLabel: s.time ?? null,
+        };
+      }),
+    [stops, assets],
+  );
 
-  const onAtlasStop = (stopId: string) => {
-    const stop = stops.find((s) => s.n === stopId);
-    if (!stop) return;
-    router.push(
-      `/${authorHandle}/${project.slug}/chapter/${stopSlugFrom(stop.title)}`,
-    );
-  };
+  const onAtlasStop = useCallback(
+    (stopId: string) => {
+      const stop = stops.find((s) => s.n === stopId);
+      if (!stop) return;
+      router.push(
+        `/${authorHandle}/${project.slug}/chapter/${stopSlugFrom(stop.title)}`,
+      );
+    },
+    [stops, router, authorHandle, project.slug],
+  );
 
   return (
     <main

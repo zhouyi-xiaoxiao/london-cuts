@@ -22,6 +22,11 @@ vi.mock("next/navigation", () => ({
     refresh: vi.fn(),
     prefetch: vi.fn(),
   }),
+  // F-I042: LanguageSwitcher reads the current pathname + search to
+  // build locale-swapped <Link>s without a hydration mismatch. The
+  // public reader uses LanguageSwitcher, so vitest needs these too.
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(""),
 }));
 
 // ─── maplibre-gl mock (see atlas.test.tsx for the detailed reasoning) ─
