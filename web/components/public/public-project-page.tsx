@@ -171,6 +171,25 @@ export function PublicProjectPage({
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <Link
+              href="/atlas"
+              aria-label={t("public.atlasLinkAria")}
+              className="mono-sm"
+              style={{
+                fontFamily: "var(--f-mono, monospace)",
+                fontSize: 11,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                padding: "4px 10px",
+                borderRadius: 999,
+                border: "1px solid color-mix(in oklab, currentColor 28%, transparent)",
+                color: "inherit",
+                textDecoration: "none",
+                lineHeight: 1.4,
+              }}
+            >
+              {t("public.atlasLink")}
+            </Link>
             <LanguageSwitcher compact />
             <ModeSwitcher />
           </div>
