@@ -1,0 +1,31 @@
+# Replaces the old GitHub Pages build (the hackathon-day snapshot of
+# 19 April 2026) with a pointer to the live site. Manual only: the app
+# itself deploys to Vercel and is not built for Pages.
+name: Pages pointer
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .github/pages
+      - id: deployment
+        uses: actions/deploy-pages@v4
