@@ -1,11 +1,14 @@
 # London Cuts
 
-> A creator tool for documenting a single-location trip (anywhere in the world) with photos, written stories, and AI-generated postcards. Three visual modes: **Fashion**, **Punk**, **Cinema**. Publish as a shareable page.
+A travel-story studio. Photos find their own place and time from the data inside them; each becomes a stop with a short text and an AI-made postcard, and the trip is published as a public story that readers can switch between three cuts: **Punk**, **Fashion** and **Cinema**.
 
-**Working name:** London Cuts (placeholder; product may be renamed before public launch).
-**Live fallback:** `https://london-cuts.vercel.app/` (currently redirects to the public SE1 reader demo).
-**Future custom domain:** `zhouyixiaoxiao.org` (M6, after IONOS → Vercel DNS).
-**AI entry points:** `/llms.txt`, `/llms-full.txt`, `/api/openapi.json`, `/api/v1/projects`, `/mcp`.
+**Live demo:** <https://london-cuts.vercel.app> — two demo stories and an atlas. The studio for making new stories is invite-only.
+
+**Status:** a working prototype, not a launched product. It began as a weekend build at Global HackTour London (UCL, 18–19 April 2026) and was developed further in the weeks that followed. London Cuts is a working name.
+
+**For AI agents:** `/llms.txt`, `/llms-full.txt`, `/api/openapi.json`, `/api/v1/projects`, `/mcp`.
+
+Made by Xiaoxiao Zhouyi · [zhouyixiaoxiao.com](https://zhouyixiaoxiao.com/)
 
 ---
 
@@ -70,4 +73,4 @@ open design-system/preview/brand-roundel.html
 
 ## License
 
-(TBD — add before public launch.)
+MIT — see `LICENSE`.
