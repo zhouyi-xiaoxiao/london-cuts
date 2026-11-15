@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>London Cuts has moved</title>
+<script>
+  // Send old deep links (/london-cuts/@author/story/...) to the same path on the live site.
+  (function () {
+    var path = location.pathname.replace(/^\/london-cuts/, "").replace(/\/+$/, "");
+    location.replace("https://london-cuts.vercel.app" + (path || "/") + location.search);
+  })();
+</script>
+</head>
+<body style="font: 17px/1.6 Georgia, serif; padding: 24px;">
+  <p>London Cuts now lives at <a href="https://london-cuts.vercel.app/">london-cuts.vercel.app</a>.</p>
+</body>
+</html>
