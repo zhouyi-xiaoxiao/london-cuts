@@ -1025,3 +1025,14 @@ body[data-mode="cinema"] {
   line-height: 1.9;
   letter-spacing: 0.02em;
 }
+
+/* ─── Atlas basemap tint ──────────────────────────────────────────────
+   The vector basemap (components/map/atlas.tsx) is neutral; each mode
+   tints the map canvas only, so pins keep their accent colour. */
+[data-atlas-mode="fashion"] .maplibregl-canvas {
+  filter: sepia(0.22) saturate(0.9);
+}
+[data-atlas-mode="punk"] .maplibregl-canvas {
+  filter: grayscale(1) contrast(1.1);
+}
+

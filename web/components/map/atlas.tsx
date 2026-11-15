@@ -8,13 +8,9 @@
 //    We dynamically `import()` it inside the first `useEffect` so SSR never
 //    touches it — Next.js 16 builds the server bundle without the dep, and
 //    tests can stub the dynamic-import resolve.
-// 2. The three narrative modes pick different CARTO basemap tile URLs:
-//       fashion → voyager   (warm, neutral)
-//       cinema  → dark_all  (deep blue/black)
-//       punk    → light_all + full B&W filter via CSS (zine)
-//    URLs are all under basemaps.cartocdn.com, which is already allow-listed
-//    in `web/next.config.ts` for next/image.
-// 3. Mode changes swap tiles via `map.setStyle(buildStyle(mode))` so the
+// 2. The three narrative modes pick different OpenFreeMap vector styles
+//    (see "Map style per mode" below).
+// 3. Mode changes swap styles via `map.setStyle(buildStyle(mode))` so the
 //    user sees a real re-themed canvas, not just a different overlay.
 // 4. Fallback story: if the MapLibre constructor throws (no WebGL, or the
 //    worker URL can't load), we render an SVG schematic that projects the
@@ -154,125 +150,30 @@ function renderHoverCardHtml(stop: AtlasStop): string {
   );
 }
 
-// ─── Tile style per mode ───────────────────────────────────────────────
+// ─── Map style per mode ────────────────────────────────────────────────
+//
+// CARTO's public raster basemaps started answering every request with an
+// "API KEY REQUIRED" tile, so the atlas now uses OpenFreeMap's hosted
+// vector styles: free, keyless, no registration. Positron and Dark are
+// the open descendants of CARTO's own Positron / Dark Matter designs, so
+// the look stays close to what the modes were tuned against.
+//
+//   fashion → positron, warmed slightly via CSS (see globals.css)
+//   cinema  → dark
+//   punk    → positron, greyscale via CSS (zine)
+//
+// The tint lives in CSS on the canvas only (`[data-atlas-mode]`), so the
+// pins keep their mode accent colour.
 
-const CARTO = "https://basemaps.cartocdn.com";
-const TILE_URL: Record<NarrativeMode, string> = {
-  fashion: `${CARTO}/rastertiles/voyager/{z}/{x}/{y}.png`,
-  cinema: `${CARTO}/dark_all/{z}/{x}/{y}.png`,
-  punk: `${CARTO}/light_all/{z}/{x}/{y}.png`,
+const OPENFREEMAP = "https://tiles.openfreemap.org/styles";
+const STYLE_URL: Record<NarrativeMode, string> = {
+  fashion: `${OPENFREEMAP}/positron`,
+  cinema: `${OPENFREEMAP}/dark`,
+  punk: `${OPENFREEMAP}/positron`,
 };
-const TILE_ATTR = "© OpenStreetMap © CARTO";
 
-/**
- * Build a MapLibre style spec tuned to a narrative mode.
- *
- * ─── Dogfood round 4 simplification (F-I036) ─────────────────────────
- *
- * Previous iterations stacked heavy raster paint filters (brightness-max
- * caps, hue rotates, saturation clamps, warm/cyan scrims) that tried to
- * "theme" each mode on top of CARTO's already-designed basemaps. Net
- * effect was unpredictable rendering — owner reported maps appearing as
- * blank boxes or unreadable washes across multiple modes even after
- * tile requests confirmed 200 OK.
- *
- * New approach: trust each CARTO basemap as-is (they're professionally
- * designed for their themes) and use only TINY paint tweaks:
- *   - 0.05 contrast bump so thin street labels pop
- *   - raster-opacity: 1.0 (full weight — no ghost tiles)
- *   - a subtle under-tile bg so loading-state / edge-of-tile pixels
- *     match the tile palette instead of flashing the paper-cream of
- *     the parent container
- *
- * The narrative VIBE comes from elsewhere: pin colours (mode-accent),
- * hover-card theming, page chrome. Map is just the map.
- */
-function buildStyle(mode: NarrativeMode) {
-  const tileConfig = {
-    version: 8 as const,
-    sources: {
-      t: {
-        type: "raster" as const,
-        tiles: [TILE_URL[mode]],
-        tileSize: 256,
-        attribution: TILE_ATTR,
-      },
-    },
-  };
-
-  if (mode === "punk") {
-    return {
-      ...tileConfig,
-      layers: [
-        {
-          id: "bg",
-          type: "background" as const,
-          paint: { "background-color": "#f4f0e6" },
-        },
-        {
-          id: "t",
-          type: "raster" as const,
-          source: "t",
-          paint: {
-            // Light_all is already high-contrast B&W-ish; just lift
-            // contrast slightly + desat fully so any stray colour on
-            // the tiles reads zine-mono.
-            "raster-saturation": -1,
-            "raster-contrast": 0.1,
-            "raster-opacity": 1.0,
-          },
-        },
-      ],
-    };
-  }
-
-  if (mode === "cinema") {
-    return {
-      ...tileConfig,
-      layers: [
-        {
-          id: "bg",
-          type: "background" as const,
-          paint: { "background-color": "#0f1420" },
-        },
-        {
-          id: "t",
-          type: "raster" as const,
-          source: "t",
-          paint: {
-            // CARTO dark_all is already dark by design. Just lift
-            // contrast so streets carry. No brightness-cap, no tints.
-            "raster-contrast": 0.08,
-            "raster-opacity": 1.0,
-          },
-        },
-      ],
-    };
-  }
-
-  // fashion (default)
-  return {
-    ...tileConfig,
-    layers: [
-      {
-        id: "bg",
-        type: "background" as const,
-        paint: { "background-color": "#f7f1e5" },
-      },
-      {
-        id: "t",
-        type: "raster" as const,
-        source: "t",
-        paint: {
-          // Voyager is warm + readable out of the box. Tiny contrast
-          // lift only; no brightness cap, no saturation clamp, no
-          // hue-rotate. Keeps street labels sharp.
-          "raster-contrast": 0.08,
-          "raster-opacity": 1.0,
-        },
-      },
-    ],
-  };
+function buildStyle(mode: NarrativeMode): string {
+  return STYLE_URL[mode];
 }
 
 // ─── SVG fallback (no WebGL / tiles) ───────────────────────────────────
@@ -703,7 +604,9 @@ export function Atlas({
           zoom,
           minZoom: 2,
           maxZoom: 18,
-          attributionControl: false,
+          // Map data and style need visible credit (OpenStreetMap,
+          // OpenMapTiles, OpenFreeMap); compact keeps it to an (i).
+          attributionControl: { compact: true },
         });
         mapRef.current = map;
         setReady(true);
@@ -878,6 +781,7 @@ export function Atlas({
       <div
         ref={containerRef}
         data-testid="atlas-map-container"
+        data-atlas-mode={mode}
         style={{ width: "100%", height: "100%" }}
       />
       {/* Custom DOM hover card — a single overlay, repositioned on
