@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(getAppBaseUrl()),
   title: "London Cuts",
   description:
-    "An AI-native London storytelling demo with public stories, atlas browsing, creator studio, postcards, and a swappable media adapter.",
+    "A travel-story studio: photos placed by their own time and location, written stops and AI-made postcards, published as a public story you can read in three cuts — Punk, Fashion or Cinema. A working prototype.",
   alternates: {
     canonical: getAppBaseUrl(),
   },
