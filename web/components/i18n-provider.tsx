@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { createContext, useContext } from "react";
 
@@ -37,7 +36,7 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
   const locale = useLocale();
   // Read pathname + search through Next routing context, not window.location.
   // The previous `typeof window === "undefined"` branch evaluated to "/" during
-  // SSR but to the real path on the client, so each <Link> got a different
+  // SSR but to the real path on the client, so each link got a different
   // href across the hydration boundary and React logged a mismatch.
   const pathname = usePathname() || "/";
   const searchParams = useSearchParams();
@@ -67,8 +66,11 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
           cleanSearch ? `?${cleanSearch}` : ""
         }`;
         const active = locale === next;
+        // A plain <a>, not next/link: switching language needs a full page
+        // load (the locale and <html lang> are decided on the server), and
+        // next/link would also prefetch the other language in the background.
         return (
-          <Link
+          <a
             key={next}
             href={href}
             hrefLang={next === "zh" ? "zh-CN" : "en"}
@@ -84,7 +86,7 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
             }}
           >
             {next === "zh" ? t(locale, "language.zh") : t(locale, "language.en")}
-          </Link>
+          </a>
         );
       })}
     </div>
