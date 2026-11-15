@@ -56,7 +56,12 @@ export function createStopPin(desc: PinDescriptor): HTMLElement {
   Object.assign(wrap.style, {
     width: "22px",
     height: "22px",
-    position: "relative",
+    // Must stay absolute, as in MapLibre's own .maplibregl-marker rule:
+    // with `relative` every marker kept its place in the normal flow,
+    // so each pin sat one pin-height lower than the one before it.
+    position: "absolute",
+    top: "0",
+    left: "0",
     cursor: "pointer",
     // Mouse events pass through to the badge child — the wrap itself
     // has no chrome.
