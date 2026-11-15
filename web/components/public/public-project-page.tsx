@@ -10,7 +10,7 @@
 //   3. Atlas snippet: <Atlas stops=… height=360 />.
 //   4. Stop cards grid: numbered cards (one per stop), each a link to
 //      /<author>/<slug>/chapter/<stopSlug>.
-//   5. Footer: "Published via London Cuts" → /atlas.
+//   5. Footer: "Published via London Cuts" → / (what London Cuts is).
 //
 // Data source: `usePublicProjectLookup()` — matches slug against the
 // current project first, falls back to the archive. If nothing
@@ -126,10 +126,8 @@ export function PublicProjectPage({
     >
       {/* Top bar */}
       <header
+        className="lc-reader-bar"
         style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
           background: "var(--mode-bg, var(--paper))",
           borderBottom:
             "1px solid color-mix(in oklab, currentColor 15%, transparent)",
@@ -165,7 +163,7 @@ export function PublicProjectPage({
             >
               {project.author}
               {project.publishedAt ? ` · ${project.publishedAt}` : ""}
-              {typeof project.reads === "number"
+              {typeof project.reads === "number" && project.reads > 0
                 ? ` · ${project.reads.toLocaleString()} ${t("public.reads")}`
                 : ""}
             </div>
@@ -378,7 +376,7 @@ export function PublicProjectPage({
         }}
       >
         <Link
-          href="/atlas"
+          href="/"
           className="mono-sm"
           style={{
             fontFamily: "var(--f-mono)",

@@ -9,15 +9,39 @@
 // housekeeping; we skip that here and read seed data directly.
 
 import { useMemo } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { LanguageSwitcher, useT } from "@/components/i18n-provider";
 import { Atlas, type AtlasStop } from "@/components/map/atlas";
+import { ModeSwitcher } from "@/components/mode-switcher";
+import { stopSlugFrom } from "@/components/public/use-public-project";
 import { useMode } from "@/stores/mode";
-import { SEED_STOPS, SEED_STOPS_REYKJAVIK } from "@/lib/seed";
+import {
+  SEED_PROJECT,
+  SEED_PROJECT_REYKJAVIK,
+  SEED_STOPS,
+  SEED_STOPS_REYKJAVIK,
+} from "@/lib/seed";
+
+// Both demo stories are published under the seed author's handle.
+const SEED_HANDLE_PATH = "/@ana-ishii";
+
+function chapterHref(stopId: string): string | null {
+  const reykjavik = stopId.startsWith("r");
+  const n = reykjavik ? stopId.slice(1) : stopId;
+  const stop = (reykjavik ? SEED_STOPS_REYKJAVIK : SEED_STOPS).find(
+    (s) => s.n === n,
+  );
+  if (!stop) return null;
+  const slug = reykjavik ? SEED_PROJECT_REYKJAVIK.slug : SEED_PROJECT.slug;
+  return `${SEED_HANDLE_PATH}/${slug}/chapter/${stopSlugFrom(stop.title)}`;
+}
 
 export default function Page() {
   const mode = useMode();
   const t = useT();
+  const router = useRouter();
 
   // Union of seed stops. Prefix the Reykjavík IDs so `n` is unique across
   // the two projects (both use "01".."NN"). `mood` / `time` feed the
@@ -49,15 +73,24 @@ export default function Page() {
     <main
       data-mode={mode}
       style={{
-        padding: "48px 40px",
+        padding: "48px clamp(20px, 6vw, 40px)",
         maxWidth: 1280,
         margin: "0 auto",
         minHeight: "100vh",
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-        <div className="eyebrow">The Atlas · F-P002</div>
-        <LanguageSwitcher compact />
+        <div className="eyebrow">
+          <Link href="/" style={{ color: "inherit" }}>
+            {t("atlas.home")}
+          </Link>
+          {" · "}
+          {t("atlas.eyebrow")}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <LanguageSwitcher compact />
+          <ModeSwitcher />
+        </div>
       </div>
       <h1
         style={{
@@ -80,7 +113,8 @@ export default function Page() {
       <Atlas
         stops={allStops}
         onStopClick={(stopId) => {
-          console.log("[atlas] stop clicked", stopId);
+          const href = chapterHref(stopId);
+          if (href) router.push(href);
         }}
         height={560}
       />
