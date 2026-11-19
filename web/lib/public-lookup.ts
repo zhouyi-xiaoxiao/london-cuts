@@ -9,6 +9,7 @@
 // exactly what the public SELECT RLS policy allows — published + public
 // projects and their children.
 
+import { withLiveLookupGuard } from "./live-lookup";
 import { getBrowserClient, hasSupabaseConfig } from "./supabase";
 import type {
   Asset,
@@ -34,7 +35,13 @@ export async function fetchPublicProjectByHandleAndSlug(
   slug: string,
 ): Promise<PublicProjectPayload | null> {
   if (!hasSupabaseConfig()) return null;
+  return withLiveLookupGuard(() => lookupPublicProject(handle, slug), null);
+}
 
+async function lookupPublicProject(
+  handle: string,
+  slug: string,
+): Promise<PublicProjectPayload | null> {
   // Strip leading `@` — SSG URLs are built with `@ana-ishii` but the
   // `users.handle` column stores the bare `ana-ishii`.
   const bareHandle = handle.startsWith("@") ? handle.slice(1) : handle;

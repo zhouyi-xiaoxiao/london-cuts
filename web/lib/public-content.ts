@@ -15,6 +15,7 @@ import {
   type ProjectTranslation,
   type StopTranslation,
 } from "@/lib/i18n";
+import { withLiveLookupGuard } from "@/lib/live-lookup";
 import { fetchPublicProjectByHandleAndSlug } from "@/lib/public-lookup";
 import {
   SEED_ASSETS,
@@ -677,6 +678,12 @@ async function listSupabaseProjectSummaries(
   locale: Locale,
 ): Promise<PublicProjectSummaryDTO[]> {
   if (!hasSupabaseConfig()) return [];
+  return withLiveLookupGuard(() => readSupabaseProjectSummaries(locale), []);
+}
+
+async function readSupabaseProjectSummaries(
+  locale: Locale,
+): Promise<PublicProjectSummaryDTO[]> {
   let db;
   try {
     db = getBrowserClient();
