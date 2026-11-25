@@ -35,6 +35,10 @@ export default async function Page() {
   const locale = resolveLocaleFromHeaders(await headers());
   const tr = (key: Parameters<typeof t>[1], vars?: Parameters<typeof t>[2]) =>
     t(locale, key, vars);
+  // The Chinese title breaks after its comma on phones (see globals.css)
+  // so that "剪辑" is never split across lines.
+  const title = tr("home.title");
+  const titleBreak = locale === "zh" ? title.indexOf("，") : -1;
   const projects = (await listPublicProjects(locale)).slice(0, 6);
   // Stories with photos first; a text-only sample reads better second.
   const stories = [...projects].sort(
@@ -50,7 +54,20 @@ export default async function Page() {
 
       <section className="lc-home-intro">
         <p className="eyebrow">{tr("home.eyebrow")}</p>
-        <h1 className="lc-home-title">{tr("home.title")}</h1>
+        <h1 className="lc-home-title">
+          {titleBreak > 0 ? (
+            <>
+              <span className="lc-home-title-first">
+                {title.slice(0, titleBreak + 1)}
+              </span>
+              <span className="lc-home-title-second">
+                {title.slice(titleBreak + 1)}
+              </span>
+            </>
+          ) : (
+            title
+          )}
+        </h1>
         <p className="lc-home-lede">{tr("home.lede")}</p>
         <div className="lc-home-cut">
           <span className="mono-sm">{tr("home.tryCut")}</span>

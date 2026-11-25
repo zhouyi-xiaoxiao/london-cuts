@@ -1184,6 +1184,18 @@ body[data-mode="cinema"] {
   .lc-home-foot > a:last-child { margin-left: 0; }
 }
 
+@media (max-width: 480px) {
+  .lc-home-title {
+    font-size: 40px;
+  }
+  .lc-home-title-first {
+    display: block;
+  }
+  .lc-home-title-second {
+    white-space: nowrap;
+  }
+}
+
 /* Reader top bar (components/public/public-project-page.tsx): sticky on
    wide screens; on phones it wraps to three rows, so let it scroll away
    instead of holding a third of the screen. */
