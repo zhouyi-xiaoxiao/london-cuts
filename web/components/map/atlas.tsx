@@ -34,6 +34,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { useMode } from "@/stores/mode";
+import { useT } from "@/components/i18n-provider";
 import type { NarrativeMode } from "@/lib/storage";
 import { createStopPin } from "./stop-pin";
 
@@ -353,6 +354,7 @@ export function Atlas({
   zoom = 11,
 }: AtlasProps) {
   const mode = useMode();
+  const t = useT();
   const containerRef = useRef<HTMLDivElement | null>(null);
   // The single hover-card overlay. Created on mount, reused for every
   // pin. `pointer-events: none` so it never steals mouse events from
@@ -855,7 +857,7 @@ export function Atlas({
             letterSpacing: "0.08em",
           }}
         >
-          LOADING ATLAS…
+          {t("atlas.loading")}
         </div>
       )}
     </div>

@@ -14,8 +14,8 @@ export async function GET(req: Request) {
     zh ? "## 产品" : "## Product",
     "",
     zh
-      ? "London Cuts 是公开 beta 创作者工具，用照片、文字站点、地图、AI 生成明信片和可分享 public reader 页面记录一次围绕地点展开的旅行。"
-      : "London Cuts is a public-beta creator tool for documenting a single-location trip with photos, written story stops, maps, AI-generated postcards, and shareable public reader pages.",
+      ? "London Cuts 是一个能用的原型（不是已上线的产品），把一次围绕单一地点的旅行整理成由照片、短文、地图和 AI 明信片组成的按站点故事。工作室只对受邀用户开放。"
+      : "London Cuts is a working prototype (not a launched product) for turning a single-location trip into a stop-based story with photos, short texts, maps and AI-made postcards. The studio is invite-only.",
     "",
     zh ? "## 读取入口" : "## Read Surfaces",
     "",

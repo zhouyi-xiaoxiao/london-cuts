@@ -67,6 +67,10 @@ export function usePublicProjectLookup(
   const stops = useStops();
   const assets = useAssets();
 
+  // The Reykjavík demo has no photos and is withdrawn from the public
+  // reader; it stays in the studio archive only.
+  if (slug === "a-week-in-reykjavik") return null;
+
   if (project.slug === slug) {
     return { project, stops, assets, isCurrent: true };
   }

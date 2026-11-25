@@ -30,6 +30,8 @@ import {
 } from "@/lib/i18n";
 
 const COOKIE_NAME = "lc_preview_auth";
+const LEGACY_LONDON_PATH = "/@ana-ishii/a-year-in-se1";
+const CANONICAL_LONDON_PATH = "/@ana-ishii/a-year-around-london";
 
 /** Paths we NEVER gate — the gate itself lives here. */
 const GATE_INFRA = new Set<string>([
@@ -80,6 +82,19 @@ export function proxy(req: NextRequest) {
     cookieLocale ??
     localeFromAcceptLanguage(req.headers.get("accept-language")) ??
     DEFAULT_LOCALE;
+
+  if (
+    prefixed.pathname === LEGACY_LONDON_PATH ||
+    prefixed.pathname.startsWith(`${LEGACY_LONDON_PATH}/`)
+  ) {
+    const redirectUrl = req.nextUrl.clone();
+    const localePrefix = prefixed.locale ? `/${prefixed.locale}` : "";
+    redirectUrl.pathname = `${localePrefix}${prefixed.pathname.replace(
+      LEGACY_LONDON_PATH,
+      CANONICAL_LONDON_PATH,
+    )}`;
+    return NextResponse.redirect(redirectUrl, 301);
+  }
 
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-lc-locale", negotiated);

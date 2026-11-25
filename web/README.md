@@ -54,9 +54,9 @@ Open [http://localhost:3000](http://localhost:3000).
 
 - `/`
 - `/atlas`
-- `/@ana-ishii/a-year-in-se1`
-- `/@ana-ishii/a-year-in-se1/chapter/waterloo-bridge-facing-east`
-- `/@ana-ishii/a-year-in-se1/p/waterloo-bridge-facing-east`
+- `/@ana-ishii/a-year-around-london`
+- `/@ana-ishii/a-year-around-london/chapter/waterloo-bridge-facing-east`
+- `/@ana-ishii/a-year-around-london/p/waterloo-bridge-facing-east`
 
 ## Studio Routes
 

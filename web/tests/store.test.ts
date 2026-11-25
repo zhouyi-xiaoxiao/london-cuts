@@ -17,7 +17,7 @@ describe("F-T002 root store", () => {
 
   it("loads seed data", () => {
     const s = useRootStore.getState();
-    expect(s.project.slug).toBe("a-year-in-se1");
+    expect(s.project.slug).toBe("a-year-around-london");
     expect(s.stops).toHaveLength(13);
     expect(s.stops[4].n).toBe("05"); // Windsor interior
     expect(s.stops[4].body.length).toBeGreaterThan(0); // populated for stop 05
@@ -91,9 +91,9 @@ describe("F-T002 root store", () => {
   it("seam lib/storage.getProjectByHandleAndSlug resolves current slug", async () => {
     const p = await storage.getProjectByHandleAndSlug(
       "ignored",
-      "a-year-in-se1",
+      "a-year-around-london",
     );
-    expect(p?.slug).toBe("a-year-in-se1");
+    expect(p?.slug).toBe("a-year-around-london");
   });
 
   // ─── F-I009 — spine add/remove/move actions ────────────────────────

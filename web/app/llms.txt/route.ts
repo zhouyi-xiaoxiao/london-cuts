@@ -12,8 +12,8 @@ export async function GET(req: Request) {
     zh ? "# London Cuts（伦敦剪影）" : "# London Cuts",
     "",
     zh
-      ? "London Cuts 是一个 AI-native 旅行叙事工具，把照片、地点和短笔记整理成按站点组织的公开故事与明信片。"
-      : "London Cuts is an AI-native travel storytelling tool for turning photos, places, and short notes into public stop-based stories and postcards.",
+      ? "London Cuts 是一个能用的原型（不是已上线的产品），把一次围绕单一地点的旅行整理成由照片、短文、地图和 AI 明信片组成的按站点故事。工作室只对受邀用户开放。"
+      : "London Cuts is a working prototype (not a launched product) for turning a single-location trip into a stop-based story with photos, short texts, maps and AI-made postcards. The studio is invite-only.",
     "",
     zh ? "## 规范链接" : "## Canonical Links",
     "",

@@ -29,15 +29,15 @@ describe("i18n locale negotiation and seed content", () => {
   });
 
   it("handles explicit locale URL prefixes without changing stable slugs", () => {
-    expect(stripLocalePrefix("/zh/@ana-ishii/a-year-in-se1")).toEqual({
+    expect(stripLocalePrefix("/zh/@ana-ishii/a-year-around-london")).toEqual({
       locale: "zh",
-      pathname: "/@ana-ishii/a-year-in-se1",
+      pathname: "/@ana-ishii/a-year-around-london",
     });
-    expect(localizePath("/@ana-ishii/a-year-in-se1", "zh")).toBe(
-      "/zh/@ana-ishii/a-year-in-se1",
+    expect(localizePath("/@ana-ishii/a-year-around-london", "zh")).toBe(
+      "/zh/@ana-ishii/a-year-around-london",
     );
-    expect(localizePath("/en/@ana-ishii/a-year-in-se1", "zh")).toBe(
-      "/zh/@ana-ishii/a-year-in-se1",
+    expect(localizePath("/en/@ana-ishii/a-year-around-london", "zh")).toBe(
+      "/zh/@ana-ishii/a-year-around-london",
     );
   });
 
@@ -46,19 +46,19 @@ describe("i18n locale negotiation and seed content", () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
     vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://example.test");
 
-    const project = await getPublicProject("@ana-ishii", "a-year-in-se1", "zh");
+    const project = await getPublicProject("@ana-ishii", "a-year-around-london", "zh");
     expect(project?.locale).toBe("zh");
-    expect(project?.slug).toBe("a-year-in-se1");
+    expect(project?.slug).toBe("a-year-around-london");
     expect(project?.title).toContain("伦敦");
     expect(project?.markdown).toContain("## 概览");
     expect(project?.translationStatus).toBe("translated");
     expect(project?.alternateUrls.zh).toBe(
-      "https://example.test/zh/@ana-ishii/a-year-in-se1",
+      "https://example.test/zh/@ana-ishii/a-year-around-london",
     );
 
     const stop = await getPublicStop(
       "@ana-ishii",
-      "a-year-in-se1",
+      "a-year-around-london",
       "regent-street-illuminations",
       "zh",
     );

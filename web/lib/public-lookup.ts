@@ -34,6 +34,9 @@ export async function fetchPublicProjectByHandleAndSlug(
   handle: string,
   slug: string,
 ): Promise<PublicProjectPayload | null> {
+  if (handle.replace(/^@/, "").toLowerCase() === "ana-ishii" && slug === "a-week-in-reykjavik") {
+    return null;
+  }
   if (!hasSupabaseConfig()) return null;
   return withLiveLookupGuard(() => lookupPublicProject(handle, slug), null);
 }

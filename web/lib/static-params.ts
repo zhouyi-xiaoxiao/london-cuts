@@ -3,17 +3,13 @@
 // the seed author/project/stop combinations that the scaffold + reader
 // pages consume.
 //
-// For F-T009: we enumerate BOTH seed projects (SE1 current + Reykjavík
-// archived) so the public `[author]/[slug]` pages build a shell for
-// each. The runtime render still reads the live Zustand store, so any
-// user-published project in localStorage will render from the SE1 shell
-// when its slug matches; otherwise we fall through to NotFoundCard.
+// The public routes pre-render the current London/Windsor seed. The archived
+// Reykjavík demo remains available to the studio state but is not a public
+// reader surface.
 
 import {
   SEED_PROJECT,
-  SEED_PROJECT_REYKJAVIK,
   SEED_STOPS,
-  SEED_STOPS_REYKJAVIK,
 } from "@/lib/seed";
 
 // The scaffold public routes key on an `@handle`. The new seed module
@@ -34,10 +30,6 @@ export function getPublicProjectParams() {
       author: SEED_AUTHOR_HANDLE,
       slug: SEED_PROJECT.slug,
     },
-    {
-      author: SEED_AUTHOR_HANDLE,
-      slug: SEED_PROJECT_REYKJAVIK.slug,
-    },
   ];
 }
 
@@ -46,11 +38,6 @@ export function getPublicStopParams() {
     ...SEED_STOPS.map((stop) => ({
       author: SEED_AUTHOR_HANDLE,
       slug: SEED_PROJECT.slug,
-      stop: stopSlug(stop.title),
-    })),
-    ...SEED_STOPS_REYKJAVIK.map((stop) => ({
-      author: SEED_AUTHOR_HANDLE,
-      slug: SEED_PROJECT_REYKJAVIK.slug,
       stop: stopSlug(stop.title),
     })),
   ];

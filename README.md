@@ -2,7 +2,7 @@
 
 A travel-story studio. Photos find their own place and time from the data inside them; each becomes a stop with a short text and an AI-made postcard, and the trip is published as a public story that readers can switch between three cuts: **Punk**, **Fashion** and **Cinema**.
 
-**Live demo:** <https://london-cuts.vercel.app> — two demo stories and an atlas. The studio for making new stories is invite-only.
+**Live demo:** <https://london-cuts.vercel.app> — a demo story of 13 photos across London and Windsor, and an atlas. The studio for making new stories is invite-only.
 
 **Status:** a working prototype, not a launched product. It began as a weekend build at Global HackTour London (UCL, 18–19 April 2026) and was developed further in the weeks that followed. London Cuts is a working name.
 

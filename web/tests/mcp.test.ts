@@ -38,7 +38,7 @@ describe("MCP endpoint", () => {
     const res = await POST(
       rpc("tools/call", {
         name: "get_public_project",
-        arguments: { handle: "@ana-ishii", slug: "a-year-in-se1" },
+        arguments: { handle: "@ana-ishii", slug: "a-year-around-london" },
       }),
     );
     const json = await res.json();
@@ -53,7 +53,7 @@ describe("MCP endpoint", () => {
     const res = await POST(
       rpc("tools/call", {
         name: "audit_public_project_visibility",
-        arguments: { handle: "@ana-ishii", slug: "a-year-in-se1" },
+        arguments: { handle: "@ana-ishii", slug: "a-year-around-london" },
       }),
     );
     const json = await res.json();
@@ -69,7 +69,7 @@ describe("MCP endpoint", () => {
     const res = await POST(
       rpc("tools/call", {
         name: "get_public_project",
-        arguments: { handle: "@ana-ishii", slug: "a-year-in-se1", locale: "zh" },
+        arguments: { handle: "@ana-ishii", slug: "a-year-around-london", locale: "zh" },
       }),
     );
     const json = await res.json();

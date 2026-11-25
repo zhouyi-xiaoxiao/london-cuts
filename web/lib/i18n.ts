@@ -230,8 +230,8 @@ const UI_EN = {
   "publish.linkCopied": "Link copied",
   "atlas.home": "London Cuts",
   "atlas.eyebrow": "Atlas",
-  "atlas.title": "{count} stops, two cities.",
-  "atlas.body": "Every stop from the demo stories, on one map. Hover a pin for its place and time; open it to read the stop.",
+  "atlas.title": "{count} stops across London and Windsor.",
+  "atlas.body": "Every stop from the demo story, on one map. Hover a pin for its place and time; open it to read the stop.",
   "home.metaTitle": "London Cuts — one city, three cuts",
   "home.metaDescription": "A travel-story studio: photos placed by their own time and location, written stops and AI-made postcards, published as a public story you can read in three cuts — Punk, Fashion or Cinema. A working prototype.",
   "home.eyebrow": "Travel stories · working prototype",
@@ -244,14 +244,15 @@ const UI_EN = {
   "home.textOnly": "text only, no photos yet",
   "home.read": "Read",
   "home.atlasTitle": "The atlas",
-  "home.atlasBody": "Every stop from both stories on one map.",
-  "home.atlasMeta": "London · Windsor · Reykjavík",
+  "home.atlasBody": "All 13 stops from the story on one map.",
+  "home.atlasMeta": "London · Windsor",
   "home.open": "Open",
   "home.statusLabel": "Status",
   "home.status": "A working prototype, not a launched product. It began as a weekend build at Global HackTour London (UCL, 18–19 April 2026) and was developed further in the weeks that followed. The stories here are demo content; the studio for making new ones is invite-only. London Cuts is a working name.",
   "home.agentsLabel": "For AI agents",
   "home.source": "Source on GitHub",
   "atlas.switchHint": "SWITCH NARRATIVE MODE TO SEE THE ATLAS RE-TILE",
+  "atlas.loading": "Loading map…",
 } as const;
 
 type UiKey = keyof typeof UI_EN;
@@ -367,7 +368,7 @@ const UI_ZH: Record<UiKey, string> = {
   "publish.linkCopied": "链接已复制",
   "atlas.home": "London Cuts",
   "atlas.eyebrow": "地图集",
-  "atlas.title": "{count} 个站点，两座城市。",
+  "atlas.title": "{count} 个站点，分布在伦敦和温莎。",
   "atlas.body": "演示故事里的每一站，都在这一张地图上。把鼠标移到图钉上可以看到地点和时间，点开就能读这一站。",
   "home.metaTitle": "London Cuts——一座城，三种剪辑",
   "home.metaDescription": "旅行故事工作室：照片的时间与位置取自照片本身，配上文字和 AI 明信片，发布成可以用朋克、时装、电影三种剪辑阅读的公开故事。仍是原型。",
@@ -381,14 +382,15 @@ const UI_ZH: Record<UiKey, string> = {
   "home.textOnly": "只有文字，还没有照片",
   "home.read": "阅读",
   "home.atlasTitle": "地图集",
-  "home.atlasBody": "两个故事的每一站，都在一张地图上。",
-  "home.atlasMeta": "伦敦 · 温莎 · 雷克雅未克",
+  "home.atlasBody": "这个故事的 13 个站点，都在一张地图上。",
+  "home.atlasMeta": "伦敦 · 温莎",
   "home.open": "打开",
   "home.statusLabel": "现状",
   "home.status": "这是一个能用的原型，不是已上线的产品。它始于 Global HackTour 伦敦站（伦敦大学学院，2026 年 4 月 18 日至 19 日）的一个周末，之后几周里继续开发。这里的故事是演示内容；用来创作新故事的工作室只对受邀用户开放。London Cuts 是暂定名。",
   "home.agentsLabel": "给 AI 智能体",
   "home.source": "GitHub 上的源代码",
   "atlas.switchHint": "切换叙事模式可以看到地图重新换肤",
+  "atlas.loading": "地图加载中…",
 };
 
 const UI = { en: UI_EN, zh: UI_ZH } as const;
@@ -403,6 +405,36 @@ export function t(locale: Locale, key: UiKey, vars: Record<string, string | numb
 
 export function localeName(locale: Locale): string {
   return locale === "zh" ? "中文" : "English";
+}
+
+export function formatPublishedDate(value: string, locale: Locale): string {
+  const match = value.trim().match(/^(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{4})$/);
+  const isoMatch = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const day = match?.[1] ?? (isoMatch ? String(Number(isoMatch[3])) : null);
+  const month = match?.[2] ?? (isoMatch ? isoMatch[2] : null);
+  const year = match?.[3] ?? isoMatch?.[1] ?? null;
+  if (!day || !month || !year) return value;
+  const monthNames = [
+    "jan",
+    "feb",
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct",
+    "nov",
+    "dec",
+  ];
+  const monthName = isoMatch
+    ? monthNames[Number(month) - 1]
+    : month.slice(0, 3).toLowerCase();
+  const monthNumber = monthName ? monthNames.indexOf(monthName) : -1;
+  if (monthNumber < 0) return value;
+  if (locale === "zh") return `${year} 年 ${monthNumber + 1} 月 ${Number(day)} 日`;
+  return `${Number(day)} ${monthNames[monthNumber].toUpperCase()} ${year}`;
 }
 
 export function localizedField<T extends Record<string, unknown>, K extends keyof T>(
@@ -435,16 +467,16 @@ function zhBody(meta: readonly string[], paragraph: string, pullQuote: string, c
 }
 
 export const SEED_PROJECT_TRANSLATIONS: Record<string, Localized<ProjectTranslation>> = {
-  "a-year-in-se1": {
+  "a-year-around-london": {
     zh: {
-      title: "伦敦周游一年",
-      subtitle: "十三张带 EXIF 线索的照片，穿过伦敦、温莎和其间的路。",
+      title: "在伦敦的一年",
+      subtitle: "十三张照片，穿过伦敦、温莎和其间的路；地点和时间都取自照片本身。",
       description: "一组以照片、地点和时间为锚点的伦敦旅行故事。",
       locationName: "伦敦、温莎及周边",
       coverLabel: "伦敦 · 温莎 · 希思罗",
       tags: ["伦敦", "温莎", "照片日记"],
       duration: "约 48 分钟阅读",
-      author: "Ana Ishii",
+      author: "Ana Ishii（演示作者）",
     },
   },
   "a-week-in-reykjavik": {
@@ -462,19 +494,19 @@ export const SEED_PROJECT_TRANSLATIONS: Record<string, Localized<ProjectTranslat
 };
 
 export const SEED_STOP_TRANSLATIONS: Record<string, Localized<StopTranslation>> = {
-  "a-year-in-se1:01": { zh: { title: "摄政街灯饰", time: "20:50", mood: "节庆", code: "W1B 4NF", label: "梅费尔的魔法灯光", body: zhBody(["20:50", "2026 年 1 月 1 日", "W1B 4NF", "梅费尔的魔法灯光"], "夜幕落在摄政街上，圣诞灯饰逐一亮起。天使般的光影悬在繁忙街道上方，把伦敦市中心的节日情绪推到眼前。", "伦敦中心的一片节庆梦境。", "摄政街的圣诞灯饰照亮夜晚。", "se1-01") } },
-  "a-year-in-se1:02": { zh: { title: "隔着玻璃", time: "13:51", mood: "宁静", code: "N6 5UL", label: "Muswell Hill 窗景", body: zhBody(["13:51", "2025 年 8 月 21 日", "N6 5UL", "Muswell Hill 窗景"], "纹理玻璃把外面的绿意变得柔软。光线穿过窗面，像把 Muswell Hill 的日常安静地框进屋内。", "自然的美刚好被框住。", "透过纹理窗户看到的宁静景色。", "se1-02") } },
-  "a-year-in-se1:03": { zh: { title: "Tufnell Park 地铁站", time: "13:35", mood: "通勤", code: "N19 5AA", label: "Tufnell Park 站台", body: zhBody(["13:35", "2025 年 8 月 23 日", "N19 5AA", "Tufnell Park 站台"], "Tufnell Park 的地下站台在等待中停顿。广告、瓷砖和列车灯光都很忙，但这一刻仍像被城市节奏短暂托住。", "城市节拍里的一次暂停。", "Tufnell Park 站台上的伦敦通勤瞬间。", "se1-03") } },
-  "a-year-in-se1:04": { zh: { title: "守卫传统", time: "08:39", mood: "历史", code: "SL4 1QF", label: "温莎卫兵", body: zhBody(["08:39", "2025 年 9 月 9 日", "SL4 1QF", "温莎卫兵"], "温莎城堡的庭院里，卫兵以仪式感穿过石墙之间。红色制服和熊皮帽把一个游客的早晨突然变得庄重而古老。", "传统仍在行进。", "温莎城堡卫兵正在执勤。", "se1-04") } },
-  "a-year-in-se1:05": { zh: { title: "安静的退隐处", time: "10:23", mood: "平静", code: "SL4 1LB", label: "Cornwall Tower", body: zhBody(["10:23", "2025 年 9 月 9 日", "SL4 1LB", "Cornwall Tower"], "温莎城堡内部，石拱和柔光形成一个从仪式转向午餐的停顿。古老砖面下的桌椅让塔楼像一间暂时避开的房间。", "温莎的一次安静逃离。", "Cornwall Tower 内部的宁静空间。", "se1-05") } },
-  "a-year-in-se1:06": { zh: { title: "成就的庆祝", time: "15:05", mood: "喜悦", code: "WC2N 6PB", label: "毕业典礼人群", body: zhBody(["15:05", "2025 年 9 月 11 日", "WC2N 6PB", "毕业典礼人群"], "Golden Jubilee Bridge 附近，一群正式着装的人在白日中聚集。长袍、西装和手机让人行道也带上了典礼感。", "值得记住的一刻。", "桥边庆祝的人群。", "se1-06") } },
-  "a-year-in-se1:07": { zh: { title: "城市表情", time: "17:08", mood: "色彩", code: "TW5 9GX", label: "Hounslow 街头艺术", body: zhBody(["17:08", "2025 年 9 月 13 日", "TW5 9GX", "Hounslow 街头艺术"], "Hounslow 的通道被涂鸦和层叠颜料填满。一个普通路线突然像小型城市画廊，私人标记把目光往深处拉。", "艺术在无声处说话。", "Hounslow 通道里的彩色涂鸦。", "se1-07") } },
-  "a-year-in-se1:08": { zh: { title: "夜里的城市灯光", time: "18:31", mood: "宁静", code: "SE10 0JH", label: "格林尼治半岛", body: zhBody(["18:31", "2025 年 9 月 27 日", "SE10 0JH", "格林尼治半岛"], "格林尼治半岛的夜色里，城市灯光掠过水面。楼群和倒影沿河岸叠成明亮边缘，前景却仍适合慢慢散步。", "城市在夜空下闪光。", "格林尼治半岛夜景。", "se1-08") } },
-  "a-year-in-se1:09": { zh: { title: "抵达希思罗", time: "18:03", mood: "忙碌", code: "TW6 1FB", label: "英国边检队伍", body: zhBody(["18:03", "2025 年 11 月 20 日", "TW6 1FB", "英国边检队伍"], "希思罗把抵达的最初几分钟压缩成行李、外套和护照检查的队列。城市还没正式开始，却已经在等待里出现。", "兴奋在空气里挤着前进。", "希思罗机场英国边检的忙碌场景。", "se1-09") } },
-  "a-year-in-se1:10": { zh: { title: "国王十字的餐食", time: "17:14", mood: "温暖", code: "N1C 4DQ", label: "摄政运河旁的餐桌", body: zhBody(["17:14", "2025 年 5 月 30 日", "N1C 4DQ", "摄政运河旁的餐桌"], "在国王十字的摄政运河边，餐厅柜台成了整个场景。手写菜单、冷水、金属架和服务员的动作组成了晚餐的小型编舞。", "感官的一次盛宴。", "摄政运河旁的餐厅瞬间。", "se1-10") } },
-  "a-year-in-se1:11": { zh: { title: "皮卡迪利夜灯", time: "22:05", mood: "鲜活", code: "W1J 9HA", label: "梅费尔夜色", body: zhBody(["22:05", "2026 年 4 月 18 日", "W1J 9HA", "梅费尔夜色"], "夜里的皮卡迪利把交通变成移动的光桌。巴士、汽车和店面亮光聚在 BAFTA 立面周围，让梅费尔显得精致又不安分。", "伦敦夜生活自有电流。", "梅费尔夜晚的街道灯光。", "se1-11") } },
-  "a-year-in-se1:12": { zh: { title: "城市中的力量", time: "18:23", mood: "能量", code: "WC1H 0AH", label: "Pulse Fitness 健身房", body: zhBody(["18:23", "2026 年 4 月 18 日", "WC1H 0AH", "Pulse Fitness 健身房"], "Gordon Street 附近的健身房明亮、实用、充满重复动作。器械、镜子和身体共享同一个房间，却各自追着不同目标。", "力量遇见共同体。", "Pulse Fitness 健身房的城市室内场景。", "se1-12") } },
-  "a-year-in-se1:13": { zh: { title: "日落的宁静", time: "02:05", mood: "安宁", code: "N4 3NP", label: "Coleridge Road", body: zhBody(["02:05", "2025 年 7 月 6 日", "N4 3NP", "Coleridge Road"], "Coleridge Road 上，一片柔软的云接住最后的颜色。街道普通得近乎空白，于是天空成了主角。", "城市里一刻短暂的平静。", "Finsbury Park 附近 Coleridge Road 上的宁静晚霞。", "se1-13") } },
+  "a-year-around-london:01": { zh: { title: "摄政街灯饰", time: "22:50", mood: "节庆", code: "W1B 4NF", label: "梅费尔的魔法灯光", body: zhBody(["22:50", "2026 年 1 月 1 日", "W1B 4NF", "梅费尔的魔法灯光"], "夜幕落在摄政街上，圣诞灯饰逐一亮起。天使般的光影悬在繁忙街道上方，把伦敦市中心的节日情绪推到眼前。", "伦敦中心的一片节庆梦境。", "摄政街的圣诞灯饰照亮夜晚。", "se1-01") } },
+  "a-year-around-london:02": { zh: { title: "隔着玻璃", time: "16:51", mood: "宁静", code: "N6 5UL", label: "Muswell Hill 窗景", body: zhBody(["16:51", "2025 年 8 月 21 日", "N6 5UL", "Muswell Hill 窗景"], "纹理玻璃把外面的绿意变得柔软。光线穿过窗面，像把 Muswell Hill 的日常安静地框进屋内。", "自然的美刚好被框住。", "透过纹理窗户看到的宁静景色。", "se1-02") } },
+  "a-year-around-london:03": { zh: { title: "塔夫内尔公园地铁站", time: "16:35", mood: "通勤", code: "N19 5AA", label: "塔夫内尔公园站台", body: zhBody(["16:35", "2025 年 8 月 23 日", "N19 5AA", "塔夫内尔公园站台"], "塔夫内尔公园的地下站台在等待中停顿。广告、瓷砖和列车灯光都很忙，但这一刻仍像被城市节奏短暂托住。", "城市节拍里的一次暂停。", "塔夫内尔公园站台上的伦敦通勤瞬间。", "se1-03") } },
+  "a-year-around-london:04": { zh: { title: "守卫传统", time: "11:39", mood: "历史", code: "SL4 1QF", label: "温莎卫兵", body: zhBody(["11:39", "2025 年 9 月 9 日", "SL4 1QF", "温莎卫兵"], "温莎城堡的庭院里，卫兵以仪式感穿过石墙之间。红色制服和熊皮帽把一个游客的早晨突然变得庄重而古老。", "传统仍在行进。", "温莎城堡卫兵正在执勤。", "se1-04") } },
+  "a-year-around-london:05": { zh: { title: "温莎的僻静角落", time: "13:23", mood: "平静", code: "SL4 1LB", label: "Cornwall Tower", body: zhBody(["13:23", "2025 年 9 月 9 日", "SL4 1LB", "Cornwall Tower"], "温莎城堡内部，石拱和柔光形成一个从仪式转向午餐的停顿。古老砖面下的桌椅让塔楼像一间暂时避开的房间。", "温莎的一次安静逃离。", "Cornwall Tower 内部的宁静空间。", "se1-05") } },
+  "a-year-around-london:06": { zh: { title: "庆祝的一天", time: "18:05", mood: "喜悦", code: "WC2N 6PB", label: "毕业典礼人群", body: zhBody(["18:05", "2025 年 9 月 11 日", "WC2N 6PB", "毕业典礼人群"], "Golden Jubilee Bridge 附近，一群正式着装的人在白日中聚集。长袍、西装和手机让人行道也带上了典礼感。", "值得记住的一刻。", "桥边庆祝的人群。", "se1-06") } },
+  "a-year-around-london:07": { zh: { title: "城市表情", time: "20:08", mood: "色彩", code: "TW5 9GX", label: "Hounslow 街头艺术", body: zhBody(["20:08", "2025 年 9 月 13 日", "TW5 9GX", "Hounslow 街头艺术"], "Hounslow 的通道被涂鸦和层叠颜料填满。一个普通路线突然像小型城市画廊，私人标记把目光往深处拉。", "艺术在无声处说话。", "Hounslow 通道里的彩色涂鸦。", "se1-07") } },
+  "a-year-around-london:08": { zh: { title: "夜里的城市灯光", time: "21:31", mood: "宁静", code: "SE10 0JH", label: "格林尼治半岛", body: zhBody(["21:31", "2025 年 9 月 27 日", "SE10 0JH", "格林尼治半岛"], "格林尼治半岛的夜色里，城市灯光掠过水面。楼群和倒影沿河岸叠成明亮边缘，前景却仍适合慢慢散步。", "城市在夜空下闪光。", "格林尼治半岛夜景。", "se1-08") } },
+  "a-year-around-london:09": { zh: { title: "抵达希思罗", time: "20:03", mood: "忙碌", code: "TW6 1FB", label: "英国边检队伍", body: zhBody(["20:03", "2025 年 11 月 20 日", "TW6 1FB", "英国边检队伍"], "希思罗把抵达的最初几分钟压缩成行李、外套和护照检查的队列。城市还没正式开始，却已经在等待里出现。", "兴奋在空气里挤着前进。", "希思罗机场英国边检的忙碌场景。", "se1-09") } },
+  "a-year-around-london:10": { zh: { title: "国王十字的一餐", time: "20:14", mood: "温暖", code: "N1C 4DQ", label: "摄政运河旁的餐桌", body: zhBody(["20:14", "2025 年 5 月 30 日", "N1C 4DQ", "摄政运河旁的餐桌"], "在国王十字的摄政运河边，餐厅柜台成了整个场景。手写菜单、冷水、金属架和服务员的动作组成了晚餐的小型编舞。", "感官的一次盛宴。", "摄政运河旁的餐厅瞬间。", "se1-10") } },
+  "a-year-around-london:11": { zh: { title: "皮卡迪利夜灯", time: "00:05", mood: "鲜活", code: "W1J 9HA", label: "梅费尔夜色", body: zhBody(["00:05", "2026 年 4 月 18 日", "W1J 9HA", "梅费尔夜色"], "夜里的皮卡迪利把交通变成移动的光桌。巴士、汽车和店面亮光聚在 BAFTA 立面周围，让梅费尔显得精致又不安分。", "伦敦夜生活自有电流。", "梅费尔夜晚的街道灯光。", "se1-11") } },
+  "a-year-around-london:12": { zh: { title: "城里的力量感", time: "20:23", mood: "能量", code: "WC1H 0AH", label: "Pulse Fitness 健身房", body: zhBody(["20:23", "2026 年 4 月 18 日", "WC1H 0AH", "Pulse Fitness 健身房"], "Gordon Street 附近的健身房明亮、实用、充满重复动作。器械、镜子和身体共享同一个房间，却各自追着不同目标。", "力量遇见共同体。", "Pulse Fitness 健身房的城市室内场景。", "se1-12") } },
+  "a-year-around-london:13": { zh: { title: "日出的宁静", time: "05:05", mood: "安宁", code: "N4 3NP", label: "Coleridge Road", body: zhBody(["05:05", "2025 年 7 月 6 日", "N4 3NP", "Coleridge Road"], "日出后不久，Coleridge Road 上一片柔软的云接住清晨的第一抹颜色。街道普通得近乎空白，于是天空成了主角。", "城市里一刻短暂的平静。", "芬斯伯里公园附近 Coleridge Road 上的宁静朝霞。", "se1-13") } },
   "a-week-in-reykjavik:01": { zh: { title: "山顶的 Hallgrímskirkja", time: "09:18", mood: "石色", code: "101 RVK", label: "Hallgrímskirkja · 玄武岩", body: [] } },
   "a-week-in-reykjavik:02": { zh: { title: "港口旁的玻璃钻石 Harpa", time: "11:02", mood: "冰川", code: "101 RVK", label: "Harpa · 港口玻璃", body: [] } },
   "a-week-in-reykjavik:03": { zh: { title: "黎明时的 Sólfar 太阳航海者", time: "07:44", mood: "钢色", code: "101 RVK", label: "Sólfar · 冷钢", body: [] } },
@@ -485,25 +517,25 @@ export const SEED_STOP_TRANSLATIONS: Record<string, Localized<StopTranslation>> 
 };
 
 export const SEED_POSTCARD_TRANSLATIONS: Record<string, Localized<PostcardTranslation>> = {
-  "a-year-in-se1:01": { zh: { message: "我很喜欢在节日灯光下慢慢走。那种气氛像被点亮了一样。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
-  "a-year-in-se1:02": { zh: { message: "我找到一个安静的位置看窗外。这里真的很平和。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
-  "a-year-in-se1:03": { zh: { message: "Tufnell Park 的能量很迷人。地铁总像一座小剧场。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
-  "a-year-in-se1:04": { zh: { message: "今天看见卫兵完整地经过。这个早晨太难忘了。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
-  "a-year-in-se1:05": { zh: { message: "我在温莎找到一处安静停顿。建筑自己就说了一半。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
-  "a-year-in-se1:06": { zh: { message: "今天路过桥边的典礼。整条人行道都像在骄傲。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
-  "a-year-in-se1:07": { zh: { message: "我找到一条满是颜色的小巷。像一间藏起来的小画廊。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
-  "a-year-in-se1:08": { zh: { message: "夜里沿河走了一段。灯光把所有工作都完成了。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
-  "a-year-in-se1:09": { zh: { message: "刚从希思罗抵达。城市在离开队伍之前就已经开始了。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
-  "a-year-in-se1:10": { zh: { message: "我在运河旁吃饭，看柜台围着晚餐移动。整个房间都带电。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
-  "a-year-in-se1:11": { zh: { message: "夜里的伦敦还是很有电流。皮卡迪利像为自己盛装了一样。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
-  "a-year-in-se1:12": { zh: { message: "在 Gordon Street 附近找到一小块专注。每个人都按自己的节奏移动。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
-  "a-year-in-se1:13": { zh: { message: "我在 Coleridge Road 为天空停下。它普通，又美得很短暂。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
+  "a-year-around-london:01": { zh: { message: "我很喜欢在节日灯光下慢慢走。那种气氛像被点亮了一样。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
+  "a-year-around-london:02": { zh: { message: "我找到一个安静的位置看窗外。这里真的很平和。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
+  "a-year-around-london:03": { zh: { message: "塔夫内尔公园的能量很迷人。地铁总像一座小剧场。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
+  "a-year-around-london:04": { zh: { message: "今天看见卫兵完整地经过。这个早晨太难忘了。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
+  "a-year-around-london:05": { zh: { message: "我在温莎找到一处安静停顿。建筑自己就说了一半。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
+  "a-year-around-london:06": { zh: { message: "今天路过桥边的典礼。整条人行道都像在骄傲。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
+  "a-year-around-london:07": { zh: { message: "我找到一条满是颜色的小巷。像一间藏起来的小画廊。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
+  "a-year-around-london:08": { zh: { message: "夜里沿河走了一段。灯光把所有工作都完成了。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
+  "a-year-around-london:09": { zh: { message: "刚从希思罗抵达。城市在离开队伍之前就已经开始了。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
+  "a-year-around-london:10": { zh: { message: "我在运河旁吃饭，看柜台围着晚餐移动。整个房间都带电。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
+  "a-year-around-london:11": { zh: { message: "夜里的伦敦还是很有电流。皮卡迪利像为自己盛装了一样。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
+  "a-year-around-london:12": { zh: { message: "在 Gordon Street 附近找到一小块专注。每个人都按自己的节奏移动。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
+  "a-year-around-london:13": { zh: { message: "我在 Coleridge Road 为天空停下。它普通，又美得很短暂。", recipient: { name: "M.", line1: "温暖的某处", line2: "留局待取", country: "世界" } } },
 };
 
 export const SEED_ASSET_TRANSLATIONS: Record<string, Localized<AssetTranslation>> = {
   "se1-01": { zh: { alt: "摄政街圣诞灯饰照亮夜晚。", caption: "摄政街的圣诞灯饰" } },
   "se1-02": { zh: { alt: "透过纹理玻璃看到的安静绿意。", caption: "Muswell Hill 的窗景" } },
-  "se1-03": { zh: { alt: "Tufnell Park 地铁站台上的伦敦通勤瞬间。", caption: "Tufnell Park 地铁站" } },
+  "se1-03": { zh: { alt: "塔夫内尔公园地铁站台上的伦敦通勤瞬间。", caption: "塔夫内尔公园地铁站" } },
   "se1-04": { zh: { alt: "温莎城堡卫兵在石墙前列队执勤。", caption: "温莎卫兵" } },
   "se1-05": { zh: { alt: "Cornwall Tower 内部的石拱和安静桌椅。", caption: "Cornwall Tower 的宁静空间" } },
   "se1-06": { zh: { alt: "Golden Jubilee Bridge 附近庆祝毕业的人群。", caption: "桥边的毕业庆祝" } },
@@ -513,5 +545,5 @@ export const SEED_ASSET_TRANSLATIONS: Record<string, Localized<AssetTranslation>
   "se1-10": { zh: { alt: "国王十字摄政运河旁忙碌而温暖的餐厅柜台。", caption: "摄政运河旁的餐桌" } },
   "se1-11": { zh: { alt: "皮卡迪利夜晚的街道、车灯和店面亮光。", caption: "梅费尔夜色" } },
   "se1-12": { zh: { alt: "Gordon Street 附近明亮而专注的健身房室内。", caption: "Pulse Fitness 健身房" } },
-  "se1-13": { zh: { alt: "Coleridge Road 上方柔和的日落云色。", caption: "Coleridge Road 的晚霞" } },
+  "se1-13": { zh: { alt: "Coleridge Road 上方日出时的柔和云色。", caption: "Coleridge Road 的朝霞" } },
 };

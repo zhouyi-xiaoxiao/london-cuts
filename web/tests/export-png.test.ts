@@ -92,8 +92,8 @@ describe("F-P004 exportNodeToPng", () => {
 
 describe("F-P004 suggestPostcardFilename", () => {
   it("produces <project>_<stop>_<side>.png for clean slugs", () => {
-    expect(suggestPostcardFilename("a-year-in-se1", "01-borough", "front")).toBe(
-      "a-year-in-se1_01-borough_front.png",
+    expect(suggestPostcardFilename("a-year-around-london", "01-borough", "front")).toBe(
+      "a-year-around-london_01-borough_front.png",
     );
   });
 
@@ -112,10 +112,10 @@ describe("F-P004 suggestPostcardFilename", () => {
     ).toBe(true);
   });
 
-  it("preserves the canonical seed slug a-year-in-se1 unchanged", () => {
+  it("preserves the canonical seed slug a-year-around-london unchanged", () => {
     // Regression guard: the current SE1 demo slug must round-trip as-is.
     expect(
-      suggestPostcardFilename("a-year-in-se1", "stop", "front"),
-    ).toBe("a-year-in-se1_stop_front.png");
+      suggestPostcardFilename("a-year-around-london", "stop", "front"),
+    ).toBe("a-year-around-london_stop_front.png");
   });
 });

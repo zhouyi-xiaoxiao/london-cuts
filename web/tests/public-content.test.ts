@@ -44,7 +44,7 @@ describe("public-content DTO seam", () => {
   });
 
   it("returns project markdown with stop-level citation URLs", async () => {
-    const project = await getPublicProject("@ana-ishii", "a-year-in-se1");
+    const project = await getPublicProject("@ana-ishii", "a-year-around-london");
     expect(project).not.toBeNull();
     expect(project?.stops).toHaveLength(13);
     expect(project?.markdown).toContain("# A Year Around London");
@@ -58,7 +58,7 @@ describe("public-content DTO seam", () => {
   });
 
   it("localizes public DTOs and markdown packs in Simplified Chinese", async () => {
-    const project = await getPublicProject("@ana-ishii", "a-year-in-se1", "zh");
+    const project = await getPublicProject("@ana-ishii", "a-year-around-london", "zh");
     expect(project).not.toBeNull();
     expect(project?.locale).toBe("zh");
     expect(project?.availableLocales).toContain("zh");
@@ -71,7 +71,7 @@ describe("public-content DTO seam", () => {
   it("returns an individual public stop by slug", async () => {
     const result = await getPublicStop(
       "@ana-ishii",
-      "a-year-in-se1",
+      "a-year-around-london",
       "regent-street-illuminations",
     );
     expect(result?.stop.title).toBe("Regent Street Illuminations");

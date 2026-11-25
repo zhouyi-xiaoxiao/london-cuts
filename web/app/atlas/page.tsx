@@ -1,8 +1,7 @@
 "use client";
 
 // F-P002 atlas demo page. Renders the ported MapLibre Atlas with the
-// union of SE1 + Reykjavík seed stops so the demo proves the renderer
-// handles international coordinates (not just London).
+// London/Windsor seed stops used by the public story.
 //
 // The old AtlasPage (the SVG-schematic version in public-pages.tsx) used
 // the DemoStoreProvider state that's being torn down in M-fast
@@ -19,23 +18,16 @@ import { stopSlugFrom } from "@/components/public/use-public-project";
 import { useMode } from "@/stores/mode";
 import {
   SEED_PROJECT,
-  SEED_PROJECT_REYKJAVIK,
   SEED_STOPS,
-  SEED_STOPS_REYKJAVIK,
 } from "@/lib/seed";
 
-// Both demo stories are published under the seed author's handle.
+// The public demo story is published under the seed author's handle.
 const SEED_HANDLE_PATH = "/@ana-ishii";
 
 function chapterHref(stopId: string): string | null {
-  const reykjavik = stopId.startsWith("r");
-  const n = reykjavik ? stopId.slice(1) : stopId;
-  const stop = (reykjavik ? SEED_STOPS_REYKJAVIK : SEED_STOPS).find(
-    (s) => s.n === n,
-  );
+  const stop = SEED_STOPS.find((s) => s.n === stopId);
   if (!stop) return null;
-  const slug = reykjavik ? SEED_PROJECT_REYKJAVIK.slug : SEED_PROJECT.slug;
-  return `${SEED_HANDLE_PATH}/${slug}/chapter/${stopSlugFrom(stop.title)}`;
+  return `${SEED_HANDLE_PATH}/${SEED_PROJECT.slug}/chapter/${stopSlugFrom(stop.title)}`;
 }
 
 export default function Page() {
@@ -43,22 +35,12 @@ export default function Page() {
   const t = useT();
   const router = useRouter();
 
-  // Union of seed stops. Prefix the Reykjavík IDs so `n` is unique across
-  // the two projects (both use "01".."NN"). `mood` / `time` feed the
-  // pin-hover popover; no hero thumbnails at this demo layer — the
-  // asset pool isn't wired through, so `heroUrl` stays undefined.
+  // Mood and time feed the pin-hover popover. The asset pool isn't wired
+  // through at this demo layer, so `heroUrl` stays undefined.
   const allStops = useMemo<readonly AtlasStop[]>(
     () => [
       ...SEED_STOPS.map((s) => ({
         n: s.n,
-        title: s.title,
-        lat: s.lat,
-        lng: s.lng,
-        mood: s.mood,
-        timeLabel: s.time,
-      })),
-      ...SEED_STOPS_REYKJAVIK.map((s) => ({
-        n: `r${s.n}`,
         title: s.title,
         lat: s.lat,
         lng: s.lng,

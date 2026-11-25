@@ -7,6 +7,7 @@ import {
   SEED_POSTCARD_TRANSLATIONS,
   SEED_PROJECT_TRANSLATIONS,
   SEED_STOP_TRANSLATIONS,
+  formatPublishedDate,
   localizeBodyBlocks,
   localizePath,
   localizedField,
@@ -22,9 +23,7 @@ import {
   SEED_BODIES,
   SEED_POSTCARDS,
   SEED_PROJECT,
-  SEED_PROJECT_REYKJAVIK,
   SEED_STOPS,
-  SEED_STOPS_REYKJAVIK,
   type BodyBlock,
 } from "@/lib/seed";
 import { getBrowserClient, hasSupabaseConfig } from "@/lib/supabase";
@@ -33,6 +32,12 @@ import type { Asset, Project, Stop } from "@/stores/types";
 const DEFAULT_BASE_URL = "https://london-cuts.vercel.app";
 const SEED_OWNER_ID = "00000000-0000-4000-8000-000000000001";
 const SEED_HANDLE = "ana-ishii";
+export const LEGACY_SEED_SLUG = "a-year-in-se1";
+export const WITHDRAWN_SEED_SLUG = "a-week-in-reykjavik";
+
+export function isWithdrawnPublicSeed(handle: string, slug: string): boolean {
+  return normalizeHandle(handle) === SEED_HANDLE && slug === WITHDRAWN_SEED_SLUG;
+}
 
 export interface PublicAssetDTO {
   id: string;
@@ -186,7 +191,9 @@ export function absoluteUrl(pathOrUrl: string | null | undefined): string | null
 export async function listPublicProjects(
   locale: Locale = DEFAULT_LOCALE,
 ): Promise<PublicProjectSummaryDTO[]> {
-  const live = await listSupabaseProjectSummaries(locale);
+  const live = (await listSupabaseProjectSummaries(locale)).filter(
+    (project) => !isWithdrawnPublicSeed(project.handle, project.slug),
+  );
   if (live.length > 0) return live;
 
   return [
@@ -194,14 +201,6 @@ export async function listPublicProjects(
       project: seedProjectToRuntime(SEED_PROJECT, "seed-a-year-in-se1"),
       stops: seedStopsToRuntime(SEED_STOPS, SEED_PROJECT.slug),
       assets: seedAssetsToRuntime(),
-    }, locale),
-    seedProjectToPublic({
-      project: seedProjectToRuntime(
-        SEED_PROJECT_REYKJAVIK,
-        "seed-a-week-in-reykjavik",
-      ),
-      stops: seedStopsToRuntime(SEED_STOPS_REYKJAVIK, SEED_PROJECT_REYKJAVIK.slug),
-      assets: [],
     }, locale),
   ].map(projectSummary);
 }
@@ -212,24 +211,16 @@ export async function getPublicProject(
   locale: Locale = DEFAULT_LOCALE,
 ): Promise<PublicProjectDTO | null> {
   const normalizedHandle = normalizeHandle(handle);
-  const live = await fetchPublicProjectByHandleAndSlug(normalizedHandle, slug);
+  if (isWithdrawnPublicSeed(normalizedHandle, slug)) return null;
+  const requestedSlug = slug === LEGACY_SEED_SLUG ? SEED_PROJECT.slug : slug;
+  const live = await fetchPublicProjectByHandleAndSlug(normalizedHandle, requestedSlug);
   if (live) return publicLookupPayloadToProject(live, normalizedHandle, locale);
 
-  if (normalizedHandle === SEED_HANDLE && slug === SEED_PROJECT.slug) {
+  if (normalizedHandle === SEED_HANDLE && requestedSlug === SEED_PROJECT.slug) {
     return seedProjectToPublic({
       project: seedProjectToRuntime(SEED_PROJECT, "seed-a-year-in-se1"),
       stops: seedStopsToRuntime(SEED_STOPS, SEED_PROJECT.slug),
       assets: seedAssetsToRuntime(),
-    }, locale);
-  }
-  if (normalizedHandle === SEED_HANDLE && slug === SEED_PROJECT_REYKJAVIK.slug) {
-    return seedProjectToPublic({
-      project: seedProjectToRuntime(
-        SEED_PROJECT_REYKJAVIK,
-        "seed-a-week-in-reykjavik",
-      ),
-      stops: seedStopsToRuntime(SEED_STOPS_REYKJAVIK, SEED_PROJECT_REYKJAVIK.slug),
-      assets: [],
     }, locale);
   }
   return null;
@@ -438,7 +429,7 @@ export function projectMarkdown(project: PublicProjectDTO): string {
     `- ${labels.canonicalUrl}: ${project.canonicalUrl}`,
     `- ${labels.apiUrl}: ${project.apiUrl}`,
     `- ${labels.markdownUrl}: ${project.markdownUrl}`,
-    `- ${labels.published}: ${project.publishedAt ?? labels.unknown}`,
+    `- ${labels.published}: ${project.publishedAt ? formatPublishedDate(project.publishedAt, project.locale) : labels.unknown}`,
     `- ${labels.stops}: ${project.stopCount}`,
     `- ${labels.images}: ${project.imageCount}`,
     "",
@@ -1347,7 +1338,7 @@ function seedProjectToRuntime(seed: typeof SEED_PROJECT, id: string): Project {
 }
 
 function seedStopsToRuntime(
-  stops: typeof SEED_STOPS | typeof SEED_STOPS_REYKJAVIK,
+  stops: typeof SEED_STOPS,
   projectSlug: string,
 ): Stop[] {
   return stops.map((stop) => ({

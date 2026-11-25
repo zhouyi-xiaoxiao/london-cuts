@@ -20,10 +20,11 @@ import { useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { LanguageSwitcher, useT } from "@/components/i18n-provider";
+import { LanguageSwitcher, useLocale, useT } from "@/components/i18n-provider";
 import { Atlas, type AtlasStop } from "@/components/map/atlas";
 import { ModeSwitcher } from "@/components/mode-switcher";
 import { useMode } from "@/stores/mode";
+import { formatPublishedDate } from "@/lib/i18n";
 import { NotFoundCard } from "./not-found-card";
 import {
   stopSlugFrom,
@@ -57,6 +58,7 @@ export function PublicProjectPage({
   const router = useRouter();
   const mode = useMode();
   const t = useT();
+  const locale = useLocale();
 
   if (!lookup) {
     return (
@@ -162,7 +164,9 @@ export function PublicProjectPage({
               style={{ opacity: 0.62, fontSize: 12, letterSpacing: "0.06em" }}
             >
               {project.author}
-              {project.publishedAt ? ` · ${project.publishedAt}` : ""}
+              {project.publishedAt
+                ? ` · ${formatPublishedDate(project.publishedAt, locale)}`
+                : ""}
               {typeof project.reads === "number" && project.reads > 0
                 ? ` · ${project.reads.toLocaleString()} ${t("public.reads")}`
                 : ""}

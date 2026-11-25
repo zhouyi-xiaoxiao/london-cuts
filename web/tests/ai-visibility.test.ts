@@ -12,14 +12,14 @@ describe("AI visibility audit", () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
     vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://example.test");
-    const project = await getPublicProject("@ana-ishii", "a-year-in-se1");
+    const project = await getPublicProject("@ana-ishii", "a-year-around-london");
     expect(project).not.toBeNull();
 
     const audit = auditPublicProjectVisibility(project!);
     expect(audit.object).toBe("ai_visibility_audit");
     expect(audit.project).toMatchObject({
       handle: "ana-ishii",
-      slug: "a-year-in-se1",
+      slug: "a-year-around-london",
       markdownUrl: expect.stringContaining("/markdown"),
     });
     expect(audit.suggestedQueries).toContain("A Year Around London");
@@ -32,7 +32,7 @@ describe("AI visibility audit", () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
     vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://example.test");
-    const project = await getPublicProject("@ana-ishii", "a-year-in-se1", "zh");
+    const project = await getPublicProject("@ana-ishii", "a-year-around-london", "zh");
     expect(project).not.toBeNull();
 
     const audit = auditPublicProjectVisibility(project!, "zh");
